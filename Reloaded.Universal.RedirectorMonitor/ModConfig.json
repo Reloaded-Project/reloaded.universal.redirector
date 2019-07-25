@@ -1,0 +1,11 @@
+{
+  "ModId": "reloaded.universal.redirectormonitor",
+  "ModName": "Reloaded File Redirector Monitor",
+  "ModAuthor": "Sewer56",
+  "ModVersion": "1.0.0",
+  "ModDescription": "Prints file redirections performed by the File Redirector",
+  "ModDll": "Reloaded.Universal.RedirectorMonitor.dll",
+  "ModIcon": "Preview.png",
+  "ModDependencies": [ "reloaded.universal.redirector" ],
+  "SupportedAppId": []
+}
