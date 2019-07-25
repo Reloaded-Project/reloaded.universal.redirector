@@ -38,8 +38,13 @@ namespace Reloaded.Universal.Redirector
 
         public void Remove(IModConfigV1 configuration)
         {
-            var dictionary = _redirections.Find(x => x.ModConfig.ModId == configuration.ModId);
-            dictionary?.Dispose();
+            int index = _redirections.FindIndex(x => x.ModConfig.ModId == configuration.ModId);
+            if (index != -1)
+            {
+                var redirection = _redirections[index];
+                _redirections.RemoveAt(index);
+                redirection.Dispose();
+            }
         }
 
         public bool TryRedirect(string path, out string newPath)
