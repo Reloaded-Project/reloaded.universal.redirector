@@ -15,7 +15,9 @@ This project is a set of mods for [Reloaded II](https://github.com/Reloaded-Proj
 
 #### Mods
 Reloaded.Universal.Redirector: *Provides file redirection support for other mods.*
+
 Reloaded.Universal.Monitor: *Prints out the files being accessed by the application.*
+
 Reloaded.Universal.RedirectorMonitor: *Prints out the files being redirected by the redirector.*
 
 #### Controllers (For Programmers)
