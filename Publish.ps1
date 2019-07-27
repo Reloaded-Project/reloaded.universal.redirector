@@ -3,20 +3,25 @@ $monitorOutputPath = "Reloaded.Universal.Monitor/bin"
 $redirectorOutputPath = "Reloaded.Universal.Redirector/bin"
 $interfacesOutputPath = "Reloaded.Universal.Redirector.Interfaces/bin"
 $redirectorMonitorOutputPath = "Reloaded.Universal.RedirectorMonitor/bin"
+$publishDirectory = "Publish"
 
-if ([System.IO.File]::Exists($monitorOutputPath)) {
+if ([System.IO.Directory]::Exists($publishDirectory)) {
+	Get-ChildItem $publishDirectory -Include * -Recurse | Remove-Item -Force -Recurse
+}
+
+if ([System.IO.Directory]::Exists($monitorOutputPath)) {
 	Get-ChildItem $monitorOutputPath -Include * -Recurse | Remove-Item -Force -Recurse
 }
 
-if ([System.IO.File]::Exists($redirectorOutputPath)) {
+if ([System.IO.Directory]::Exists($redirectorOutputPath)) {
 	Get-ChildItem $redirectorOutputPath -Include * -Recurse | Remove-Item -Force -Recurse
 }
 
-if ([System.IO.File]::Exists($interfacesOutputPath)) {
+if ([System.IO.Directory]::Exists($interfacesOutputPath)) {
 	Get-ChildItem $interfacesOutputPath -Include * -Recurse | Remove-Item -Force -Recurse
 }
 
-if ([System.IO.File]::Exists($redirectorMonitorOutputPath)) {
+if ([System.IO.Directory]::Exists($redirectorMonitorOutputPath)) {
 	Get-ChildItem $redirectorMonitorOutputPath -Include * -Recurse | Remove-Item -Force -Recurse
 }
 
@@ -34,7 +39,9 @@ Get-ChildItem $redirectorMonitorOutputPath -Include *.pdb -Recurse | Remove-Item
 Get-ChildItem $redirectorMonitorOutputPath -Include *.xml -Recurse | Remove-Item -Force -Recurse
 
 # Make compressed directory
-New-Item "Publish" -ItemType Directory
+if (![System.IO.Directory]::Exists($publishDirectory)) {
+    New-Item $publishDirectory -ItemType Directory
+}
 
 # Compress
 Add-Type -A System.IO.Compression.FileSystem
