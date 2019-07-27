@@ -14,11 +14,11 @@ This project is a set of mods for [Reloaded II](https://github.com/Reloaded-Proj
 ## Inside This Repository
 
 #### Mods
-Reloaded.Universal.Redirector: *Provides file redirection support for other mods.*
+Redirector: *Provides file redirection support for other mods.*
 
-Reloaded.Universal.Monitor: *Prints out the files being accessed by the application.*
+Monitor: *Prints out the files being accessed by the application.* (Requires Redirector)
 
-Reloaded.Universal.RedirectorMonitor: *Prints out the files being redirected by the redirector.*
+RedirectorMonitor: *Prints out the files being redirected by the redirector.* (Requires Redirector)
 
 #### Controllers (For Programmers)
 Reloaded.Universal.Redirector.Interfaces: *Provides support for receiving events for when e.g. files are redirected.*
