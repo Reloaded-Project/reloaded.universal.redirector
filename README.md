@@ -4,8 +4,13 @@
 	<br/> <br/>
 	<strong>Assert.Equal(expectedPath, actualPath);</strong>
 	<p>1 Test Failed. Unexpected path.</p>
+    <b>Id: reloaded.universal.monitor</b>
 </div>
 
+# Prerequisites
+
+The CRI FS Hook uses the [Hooks Shared Library](https://github.com/Sewer56/Reloaded.SharedLib.Hooks).
+Please download and extract that mod first.
 
 # About This Project
 
