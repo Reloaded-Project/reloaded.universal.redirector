@@ -14,8 +14,8 @@ namespace Reloaded.Universal.Redirector
         /// (The description here is a partial, lazy copy from MSDN)
         /// </summary>
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        [Hooks.X64.Function(Hooks.X64.CallingConventions.Microsoft)]
-        [Hooks.X86.Function(Hooks.X86.CallingConventions.Stdcall)]
+        [Hooks.Definitions.X64.Function(Hooks.Definitions.X64.CallingConventions.Microsoft)]
+        [Hooks.Definitions.X86.Function(Hooks.Definitions.X86.CallingConventions.Stdcall)]
         public delegate int NtCreateFile(out IntPtr handle, FileAccess access, ref OBJECT_ATTRIBUTES objectAttributes,
             ref IO_STATUS_BLOCK ioStatus, ref long allocSize, uint fileAttributes, FileShare share, uint createDisposition, uint createOptions,
             IntPtr eaBuffer, uint eaLength);

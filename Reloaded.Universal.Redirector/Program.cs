@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Reloaded.Hooks;
+using Reloaded.Hooks.Definitions;
+using Reloaded.Hooks.ReloadedII.Interfaces;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Interfaces;
@@ -11,6 +13,7 @@ namespace Reloaded.Universal.Redirector
 {
     public class Program : IMod, IExports
     {
+        public static IReloadedHooks ReloadedHooks; // Mod containing interface cannot be unloaded, so no need to use weak reference.
         public static IModLoader ModLoader { get; set; }
         public Type[] GetTypes() => _exports;
 
@@ -26,6 +29,7 @@ namespace Reloaded.Universal.Redirector
             Debugger.Launch();
             #endif
             ModLoader = (IModLoader)loader;
+            ModLoader.GetController<IReloadedHooks>().TryGetTarget(out ReloadedHooks);
 
             /* Your mod code starts here. */
             var ntdllHandle         = Native.LoadLibraryW("ntdll");
@@ -39,11 +43,7 @@ namespace Reloaded.Universal.Redirector
                 ModLoader.ModLoading += ModLoading;
                 ModLoader.ModUnloading += ModUnloading;
 
-                if (IntPtr.Size == 4)
-                    _ntCreateFileHook = new Reloaded.Hooks.X86.Hook<Native.NtCreateFile>(NtCreateFileHookFn, (long)ntCreateFilePointer).Activate();
-
-                else if (IntPtr.Size == 8)
-                    _ntCreateFileHook = new Reloaded.Hooks.X64.Hook<Native.NtCreateFile>(NtCreateFileHookFn, (long)ntCreateFilePointer).Activate();
+                _ntCreateFileHook = ReloadedHooks.CreateHook<Native.NtCreateFile>(NtCreateFileHookFn, (long)ntCreateFilePointer).Activate();
 
                 _redirectorController = new RedirectorController(_redirector);
                 ModLoader.AddOrReplaceController<IRedirectorController>(this, _redirectorController);
