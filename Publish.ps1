@@ -1,32 +1,23 @@
-# Remove cached build
-$monitorOutputPath = "Reloaded.Universal.Monitor/bin"
-$redirectorOutputPath = "Reloaded.Universal.Redirector/bin"
-$interfacesOutputPath = "Reloaded.Universal.Redirector.Interfaces/bin"
+# Project Output Paths
+$monitorOutputPath        		= "Reloaded.Universal.Monitor/bin"
+$redirectorOutputPath      		= "Reloaded.Universal.Redirector/bin"
 $redirectorMonitorOutputPath = "Reloaded.Universal.RedirectorMonitor/bin"
+
+$monitorPublishName       	= "Monitor.zip"
+$redirectorPublishName      = "Redirector.zip"
+$redirectorMonitorPublishName = "RedirectorMonitor.zip"
+
+$solutionName = "Reloaded.Universal.Redirector.sln"
 $publishDirectory = "Publish"
 
 if ([System.IO.Directory]::Exists($publishDirectory)) {
 	Get-ChildItem $publishDirectory -Include * -Recurse | Remove-Item -Force -Recurse
 }
 
-if ([System.IO.Directory]::Exists($monitorOutputPath)) {
-	Get-ChildItem $monitorOutputPath -Include * -Recurse | Remove-Item -Force -Recurse
-}
-
-if ([System.IO.Directory]::Exists($redirectorOutputPath)) {
-	Get-ChildItem $redirectorOutputPath -Include * -Recurse | Remove-Item -Force -Recurse
-}
-
-if ([System.IO.Directory]::Exists($interfacesOutputPath)) {
-	Get-ChildItem $interfacesOutputPath -Include * -Recurse | Remove-Item -Force -Recurse
-}
-
-if ([System.IO.Directory]::Exists($redirectorMonitorOutputPath)) {
-	Get-ChildItem $redirectorMonitorOutputPath -Include * -Recurse | Remove-Item -Force -Recurse
-}
-
 # Build
-dotnet build -c Release Reloaded.Universal.Redirector.sln
+dotnet restore $solutionName
+dotnet clean $solutionName
+dotnet build -c Release $solutionName
 
 # Cleanup
 Get-ChildItem $monitorOutputPath -Include *.pdb -Recurse | Remove-Item -Force -Recurse
@@ -45,6 +36,6 @@ if (![System.IO.Directory]::Exists($publishDirectory)) {
 
 # Compress
 Add-Type -A System.IO.Compression.FileSystem
-[IO.Compression.ZipFile]::CreateFromDirectory('Reloaded.Universal.Monitor/bin/Release', 'Publish/Monitor.zip')
-[IO.Compression.ZipFile]::CreateFromDirectory('Reloaded.Universal.Redirector/bin/Release', 'Publish/Redirector.zip')
-[IO.Compression.ZipFile]::CreateFromDirectory('Reloaded.Universal.RedirectorMonitor/bin/Release', 'Publish/RedirectorMonitor.zip')
+[IO.Compression.ZipFile]::CreateFromDirectory( $monitorOutputPath + '/Release', 'Publish/' + $monitorPublishName)
+[IO.Compression.ZipFile]::CreateFromDirectory( $redirectorOutputPath + '/Release', 'Publish/' + $redirectorPublishName)
+[IO.Compression.ZipFile]::CreateFromDirectory( $redirectorMonitorOutputPath + '/Release', 'Publish/' + $redirectorMonitorPublishName)
