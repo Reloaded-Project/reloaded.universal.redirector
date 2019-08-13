@@ -10,7 +10,6 @@
   <ItemGroup>
     <None Remove="ModConfig.json" />
     <None Remove="Preview.png" />
-    <None Remove="ReloadedGithubUpdater.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -18,9 +17,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Preview.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ReloadedGithubUpdater.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
