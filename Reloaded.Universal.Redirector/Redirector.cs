@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Structures;
 
@@ -7,7 +8,7 @@ namespace Reloaded.Universal.Redirector
 {
     public class Redirector
     {
-        private List<ModRedirectorDictionary> _redirections = new List<ModRedirectorDictionary>();
+        private Dictionary<string, ModRedirectorDictionary> _redirections = new Dictionary<string, ModRedirectorDictionary>();
         private ModRedirectorDictionary _customRedirections = new ModRedirectorDictionary();
 
         /* Constructor */
@@ -30,21 +31,28 @@ namespace Reloaded.Universal.Redirector
             _customRedirections.FileRedirects.Remove(oldPath);
         }
 
+        public void Add(string redirectFolder)
+        {
+            _redirections[redirectFolder] = new ModRedirectorDictionary(redirectFolder);
+        }
+
         public void Add(IModConfigV1 configuration)
         {
-            var redirectorTuple = new ModRedirectorDictionary(configuration);
-            _redirections.Add(redirectorTuple);
+            Add(GetRedirectFolder(configuration.ModId));
+        }
+
+        public void Remove(string redirectFolder)
+        {
+            if (!_redirections.ContainsKey(redirectFolder))
+                return;
+
+            _redirections[redirectFolder].Dispose();
+            _redirections.Remove(redirectFolder);
         }
 
         public void Remove(IModConfigV1 configuration)
         {
-            int index = _redirections.FindIndex(x => x.ModConfig.ModId == configuration.ModId);
-            if (index != -1)
-            {
-                var redirection = _redirections[index];
-                _redirections.RemoveAt(index);
-                redirection.Dispose();
-            }
+            Remove(GetRedirectFolder(configuration.ModId));
         }
 
         public bool TryRedirect(string path, out string newPath)
@@ -55,14 +63,21 @@ namespace Reloaded.Universal.Redirector
 
             // Doing this in reverse because mods with highest priority get loaded last.
             // We want to look at those mods first.
-            for (int i = _redirections.Count - 1; i >= 0; i--)
+            var values = _redirections.Values.ToArray();
+            for (int i = _redirections.Values.Count - 1; i >= 0; i--)
             {
-                if (_redirections[i].GetRedirection(path, out newPath))
+                if (values[i].GetRedirection(path, out newPath))
                     return true;
             }
 
             newPath = path;
             return false;
+        }
+
+        private string GetRedirectFolder(string modId)
+        {
+            string modFolder = Program.ModLoader.GetDirectoryForModId(modId);
+            return $"{modFolder}\\Redirector";
         }
     }
 }

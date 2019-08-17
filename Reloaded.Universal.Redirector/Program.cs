@@ -17,7 +17,7 @@ namespace Reloaded.Universal.Redirector
         public static IModLoader ModLoader { get; set; }
         public Type[] GetTypes() => _exports;
 
-        private static Type[] _exports = new[] { typeof(IRedirectorController) };
+        private static Type[] _exports = { typeof(IRedirectorController) };
         private IHook<Native.NtCreateFile> _ntCreateFileHook;
         private RedirectorController _redirectorController;
         private Redirector _redirector;

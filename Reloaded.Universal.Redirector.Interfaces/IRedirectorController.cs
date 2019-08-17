@@ -2,7 +2,25 @@
 
 namespace Reloaded.Universal.Redirector.Interfaces
 {
-    public interface IRedirectorController
+    public interface IRedirectorControllerV2
+    {
+        /// <summary>
+        /// Adds a folder for file redirection.
+        /// The files inside the folder are mapped relative to the executable directory of the modified application's executable.
+        /// </summary>
+        /// <param name="folderPath">The full path of the folder to redirect files to.</param>
+        /// <returns>True if t he operation succeeds, else false. Operation fails if a folder is already redirected.</returns>
+        void AddRedirectFolder(string folderPath);
+
+        /// <summary>
+        /// Removes a folder to be redirected.
+        /// The files inside the folder are mapped relative to the executable directory of the modified application's executable.
+        /// </summary>
+        /// <returns>True if t he operation succeeds, else false.</returns>
+        void RemoveRedirectFolder(string folderPath);
+    }
+
+    public interface IRedirectorControllerV1
     {
         Redirecting Redirecting { get; set; }
         Loading Loading { get; set; }
@@ -19,6 +37,11 @@ namespace Reloaded.Universal.Redirector.Interfaces
         /// </summary>
         /// <param name="oldFilePath">The absolute path of the file to no longer be replaced. Tip: Use Path.GetFullPath()</param>
         void RemoveRedirect(string oldFilePath);
+    }
+
+    public interface IRedirectorController : IRedirectorControllerV1, IRedirectorControllerV2
+    {
+
     }
 
     /// <summary>
