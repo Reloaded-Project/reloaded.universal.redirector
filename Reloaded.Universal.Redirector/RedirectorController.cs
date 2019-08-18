@@ -5,7 +5,7 @@ using Reloaded.Universal.Redirector.Interfaces;
 
 namespace Reloaded.Universal.Redirector
 {
-    public class RedirectorController : IRedirectorControllerV2
+    public class RedirectorController : IRedirectorController
     {
         private Redirector _redirector;
 
