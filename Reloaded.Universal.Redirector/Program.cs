@@ -47,6 +47,7 @@ namespace Reloaded.Universal.Redirector
 
                 _redirectorController = new RedirectorController(_redirector);
                 ModLoader.AddOrReplaceController<IRedirectorController>(this, _redirectorController);
+                ModLoader.AddOrReplaceController<IRedirectorControllerV2>(this, _redirectorController);
             }
         }
 

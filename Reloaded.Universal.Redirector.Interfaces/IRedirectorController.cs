@@ -2,7 +2,7 @@
 
 namespace Reloaded.Universal.Redirector.Interfaces
 {
-    public interface IRedirectorControllerV2
+    public interface IRedirectorControllerV2 : IRedirectorController
     {
         /// <summary>
         /// Adds a folder for file redirection.
@@ -20,7 +20,7 @@ namespace Reloaded.Universal.Redirector.Interfaces
         void RemoveRedirectFolder(string folderPath);
     }
 
-    public interface IRedirectorControllerV1
+    public interface IRedirectorController
     {
         Redirecting Redirecting { get; set; }
         Loading Loading { get; set; }
@@ -37,11 +37,6 @@ namespace Reloaded.Universal.Redirector.Interfaces
         /// </summary>
         /// <param name="oldFilePath">The absolute path of the file to no longer be replaced. Tip: Use Path.GetFullPath()</param>
         void RemoveRedirect(string oldFilePath);
-    }
-
-    public interface IRedirectorController : IRedirectorControllerV1, IRedirectorControllerV2
-    {
-
     }
 
     /// <summary>
