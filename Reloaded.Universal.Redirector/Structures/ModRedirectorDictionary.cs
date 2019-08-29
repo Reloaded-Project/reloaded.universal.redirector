@@ -8,19 +8,13 @@ namespace Reloaded.Universal.Redirector.Structures
 {
     public class ModRedirectorDictionary : IDisposable
     {
-        public Dictionary<string, string>       FileRedirects   { get; set; }
+        public Dictionary<string, string>       FileRedirects   { get; set; } = new Dictionary<String,String>(StringComparer.OrdinalIgnoreCase);
         private FileSystemWatcher _watcher;
 
         /* Creation/Destruction */
-        public ModRedirectorDictionary()
-        {
-            FileRedirects = new Dictionary<string, string>();
-        }
-
+        public ModRedirectorDictionary() { }
         public ModRedirectorDictionary(string redirectFolder)
         {
-            FileRedirects = new Dictionary<string, string>();
-            
             SetupFileWatcher(redirectFolder);
             SetupFileRedirects(redirectFolder);
         }
@@ -55,8 +49,8 @@ namespace Reloaded.Universal.Redirector.Structures
         {
             if (Directory.Exists(redirectFolder))
             {
-                Dictionary<string, string> redirects = new Dictionary<string, string>();
-                List<string> allModFiles = RelativePaths.GetRelativeFilePaths(redirectFolder);
+                var redirects = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var allModFiles = RelativePaths.GetRelativeFilePaths(redirectFolder);
                 var appConfig = Program.ModLoader.GetAppConfig();
 
                 foreach (string modFile in allModFiles)
