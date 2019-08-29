@@ -3,9 +3,9 @@ $monitorOutputPath        		= "Reloaded.Universal.Monitor/bin"
 $redirectorOutputPath      		= "Reloaded.Universal.Redirector/bin"
 $redirectorMonitorOutputPath = "Reloaded.Universal.RedirectorMonitor/bin"
 
-$monitorPublishName       	= "Monitor.zip"
-$redirectorPublishName      = "Redirector.zip"
-$redirectorMonitorPublishName = "RedirectorMonitor.zip"
+$monitorPublishName       	= "reloaded.universal.monitor.zip"
+$redirectorPublishName      = "reloaded.universal.redirector.zip"
+$redirectorMonitorPublishName = "reloaded.universal.redirectormonitor.zip"
 
 $solutionName = "Reloaded.Universal.Redirector.sln"
 $publishDirectory = "Publish"
