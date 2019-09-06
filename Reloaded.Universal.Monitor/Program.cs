@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Interfaces;
@@ -46,7 +47,7 @@ namespace Reloaded.Universal.Monitor
 
         private void TargetOnLoading(string path)
         {
-            if (_printLoading)
+            if (_printLoading && !path.Contains("usb#vid") && !path.Contains("hid#vid"))
                 _logger.PrintMessage($"RII File Monitor: {path}", _logger.TextColor);
         }
 
