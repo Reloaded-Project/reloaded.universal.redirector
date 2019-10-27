@@ -77,16 +77,19 @@ namespace Reloaded.Universal.Redirector
             if (oldFilePath.StartsWith("\\??\\", StringComparison.InvariantCultureIgnoreCase))
                 oldFilePath = oldFilePath.Replace("\\??\\", "");
 
-            oldFilePath = Path.GetFullPath(oldFilePath);
-
-            // Get redirected path.
-            ExecuteWithHookDisabled(() => _redirectorController.Loading?.Invoke(oldFilePath));
-
-            if (_redirector.TryRedirect(oldFilePath, out newFilePath))
+            if (!String.IsNullOrEmpty(oldFilePath))
             {
-                string newPath = newFilePath;
-                ExecuteWithHookDisabled(() => _redirectorController.Redirecting?.Invoke(oldFilePath, newPath));
-                return true;
+                oldFilePath = Path.GetFullPath(oldFilePath);
+
+                // Get redirected path.
+                ExecuteWithHookDisabled(() => _redirectorController.Loading?.Invoke(oldFilePath));
+
+                if (_redirector.TryRedirect(oldFilePath, out newFilePath))
+                {
+                    string newPath = newFilePath;
+                    ExecuteWithHookDisabled(() => _redirectorController.Redirecting?.Invoke(oldFilePath, newPath));
+                    return true;
+                }
             }
 
             newFilePath = oldFilePath;
