@@ -25,6 +25,7 @@ namespace Reloaded.Universal.Redirector
         private Redirector _redirector;
         private object _lock = new object();
 
+        public static void Main() { }
         public void Start(IModLoaderV1 loader)
         {
             #if DEBUG

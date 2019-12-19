@@ -15,6 +15,7 @@ namespace Reloaded.Universal.RedirectorMonitor
         private WeakReference<IRedirectorController> _redirectorController;
         private bool _printRedirecting = true;
 
+        public static void Main() { }
         public void Start(IModLoaderV1 loader)
         {
             #if DEBUG
