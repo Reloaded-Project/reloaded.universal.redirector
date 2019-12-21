@@ -77,9 +77,9 @@ namespace Reloaded.Universal.Redirector
             /// <summary>
             /// Gets or sets the file path of the files loaded in or out.
             /// </summary>
-            public UNICODE_STRING ObjectName
+            public unsafe UNICODE_STRING ObjectName
             {
-                get => (UNICODE_STRING)Marshal.PtrToStructure(objectName, typeof(UNICODE_STRING));
+                get => *(UNICODE_STRING*)objectName;
 
                 set
                 {
@@ -140,7 +140,6 @@ namespace Reloaded.Universal.Redirector
             /// Returns a string with the contents
             /// </summary>
             /// <returns></returns>
-            [HandleProcessCorruptedStateExceptions]
             public override string ToString()
             {
                 try
