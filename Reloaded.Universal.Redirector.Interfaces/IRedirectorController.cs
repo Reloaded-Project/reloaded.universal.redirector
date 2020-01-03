@@ -2,6 +2,17 @@
 
 namespace Reloaded.Universal.Redirector.Interfaces
 {
+    public interface IRedirectorControllerV3
+    {
+        /// <summary>
+        /// Adds a folder for file redirection, specifying what folder inside the game directory the folder should map to.
+        /// </summary>
+        /// <param name="folderPath">The full path of the folder to redirect files to.</param>
+        /// <param name="sourceFolder">Folder path relative to game's directory to redirect files from. Path should start with back or forward slash.</param>
+        /// <returns>True if the operation succeeds, else false. Operation fails if a folder is already redirected.</returns>
+        void AddRedirectFolder(string folderPath, string sourceFolder);
+    }
+
     public interface IRedirectorControllerV2
     {
         /// <summary>
@@ -20,7 +31,7 @@ namespace Reloaded.Universal.Redirector.Interfaces
         void RemoveRedirectFolder(string folderPath);
     }
 
-    public interface IRedirectorController : IRedirectorControllerV2
+    public interface IRedirectorController : IRedirectorControllerV2, IRedirectorControllerV3
     {
         Redirecting Redirecting { get; set; }
         Loading Loading { get; set; }

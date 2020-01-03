@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Reloaded.Mod.Interfaces.Internal;
@@ -34,6 +35,11 @@ namespace Reloaded.Universal.Redirector
         public void Add(string redirectFolder)
         {
             _redirections[redirectFolder] = new ModRedirectorDictionary(redirectFolder);
+        }
+
+        internal void Add(string folderPath, string sourceFolder)
+        {
+            _redirections[folderPath] = new ModRedirectorDictionary(folderPath, sourceFolder);
         }
 
         public void Add(IModConfigV1 configuration)
