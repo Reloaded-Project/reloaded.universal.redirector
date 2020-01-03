@@ -2,7 +2,7 @@
   "ModId": "reloaded.universal.monitor",
   "ModName": "Reloaded File Monitor",
   "ModAuthor": "Sewer56",
-  "ModVersion": "1.0.7",
+  "ModVersion": "1.0.8",
   "ModDescription": "File Monitor for Reloaded II",
   "ModDll": "Reloaded.Universal.Monitor.dll",
   "ModR2RManagedDll32": "x86/Reloaded.Universal.Monitor.dll",

@@ -2,7 +2,7 @@
   "ModId": "reloaded.universal.redirectormonitor",
   "ModName": "Reloaded File Redirector Monitor",
   "ModAuthor": "Sewer56",
-  "ModVersion": "1.0.6",
+  "ModVersion": "1.0.7",
   "ModDescription": "Prints file redirections performed by the File Redirector",
   "ModDll": "Reloaded.Universal.RedirectorMonitor.dll",
   "ModR2RManagedDll32": "x86/Reloaded.Universal.RedirectorMonitor.dll",
