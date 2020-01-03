@@ -11,6 +11,13 @@ namespace Reloaded.Universal.Redirector.Interfaces
         /// <param name="sourceFolder">Folder path relative to game's directory to redirect files from. Path should start with back or forward slash.</param>
         /// <returns>True if the operation succeeds, else false. Operation fails if a folder is already redirected.</returns>
         void AddRedirectFolder(string folderPath, string sourceFolder);
+
+        /// <summary>
+        /// Removes a folder to be redirected.
+        /// The files inside the folder are mapped relative to the executable directory of the modified application's executable.
+        /// </summary>
+        /// <returns>True if the operation succeeds, else false.</returns>
+        void RemoveRedirectFolder(string folderPath, string sourceFolder);
     }
 
     public interface IRedirectorControllerV2
@@ -20,14 +27,14 @@ namespace Reloaded.Universal.Redirector.Interfaces
         /// The files inside the folder are mapped relative to the executable directory of the modified application's executable.
         /// </summary>
         /// <param name="folderPath">The full path of the folder to redirect files to.</param>
-        /// <returns>True if t he operation succeeds, else false. Operation fails if a folder is already redirected.</returns>
+        /// <returns>True if the operation succeeds, else false. Operation fails if a folder is already redirected.</returns>
         void AddRedirectFolder(string folderPath);
 
         /// <summary>
         /// Removes a folder to be redirected.
         /// The files inside the folder are mapped relative to the executable directory of the modified application's executable.
         /// </summary>
-        /// <returns>True if t he operation succeeds, else false.</returns>
+        /// <returns>True if the operation succeeds, else false.</returns>
         void RemoveRedirectFolder(string folderPath);
     }
 

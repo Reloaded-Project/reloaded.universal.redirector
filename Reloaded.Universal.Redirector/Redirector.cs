@@ -9,7 +9,7 @@ namespace Reloaded.Universal.Redirector
 {
     public class Redirector
     {
-        private Dictionary<string, ModRedirectorDictionary> _redirections = new Dictionary<string, ModRedirectorDictionary>();
+        private List<ModRedirectorDictionary> _redirections = new List<ModRedirectorDictionary>();
         private ModRedirectorDictionary _customRedirections = new ModRedirectorDictionary();
 
         /* Constructor */
@@ -34,12 +34,12 @@ namespace Reloaded.Universal.Redirector
 
         public void Add(string redirectFolder)
         {
-            _redirections[redirectFolder] = new ModRedirectorDictionary(redirectFolder);
+            _redirections.Add(new ModRedirectorDictionary(redirectFolder));
         }
 
         internal void Add(string folderPath, string sourceFolder)
         {
-            _redirections[folderPath] = new ModRedirectorDictionary(folderPath, sourceFolder);
+            _redirections.Add(new ModRedirectorDictionary(folderPath, sourceFolder));
         }
 
         public void Add(IModConfigV1 configuration)
@@ -47,13 +47,15 @@ namespace Reloaded.Universal.Redirector
             Add(GetRedirectFolder(configuration.ModId));
         }
 
+        public void Remove(string redirectFolder, string sourceFolder)
+        {
+            _redirections = _redirections.Where(x => !x.RedirectFolder.Equals(redirectFolder, StringComparison.OrdinalIgnoreCase) &&
+                                                     !x.SourceFolder.Equals(sourceFolder, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
         public void Remove(string redirectFolder)
         {
-            if (!_redirections.ContainsKey(redirectFolder))
-                return;
-
-            _redirections[redirectFolder].Dispose();
-            _redirections.Remove(redirectFolder);
+            _redirections = _redirections.Where(x => !x.RedirectFolder.Equals(redirectFolder, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         public void Remove(IModConfigV1 configuration)
@@ -69,10 +71,9 @@ namespace Reloaded.Universal.Redirector
 
             // Doing this in reverse because mods with highest priority get loaded last.
             // We want to look at those mods first.
-            var values = _redirections.Values.ToArray();
-            for (int i = _redirections.Values.Count - 1; i >= 0; i--)
+            for (int i = _redirections.Count - 1; i >= 0; i--)
             {
-                if (values[i].GetRedirection(path, out newPath))
+                if (_redirections[i].GetRedirection(path, out newPath))
                     return true;
             }
 

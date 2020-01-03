@@ -9,6 +9,17 @@ namespace Reloaded.Universal.Redirector.Structures
     public class ModRedirectorDictionary : IDisposable
     {
         public Dictionary<string, string>       FileRedirects   { get; set; } = new Dictionary<String,String>(StringComparer.OrdinalIgnoreCase);
+        
+        /// <summary>
+        /// Target folder the redirection is pointing towards.
+        /// </summary>
+        public string RedirectFolder { get; private set; }
+
+        /// <summary>
+        /// Path of the source folder to redirect from inside the application directory.
+        /// </summary>
+        public string SourceFolder { get; private set; }
+
         private FileSystemWatcher _watcher;
 
         /* Creation/Destruction */
@@ -21,13 +32,21 @@ namespace Reloaded.Universal.Redirector.Structures
         /// <param name="sourceFolder">Path of the source folder to redirect from inside the application directory.</param>
         public ModRedirectorDictionary(string redirectFolder, string sourceFolder = "")
         {
-            SetupFileWatcher(redirectFolder, sourceFolder);
-            SetupFileRedirects(redirectFolder, sourceFolder);
+            RedirectFolder = redirectFolder;
+            SourceFolder = sourceFolder;
+            SetupFileWatcher();
+            SetupFileRedirects();
+        }
+
+        ~ModRedirectorDictionary()
+        {
+            Dispose();
         }
 
         public void Dispose()
         {
             _watcher?.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -51,18 +70,18 @@ namespace Reloaded.Universal.Redirector.Structures
         }
 
         /* Setup the dictionary of file redirections. */
-        private void SetupFileRedirects(string redirectFolder, string relativeFolder)
+        private void SetupFileRedirects()
         {
-            if (Directory.Exists(redirectFolder))
+            if (Directory.Exists(RedirectFolder))
             {
                 var redirects = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                var allModFiles = RelativePaths.GetRelativeFilePaths(redirectFolder);
+                var allModFiles = RelativePaths.GetRelativeFilePaths(RedirectFolder);
                 var appConfig = Program.ModLoader.GetAppConfig();
 
                 foreach (string modFile in allModFiles)
                 {
-                    string applicationFileLocation = GetSourceFolderPath(appConfig, relativeFolder) + modFile;
-                    string modFileLocation = redirectFolder + modFile;
+                    string applicationFileLocation = GetSourceFolderPath(appConfig, SourceFolder) + modFile;
+                    string modFileLocation = RedirectFolder + modFile;
                     applicationFileLocation = Path.GetFullPath(applicationFileLocation);
                     modFileLocation         = Path.GetFullPath(modFileLocation);
 
@@ -74,16 +93,16 @@ namespace Reloaded.Universal.Redirector.Structures
         }
 
         /* Sets up the FileSystem watcher that will update redirect paths on file add/modify/delete. */
-        private void SetupFileWatcher(string redirectFolder, string relativeFolder)
+        private void SetupFileWatcher()
         {
-            if (Directory.Exists(redirectFolder))
+            if (Directory.Exists(RedirectFolder))
             {
-                _watcher = new FileSystemWatcher(redirectFolder);
+                _watcher = new FileSystemWatcher(RedirectFolder);
                 _watcher.EnableRaisingEvents   = true;
                 _watcher.IncludeSubdirectories = true;
-                _watcher.Created += (sender, args) => { SetupFileRedirects(redirectFolder, relativeFolder); };
-                _watcher.Deleted += (sender, args) => { SetupFileRedirects(redirectFolder, relativeFolder); };
-                _watcher.Renamed += (sender, args) => { SetupFileRedirects(redirectFolder, relativeFolder); };
+                _watcher.Created += (sender, args) => { SetupFileRedirects(); };
+                _watcher.Deleted += (sender, args) => { SetupFileRedirects(); };
+                _watcher.Renamed += (sender, args) => { SetupFileRedirects(); };
             }
         }
 
