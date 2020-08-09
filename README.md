@@ -37,6 +37,7 @@ A. Add a dependency on this mod in your mod configuration.
 ```
 
 B. Add a folder called `Redirector` in your mod folder.
+
 C. Add files to be redirected in the `Redirector` folder.
 
 Files are mapped by their location relative to the EXE of the application you are using the Redirector with.
