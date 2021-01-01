@@ -115,9 +115,7 @@ namespace Reloaded.Universal.Redirector
             public override unsafe string ToString()
             {
                 if (buffer != IntPtr.Zero)
-                {
-                    return new string((char*)buffer, 0, Length);
-                }
+                    return new string((char*)buffer, 0, Length / sizeof(char));
 
                 return String.Empty;
             }

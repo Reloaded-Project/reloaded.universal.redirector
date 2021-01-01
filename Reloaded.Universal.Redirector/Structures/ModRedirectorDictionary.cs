@@ -58,12 +58,8 @@ namespace Reloaded.Universal.Redirector.Structures
         public bool GetRedirection(string path, out string newPath)
         {
             var fileRedirects = FileRedirects;
-
-            if (fileRedirects.ContainsKey(path))
-            {
-                newPath = fileRedirects[path];
+            if (fileRedirects.TryGetValue(path, out newPath))
                 return true;
-            }
 
             newPath = path;
             return false;

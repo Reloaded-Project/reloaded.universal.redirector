@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,7 +14,7 @@ namespace Reloaded.Universal.Redirector.Utility
         /// <param name="directory">Absolute path to directory to get file paths from. </param>
         public static List<string> GetRelativeFilePaths(string directory)
         {
-            return Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories).Select(x => x.Replace(directory, "")).ToList();
+            return Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories).Select(x => x.TrimStart(directory)).ToList();
         }
     }
 }

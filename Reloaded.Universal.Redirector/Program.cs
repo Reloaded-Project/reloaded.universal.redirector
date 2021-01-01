@@ -52,9 +52,9 @@ namespace Reloaded.Universal.Redirector
         private void ModLoading(IModV1 mod, IModConfigV1 config)   => _redirector.Add(config);
         private void ModUnloading(IModV1 mod, IModConfigV1 config) => _redirector.Remove(config);
 
-        public void Suspend()   => _server.Disable();
-        public void Resume()    => _server.Enable();
-        public void Unload()    => Suspend();
+        public void Suspend() => _server.Disable();
+        public void Resume()  => _server.Enable();
+        public void Unload()  => Suspend();
 
         public bool CanUnload()  => true;
         public bool CanSuspend() => true;
