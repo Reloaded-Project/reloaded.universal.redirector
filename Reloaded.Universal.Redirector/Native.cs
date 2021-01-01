@@ -98,30 +98,17 @@ namespace Reloaded.Universal.Redirector
         /// Represents a singular unicode string.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct UNICODE_STRING : IDisposable
+        public struct UNICODE_STRING
         {
             public ushort Length;
             public ushort MaximumLength;
             private IntPtr buffer;
 
-            public UNICODE_STRING(string s)
+            public unsafe UNICODE_STRING(char* pointer, int length)
             {
-                Length = (ushort)(s.Length * 2);
+                Length = (ushort)(length * 2);
                 MaximumLength = (ushort)(Length + 2);
-                buffer = Marshal.StringToHGlobalUni(s);
-            }
-
-            /// <summary>
-            /// Disposes of the current file name assigned to this Unicode String.
-            /// Please only use this function if 
-            /// </summary>
-            public void Dispose()
-            {
-                if (buffer != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(buffer);
-                    buffer = IntPtr.Zero;
-                }
+                buffer = (IntPtr) pointer;
             }
 
             /// <summary>

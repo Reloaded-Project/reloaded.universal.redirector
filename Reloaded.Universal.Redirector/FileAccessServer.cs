@@ -43,28 +43,31 @@ namespace Reloaded.Universal.Redirector
             lock (_lock)
             {
                 var attributes = objectAttributes;
-                string oldFilePath = attributes->ObjectName->ToString();
-                var oldObjectName  = attributes->ObjectName;
-                Native.UNICODE_STRING newObjectName;
-
-                if (TryGetNewPath(oldFilePath, out string newFilePath))
+                if (TryGetNewPath(attributes->ObjectName->ToString(), out string newFilePath))
                 {
-                    newObjectName = new Native.UNICODE_STRING(_prefix + newFilePath);
-                    attributes->ObjectName = &newObjectName;
-                    attributes->RootDirectory = IntPtr.Zero;
+                    var newObjectPath = _prefix + newFilePath;
+                    fixed (char* address = newObjectPath)
+                    {
+                        // Backup original string.
+                        var originalObjectName = attributes->ObjectName;
+                        var originalDirectory  = attributes->RootDirectory;
+
+                        // Set new file path
+                        var newObjectName = new Native.UNICODE_STRING(address, newObjectPath.Length);
+                        attributes->ObjectName = &newObjectName;
+                        attributes->RootDirectory = IntPtr.Zero;
+
+                        // Call function with new file path.
+                        var returnValue = _ntCreateFileHook.OriginalFunction.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
+
+                        // Reset original string.
+                        attributes->ObjectName    = originalObjectName;
+                        attributes->RootDirectory = originalDirectory;
+                        return returnValue;
+                    }
                 }
 
-                // Call function with new file path.
-                var returnValue = _ntCreateFileHook.OriginalFunction.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
-
-                // Dispose if old object name was modified and restore original.
-                if (oldObjectName != attributes->ObjectName)
-                {
-                    attributes->ObjectName->Dispose();
-                    attributes->ObjectName = oldObjectName;
-                }
-
-                return returnValue;
+                return _ntCreateFileHook.OriginalFunction.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
             }
         }
 
