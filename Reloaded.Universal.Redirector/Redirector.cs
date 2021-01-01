@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Structures;
@@ -81,10 +80,6 @@ namespace Reloaded.Universal.Redirector
             return false;
         }
 
-        private string GetRedirectFolder(string modId)
-        {
-            string modFolder = Program.ModLoader.GetDirectoryForModId(modId);
-            return $"{modFolder}\\Redirector";
-        }
+        private string GetRedirectFolder(string modId) => Program.ModLoader.GetDirectoryForModId(modId) + "\\Redirector";
     }
 }

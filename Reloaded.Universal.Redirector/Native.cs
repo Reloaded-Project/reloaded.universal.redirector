@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Buffers;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -35,7 +37,7 @@ namespace Reloaded.Universal.Redirector
         /// handles by routines that create objects and/or return handles to objects.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
-        public struct OBJECT_ATTRIBUTES : IDisposable
+        public struct OBJECT_ATTRIBUTES
         {
             /// <summary>
             /// Lengthm of this structure.
@@ -54,7 +56,7 @@ namespace Reloaded.Universal.Redirector
             /// Pointer to a Unicode string that contains the name of the object for which a handle is to be opened.
             /// This must either be a fully qualified object name, or a relative path name to the directory specified by the RootDirectory member.
             /// </summary>
-            private IntPtr objectName;
+            public unsafe UNICODE_STRING* ObjectName;
 
             /// <summary>
             /// Bitmask of flags that specify object handle attributes. This member can contain one or more of the flags in the following table (See MSDN)
@@ -73,45 +75,11 @@ namespace Reloaded.Universal.Redirector
             /// Currently, the InitializeObjectAttributes macro sets this member to NULL.
             /// </summary>
             public IntPtr SecurityQualityOfService;
-
-            /// <summary>
-            /// Gets or sets the file path of the files loaded in or out.
-            /// </summary>
-            public unsafe UNICODE_STRING ObjectName
-            {
-                get => *(UNICODE_STRING*)objectName;
-
-                set
-                {
-                    // Check if we need to delete old memory.
-                    bool fDeleteOld = objectName != IntPtr.Zero;
-
-                    // Allocates the necessary bytes for the string.
-                    if (!fDeleteOld)
-                        objectName = Marshal.AllocHGlobal(Marshal.SizeOf(value));
-
-                    // Deallocate old string while writing the new one.
-                    Marshal.StructureToPtr(value, objectName, fDeleteOld);
-                }
-            }
-
-            /// <summary>
-            /// Disposes of the actual object name (file name) in question.
-            /// </summary>
-            public void Dispose()
-            {
-                if (objectName != IntPtr.Zero)
-                {
-                    Marshal.DestroyStructure(objectName, typeof(UNICODE_STRING));
-                    Marshal.FreeHGlobal(objectName);
-                    objectName = IntPtr.Zero;
-                }
-            }
         }
 
 
         /// <summary>
-        /// Does this really need to be explained to you?
+        /// Represents a singular unicode string.
         /// </summary>
         [StructLayout(LayoutKind.Sequential)]
         public struct UNICODE_STRING : IDisposable
@@ -129,30 +97,29 @@ namespace Reloaded.Universal.Redirector
 
             /// <summary>
             /// Disposes of the current file name assigned to this Unicode String.
+            /// Please only use this function if 
             /// </summary>
             public void Dispose()
             {
-                Marshal.FreeHGlobal(buffer);
-                buffer = IntPtr.Zero;
+                if (buffer != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(buffer);
+                    buffer = IntPtr.Zero;
+                }
             }
 
             /// <summary>
             /// Returns a string with the contents
             /// </summary>
             /// <returns></returns>
-            public override string ToString()
+            public override unsafe string ToString()
             {
-                try
+                if (buffer != IntPtr.Zero)
                 {
-                    if (buffer != IntPtr.Zero)
-                    {
-                        Memory.Sources.Memory.CurrentProcess.ReadRaw(buffer, out byte[] uniString, Length);
-                        return Encoding.Unicode.GetString(uniString);
-                    }
-
-                    return "";
+                    return new string((char*)buffer, 0, Length);
                 }
-                catch { return ""; }
+
+                return String.Empty;
             }
         }
 

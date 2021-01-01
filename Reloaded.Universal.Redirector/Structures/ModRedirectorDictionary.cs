@@ -74,9 +74,9 @@ namespace Reloaded.Universal.Redirector.Structures
         {
             if (Directory.Exists(RedirectFolder))
             {
-                var redirects = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var redirects   = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 var allModFiles = RelativePaths.GetRelativeFilePaths(RedirectFolder);
-                var appConfig = Program.ModLoader.GetAppConfig();
+                var appConfig   = Program.ModLoader.GetAppConfig();
 
                 foreach (string modFile in allModFiles)
                 {
