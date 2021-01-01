@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Reloaded.Memory" Version="3.0.2" />
+    <PackageReference Include="Reloaded.Memory" Version="3.1.1" />
     <PackageReference Include="Reloaded.Mod.Interfaces" Version="1.8.0" />
     <PackageReference Include="Reloaded.SharedLib.Hooks" Version="1.5.0" />
   </ItemGroup>

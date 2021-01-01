@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Reloaded.Hooks.Definitions;
+using Reloaded.Memory.Pointers;
 using Reloaded.Universal.Redirector.Utility;
 using IReloadedHooks = Reloaded.Hooks.ReloadedII.Interfaces.IReloadedHooks;
 
@@ -9,18 +12,18 @@ namespace Reloaded.Universal.Redirector
     /// <summary>
     /// Intercepts I/O access on the Win32
     /// </summary>
-    public class FileAccessServer
+    public unsafe class FileAccessServer
     {
-        private Redirector _redirector;
-        private RedirectorController _redirectorController;
-        private IHook<Native.NtCreateFile> _ntCreateFileHook;
-        private object _lock = new object();
+        private static Redirector _redirector;
+        private static RedirectorController _redirectorController;
+        private static IHook<Native.NtCreateFile> _ntCreateFileHook;
+        private static object _lock = new object();
         private const string _prefix = "\\??\\";
 
-        public FileAccessServer(IReloadedHooks hooks, Redirector redirector, RedirectorController redirectorController)
+        public static void Initialize(IReloadedHooks hooks, Redirector redirector, RedirectorController redirectorController)
         {
             _redirector = redirector;
-            _redirectorController = new RedirectorController(redirector);
+            _redirectorController = redirectorController;
 
             // Get Hooks
             var ntdllHandle = Native.LoadLibraryW("ntdll");
@@ -28,42 +31,44 @@ namespace Reloaded.Universal.Redirector
 
             // Kick off the server
             if (ntCreateFilePointer != IntPtr.Zero)
-                _ntCreateFileHook = hooks.CreateHook<Native.NtCreateFile>(NtCreateFileHookFn, (long)ntCreateFilePointer).Activate();
+                _ntCreateFileHook = hooks.CreateHook<Native.NtCreateFile>((delegate* unmanaged[Stdcall]<IntPtr*, FileAccess, Native.OBJECT_ATTRIBUTES*, Native.IO_STATUS_BLOCK*, long*, uint, FileShare, uint, uint, IntPtr, uint, int>)&NtCreateFileHookFn, (long)ntCreateFilePointer).Activate();
         }
 
         /* Hooks */
 
-        private unsafe int NtCreateFileHookFn(out IntPtr fileHandle, FileAccess access, ref Native.OBJECT_ATTRIBUTES objectAttributes, ref Native.IO_STATUS_BLOCK ioStatus, ref long allocSize, uint fileattributes, FileShare share, uint createDisposition, uint createOptions, IntPtr eaBuffer, uint eaLength)
+        [UnmanagedCallersOnly(CallConvs = new []{ typeof(CallConvStdcall) })]
+        private static unsafe int NtCreateFileHookFn(IntPtr* fileHandle, FileAccess access, Native.OBJECT_ATTRIBUTES* objectAttributes, Native.IO_STATUS_BLOCK* ioStatus, long* allocSize, uint fileattributes, FileShare share, uint createDisposition, uint createOptions, IntPtr eaBuffer, uint eaLength)
         {
             // Get name of file to be loaded.
             lock (_lock)
             {
-                string oldFilePath = objectAttributes.ObjectName->ToString();
-                var oldObjectName  = objectAttributes.ObjectName;
+                var attributes = objectAttributes;
+                string oldFilePath = attributes->ObjectName->ToString();
+                var oldObjectName  = attributes->ObjectName;
                 Native.UNICODE_STRING newObjectName;
 
                 if (TryGetNewPath(oldFilePath, out string newFilePath))
                 {
                     newObjectName = new Native.UNICODE_STRING(_prefix + newFilePath);
-                    objectAttributes.ObjectName = &newObjectName;
-                    objectAttributes.RootDirectory = IntPtr.Zero;
+                    attributes->ObjectName = &newObjectName;
+                    attributes->RootDirectory = IntPtr.Zero;
                 }
 
                 // Call function with new file path.
-                var returnValue = _ntCreateFileHook.OriginalFunction(out fileHandle, access, ref objectAttributes, ref ioStatus, ref allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
+                var returnValue = _ntCreateFileHook.OriginalFunction.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
 
                 // Dispose if old object name was modified and restore original.
-                if (oldObjectName != objectAttributes.ObjectName)
+                if (oldObjectName != attributes->ObjectName)
                 {
-                    objectAttributes.ObjectName->Dispose();
-                    objectAttributes.ObjectName = oldObjectName;
+                    attributes->ObjectName->Dispose();
+                    attributes->ObjectName = oldObjectName;
                 }
 
                 return returnValue;
             }
         }
 
-        private bool TryGetNewPath(string oldFilePath, out string newFilePath)
+        private static bool TryGetNewPath(string oldFilePath, out string newFilePath)
         {
             oldFilePath = oldFilePath.TrimStart(_prefix);
             if (!String.IsNullOrEmpty(oldFilePath))
@@ -97,7 +102,7 @@ namespace Reloaded.Universal.Redirector
         }
 
         /* Mod loader interface. */
-        public void Enable()  => _ntCreateFileHook.Enable();
-        public void Disable() => _ntCreateFileHook.Disable();
+        public static void Enable()  => _ntCreateFileHook.Enable();
+        public static void Disable() => _ntCreateFileHook.Disable();
     }
 }

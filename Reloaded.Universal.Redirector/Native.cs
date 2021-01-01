@@ -6,6 +6,8 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
+using Reloaded.Hooks.Definitions.Structs;
+using Reloaded.Memory.Pointers;
 
 namespace Reloaded.Universal.Redirector
 {
@@ -15,12 +17,26 @@ namespace Reloaded.Universal.Redirector
         /// Creates a new file or directory, or opens an existing file, device, directory, or volume.
         /// (The description here is a partial, lazy copy from MSDN)
         /// </summary>
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         [Hooks.Definitions.X64.Function(Hooks.Definitions.X64.CallingConventions.Microsoft)]
         [Hooks.Definitions.X86.Function(Hooks.Definitions.X86.CallingConventions.Stdcall)]
-        public delegate int NtCreateFile(out IntPtr handle, FileAccess access, ref OBJECT_ATTRIBUTES objectAttributes,
-            ref IO_STATUS_BLOCK ioStatus, ref long allocSize, uint fileAttributes, FileShare share, uint createDisposition, uint createOptions,
-            IntPtr eaBuffer, uint eaLength);
+        public struct NtCreateFile
+        {
+            public FuncPtr
+            <
+                BlittablePointer<IntPtr>,               // handle
+                FileAccess,                             // access 
+                BlittablePointer<OBJECT_ATTRIBUTES>,    // objectAttributes
+                BlittablePointer<IO_STATUS_BLOCK>,      // ioStatus
+                BlittablePointer<long>,                 // allocSize 
+                uint,                                   // fileAttributes
+                FileShare,                              // share
+                uint,                                   // createDisposition
+                uint,                                   // createOptions
+                IntPtr,                                 // eaBuffer
+                uint,                                   // eaLength
+                int                                     // Return Value
+            >Value;    
+        }
 
         /// <summary>
         /// A driver sets an IRP's I/O status block to indicate the final status of an I/O request, before calling IoCompleteRequest for the IRP.

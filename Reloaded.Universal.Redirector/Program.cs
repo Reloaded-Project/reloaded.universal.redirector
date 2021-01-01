@@ -25,7 +25,6 @@ namespace Reloaded.Universal.Redirector
         /// </summary>
         public static IModLoader ModLoader { get; set; }
 
-        private FileAccessServer _server;
         private RedirectorController _redirectorController;
         private Redirector _redirector;
         
@@ -42,7 +41,7 @@ namespace Reloaded.Universal.Redirector
             var modConfigs  = ModLoader.GetActiveMods().Select(x => x.Generic);
             _redirector           = new Redirector(modConfigs);
             _redirectorController = new RedirectorController(_redirector);
-            _server               = new FileAccessServer(hooks, _redirector, _redirectorController);
+            FileAccessServer.Initialize(hooks, _redirector, _redirectorController);
 
             ModLoader.AddOrReplaceController<IRedirectorController>(this, _redirectorController);
             ModLoader.ModLoading   += ModLoading;
@@ -52,8 +51,8 @@ namespace Reloaded.Universal.Redirector
         private void ModLoading(IModV1 mod, IModConfigV1 config)   => _redirector.Add(config);
         private void ModUnloading(IModV1 mod, IModConfigV1 config) => _redirector.Remove(config);
 
-        public void Suspend() => _server.Disable();
-        public void Resume()  => _server.Enable();
+        public void Suspend() => FileAccessServer.Disable();
+        public void Resume()  => FileAccessServer.Enable();
         public void Unload()  => Suspend();
 
         public bool CanUnload()  => true;
