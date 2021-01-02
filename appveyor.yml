@@ -36,8 +36,8 @@ build_script:
     }
 
     # Build & Pack the Library
-    dotnet build ./Reloaded.Universal.Redirector.Interfaces/Reloaded.Universal.Redirector.Interfaces.csproj
-    dotnet pack ./Reloaded.Universal.Redirector.Interfaces/Reloaded.Universal.Redirector.Interfaces.csproj -o ./Publish/nuget.org
+    dotnet build -c Release ./Reloaded.Universal.Redirector.Interfaces/Reloaded.Universal.Redirector.Interfaces.csproj
+    dotnet pack -c Release ./Reloaded.Universal.Redirector.Interfaces/Reloaded.Universal.Redirector.Interfaces.csproj -o ./Publish/nuget.org
 artifacts:
 - path: ./Publish/*.zip
   name: Compiled Mod(s)
