@@ -10,6 +10,7 @@ namespace Reloaded.Universal.Redirector
     {
         private List<ModRedirectorDictionary> _redirections = new List<ModRedirectorDictionary>();
         private ModRedirectorDictionary _customRedirections = new ModRedirectorDictionary();
+        private bool _isDisabled = false;
 
         /* Constructor */
         public Redirector(IEnumerable<IModConfigV1> modConfigurations)
@@ -64,6 +65,11 @@ namespace Reloaded.Universal.Redirector
 
         public bool TryRedirect(string path, out string newPath)
         {
+            // Check if disabled.
+            newPath = path;
+            if (_isDisabled)
+                return false;
+
             // Custom redirections.
             if (_customRedirections.GetRedirection(path, out newPath))
                 return true;
@@ -76,10 +82,12 @@ namespace Reloaded.Universal.Redirector
                     return true;
             }
 
-            newPath = path;
             return false;
         }
 
         private string GetRedirectFolder(string modId) => Program.ModLoader.GetDirectoryForModId(modId) + "\\Redirector";
+
+        public void Disable() => _isDisabled = true;
+        public void Enable() => _isDisabled = false;
     }
 }

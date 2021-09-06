@@ -22,5 +22,7 @@ namespace Reloaded.Universal.Redirector
         public void RemoveRedirectFolder(string folderPath)             => _redirector.Remove(folderPath);
         public void AddRedirectFolder(string folderPath, string sourceFolder) => _redirector.Add(folderPath, sourceFolder);
         public void RemoveRedirectFolder(string folderPath, string sourceFolder) => _redirector.Remove(folderPath, sourceFolder);
+        public void Disable() => _redirector.Disable();
+        public void Enable() => _redirector.Enable();
     }
 }

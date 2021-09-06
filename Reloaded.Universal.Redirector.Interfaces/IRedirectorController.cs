@@ -2,6 +2,19 @@
 
 namespace Reloaded.Universal.Redirector.Interfaces
 {
+    public interface IRedirectorControllerV4
+    {
+        /// <summary>
+        /// Temporarily disables the redirector.
+        /// </summary>
+        void Disable();
+
+        /// <summary>
+        /// Re-enables the redirector after a temporary disable.
+        /// </summary>
+        void Enable();
+    }
+
     public interface IRedirectorControllerV3
     {
         /// <summary>
@@ -38,7 +51,7 @@ namespace Reloaded.Universal.Redirector.Interfaces
         void RemoveRedirectFolder(string folderPath);
     }
 
-    public interface IRedirectorController : IRedirectorControllerV2, IRedirectorControllerV3
+    public interface IRedirectorController : IRedirectorControllerV2, IRedirectorControllerV3, IRedirectorControllerV4
     {
         Redirecting Redirecting { get; set; }
         Loading Loading { get; set; }
