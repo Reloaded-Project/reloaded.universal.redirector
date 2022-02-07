@@ -10,6 +10,7 @@
     <StartupObject />
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>preview</LangVersion>
+    <OutputPath>$(RELOADEDIIMODS)\reloaded.universal.redirector</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

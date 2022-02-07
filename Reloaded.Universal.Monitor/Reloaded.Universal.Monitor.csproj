@@ -9,6 +9,7 @@
     <OutputType>WinExe</OutputType>
     <StartupObject />
     <LangVersion>preview</LangVersion>
+    <OutputPath>$(RELOADEDIIMODS)\reloaded.universal.monitor</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
