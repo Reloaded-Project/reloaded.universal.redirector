@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
 using Reloaded.Hooks.Definitions.Structs;
-using Reloaded.Memory.Pointers;
+using Reloaded.Universal.Redirector.Structures;
 
 namespace Reloaded.Universal.Redirector
 {
