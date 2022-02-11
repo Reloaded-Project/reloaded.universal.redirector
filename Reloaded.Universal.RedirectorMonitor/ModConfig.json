@@ -5,11 +5,41 @@
   "ModVersion": "1.0.8",
   "ModDescription": "Prints file redirections performed by the File Redirector",
   "ModDll": "Reloaded.Universal.RedirectorMonitor.dll",
+  "ModIcon": "Preview.png",
   "ModR2RManagedDll32": "x86/Reloaded.Universal.RedirectorMonitor.dll",
   "ModR2RManagedDll64": "x64/Reloaded.Universal.RedirectorMonitor.dll",
   "ModNativeDll32": "",
   "ModNativeDll64": "",
-  "ModIcon": "Preview.png",
-  "ModDependencies": [ "reloaded.universal.redirector" ],
+  "IsLibrary": false,
+  "ReleaseMetadataFileName": "Reloaded.Universal.RedirectorMonitor.ReleaseMetadata.json",
+  "PluginData": {
+    "GitHubDependencies": {
+      "IdToConfigMap": {
+        "reloaded.sharedlib.hooks": {
+          "Config": {
+            "UserName": "Reloaded.SharedLib.Hooks.ReloadedII",
+            "RepositoryName": "Sewer56",
+            "AssetFileName": "reloaded.sharedlib.hooks.zip"
+          }
+        }
+      }
+    },
+    "NuGet": {
+      "AllowUpdateFromAnyRepository": false,
+      "DefaultRepositoryUrls": [
+        "http://packages.sewer56.moe:5000/v3/index.json"
+      ]
+    },
+    "GitHubRelease": {
+      "UserName": "Reloaded-Project",
+      "RepositoryName": "reloaded.universal.redirector",
+      "AssetFileName": ""
+    }
+  },
+  "IsUniversalMod": true,
+  "ModDependencies": [
+    "reloaded.universal.redirector"
+  ],
+  "OptionalDependencies": [],
   "SupportedAppId": []
 }

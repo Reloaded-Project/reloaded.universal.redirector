@@ -1,16 +1,45 @@
-{
+﻿{
   "ModId": "reloaded.universal.redirector",
   "ModName": "Reloaded File Redirector",
   "ModAuthor": "Sewer56",
   "ModVersion": "1.2.1",
   "ModDescription": "File Redirector for Reloaded II",
   "ModDll": "Reloaded.Universal.Redirector.dll",
+  "ModIcon": "Preview.png",
   "ModR2RManagedDll32": "x86/Reloaded.Universal.Redirector.dll",
   "ModR2RManagedDll64": "x64/Reloaded.Universal.Redirector.dll",
   "ModNativeDll32": "",
   "ModNativeDll64": "",
-  "ModIcon": "Preview.png",
   "IsLibrary": true,
-  "ModDependencies": [ "reloaded.sharedlib.hooks" ],
+  "ReleaseMetadataFileName": "Reloaded.Universal.Redirector.ReleaseMetadata.json",
+  "PluginData": {
+    "GitHubDependencies": {
+      "IdToConfigMap": {
+        "reloaded.sharedlib.hooks": {
+          "Config": {
+            "UserName": "Reloaded.SharedLib.Hooks.ReloadedII",
+            "RepositoryName": "Sewer56",
+            "AssetFileName": "reloaded.sharedlib.hooks.zip"
+          }
+        }
+      }
+    },
+    "NuGet": {
+      "AllowUpdateFromAnyRepository": false,
+      "DefaultRepositoryUrls": [
+        "http://packages.sewer56.moe:5000/v3/index.json"
+      ]
+    },
+    "GitHubRelease": {
+      "UserName": "Reloaded-Project",
+      "RepositoryName": "Reloaded.Universal.Redirector",
+      "AssetFileName": ""
+    }
+  },
+  "IsUniversalMod": false,
+  "ModDependencies": [
+    "reloaded.sharedlib.hooks"
+  ],
+  "OptionalDependencies": [],
   "SupportedAppId": []
 }
