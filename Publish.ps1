@@ -46,6 +46,10 @@
 
     If this is true, you should set UseGitHubDelta, UseGameBananaDelta, UseNuGetDelta or equivalent to true.
 
+.PARAMETER MetadataFileName
+    Default: Sewer56.Update.ReleaseMetadata.json
+    Name of the release metadata file used to download the delta package.
+
 .PARAMETER UseGitHubDelta
     Default: $False
     If true, sources the last version of the package to publish from GitHub.
@@ -147,6 +151,7 @@ param (
 
     ## => User: Delta Config
     # Pick one and configure settings below.
+    $MetadataFileName = "Sewer56.Update.ReleaseMetadata.json",
     $UseGitHubDelta = $True,
     $UseGameBananaDelta = $False,
     $UseNuGetDelta = $False,
@@ -258,7 +263,7 @@ function Get-Last-Version {
     
     Remove-Item $deltaDirectory -Recurse -ErrorAction SilentlyContinue
     New-Item $deltaDirectory -ItemType Directory -ErrorAction SilentlyContinue
-    $arguments = "DownloadPackage --extract --outputpath `"$deltaDirectory`" --allowprereleases `"$IsPrerelease`""
+    $arguments = "DownloadPackage --extract --outputpath `"$deltaDirectory`" --allowprereleases `"$IsPrerelease`" --metadatafilename `"$MetadataFileName`""
 	
     if ($UseGitHubDelta) {
         $arguments += " --source GitHub --githubusername `"$GitHubUserName`" --githubrepositoryname `"$GitHubRepoName`" --githublegacyfallbackpattern `"$GitHubFallbackPattern`" --githubinheritversionfromtag `"$GitHubInheritVersionFromTag`""

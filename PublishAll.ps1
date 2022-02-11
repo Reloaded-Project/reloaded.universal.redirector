@@ -8,18 +8,21 @@ Split-Path $MyInvocation.MyCommand.Path | Push-Location
               -PackageName "Reloaded.Universal.Redirector" `
               -PublishOutputDir "Publish/ToUpload/Redirector" `
               -MakeDelta true -UseGitHubDelta true `
-              -GitHubUserName Reloaded-Project -GitHubRepoName reloaded.universal.redirector -GitHubFallbackPattern reloaded.universal.redirector.zip
+              -MetadataFileName "Reloaded.Universal.Redirector.ReleaseMetadata.json" `
+              -GitHubUserName Reloaded-Project -GitHubRepoName reloaded.universal.redirector -GitHubFallbackPattern reloaded.universal.redirector.zip -GitHubInheritVersionFromTag false
 
 ./Publish.ps1 -ProjectPath "Reloaded.Universal.Monitor/Reloaded.Universal.Monitor.csproj" `
               -PackageName "Reloaded.Universal.Monitor" `
               -PublishOutputDir "Publish/ToUpload/Monitor" `
               -MakeDelta true -UseGitHubDelta true `
-              -GitHubUserName Reloaded-Project -GitHubRepoName reloaded.universal.redirector -GitHubFallbackPattern reloaded.universal.monitor.zip
+              -MetadataFileName "Reloaded.Universal.Monitor.ReleaseMetadata.json" `
+              -GitHubUserName Reloaded-Project -GitHubRepoName reloaded.universal.redirector -GitHubFallbackPattern reloaded.universal.monitor.zip -GitHubInheritVersionFromTag false
 
 ./Publish.ps1 -ProjectPath "Reloaded.Universal.RedirectorMonitor/Reloaded.Universal.RedirectorMonitor.csproj" `
               -PackageName "Reloaded.Universal.RedirectorMonitor" `
               -PublishOutputDir "Publish/ToUpload/RedirectorMonitor" `
               -MakeDelta true -UseGitHubDelta true `
-              -GitHubUserName Reloaded-Project -GitHubRepoName reloaded.universal.redirector -GitHubFallbackPattern reloaded.universal.redirectormonitor.zip
+              -MetadataFileName "Reloaded.Universal.RedirectorMonitor.ReleaseMetadata.json" `
+              -GitHubUserName Reloaded-Project -GitHubRepoName reloaded.universal.redirector -GitHubFallbackPattern reloaded.universal.redirectormonitor.zip -GitHubInheritVersionFromTag false
 
 Pop-Location
