@@ -15,10 +15,19 @@
   "PluginData": {
     "GitHubDependencies": {
       "IdToConfigMap": {
+        "reloaded.universal.redirector": {
+          "Config": {
+            "UserName": "Reloaded-Project",
+            "RepositoryName": "Reloaded.Universal.Redirector",
+            "UseReleaseTag": false,
+            "AssetFileName": ""
+          }
+        },
         "reloaded.sharedlib.hooks": {
           "Config": {
             "UserName": "Reloaded.SharedLib.Hooks.ReloadedII",
             "RepositoryName": "Sewer56",
+            "UseReleaseTag": true,
             "AssetFileName": "reloaded.sharedlib.hooks.zip"
           }
         }
@@ -33,7 +42,8 @@
     "GitHubRelease": {
       "UserName": "Reloaded-Project",
       "RepositoryName": "reloaded.universal.redirector",
-      "AssetFileName": ""
+      "AssetFileName": "",
+      "UseReleaseTag": false
     }
   },
   "IsUniversalMod": true,

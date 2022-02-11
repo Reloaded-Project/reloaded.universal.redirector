@@ -1,4 +1,4 @@
-﻿{
+{
   "ModId": "reloaded.universal.redirector",
   "ModName": "Reloaded File Redirector",
   "ModAuthor": "Sewer56",
@@ -19,6 +19,7 @@
           "Config": {
             "UserName": "Reloaded.SharedLib.Hooks.ReloadedII",
             "RepositoryName": "Sewer56",
+            "UseReleaseTag": true,
             "AssetFileName": "reloaded.sharedlib.hooks.zip"
           }
         }
@@ -33,6 +34,7 @@
     "GitHubRelease": {
       "UserName": "Reloaded-Project",
       "RepositoryName": "Reloaded.Universal.Redirector",
+      "UseReleaseTag": false,
       "AssetFileName": ""
     }
   },
