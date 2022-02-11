@@ -71,6 +71,11 @@
     Allows you to specify a Wildcard pattern (e.g. *Update.zip) for the file to be downloaded.
     This is a fallback used in cases no Release Metadata file can be found.
 
+.PARAMETER GitHubInheritVersionFromTag
+    [Use if UseGitHubDelta is true]
+    Uses version determined from release tag (in GitHub Releases) as opposed to the 
+    Release Metadata file in latest release.
+
 .PARAMETER GameBananaItemId
     [Use if UseGameBananaDelta is true]
     Example: 150118
@@ -149,6 +154,7 @@ param (
     $GitHubUserName = "Sewer56",
     $GitHubRepoName = "Reloaded.SharedLib.Hooks.ReloadedII",
     $GitHubFallbackPattern = "reloaded.sharedlib.hooks.zip", # For migrating from legacy.
+    $GitHubInheritVersionFromTag = $True, # Uses version determined from release tag as opposed to metadata file in latest release.
 
     $GameBananaItemId = 333681, # From mod page URL.
 
@@ -194,6 +200,7 @@ $NuGetAllowUnlisted = [bool]::Parse($NuGetAllowUnlisted)
 $PublishGeneric = [bool]::Parse($PublishGeneric)
 $PublishNuGet = [bool]::Parse($PublishNuGet)
 $PublishGameBanana = [bool]::Parse($PublishGameBanana)
+$GitHubInheritVersionFromTag = [bool]::Parse($GitHubInheritVersionFromTag)
 
 function Get-Tools {
     # Download Tools (if needed)
@@ -254,7 +261,7 @@ function Get-Last-Version {
     $arguments = "DownloadPackage --extract --outputpath `"$deltaDirectory`" --allowprereleases `"$IsPrerelease`""
 	
     if ($UseGitHubDelta) {
-        $arguments += " --source GitHub --githubusername `"$GitHubUserName`" --githubrepositoryname `"$GitHubRepoName`" --githublegacyfallbackpattern `"$GitHubFallbackPattern`""
+        $arguments += " --source GitHub --githubusername `"$GitHubUserName`" --githubrepositoryname `"$GitHubRepoName`" --githublegacyfallbackpattern `"$GitHubFallbackPattern`" --githubinheritversionfromtag `"$GitHubInheritVersionFromTag`""
     }
     elseif ($UseNuGetDelta) {
         $arguments += " --source NuGet --nugetpackageid `"$NuGetPackageId`" --nugetfeedurl `"$NuGetFeedUrl`" --nugetallowunlisted `"$NuGetAllowUnlisted`""
