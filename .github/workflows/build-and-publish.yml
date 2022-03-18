@@ -118,7 +118,7 @@ jobs:
         NUGET_KEY: ${{ secrets.RELOADED_NUGET_KEY }}
       if: env.IS_RELEASE == 'true'
       run: |
-        $items = Get-ChildItem -Path "$env:PUBLISH_COMMON_PATH/*.nupkg"
+        $items = Get-ChildItem -Path "$env:PUBLISH_COMMON_PATH/*.nupkg" -Recurse
         Foreach ($item in $items)
         {
             Write-Host "Pushing $item"
