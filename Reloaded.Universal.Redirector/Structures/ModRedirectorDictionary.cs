@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Utility;
@@ -9,7 +10,9 @@ namespace Reloaded.Universal.Redirector.Structures;
 public class ModRedirectorDictionary : IDisposable
 {
     public Dictionary<string, string> FileRedirects { get; set; } = new Dictionary<String,String>(StringComparer.OrdinalIgnoreCase);
-        
+
+    private static string ProgramFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+
     /// <summary>
     /// Target folder the redirection is pointing towards.
     /// </summary>
@@ -73,11 +76,10 @@ public class ModRedirectorDictionary : IDisposable
 
         var redirects   = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var allModFiles = RelativePaths.GetRelativeFilePaths(RedirectFolder);
-        var appConfig   = Program.ModLoader.GetAppConfig();
 
         foreach (string modFile in allModFiles)
         {
-            string applicationFileLocation = GetSourceFolderPath(appConfig, SourceFolder) + modFile;
+            string applicationFileLocation = ProgramFolder + SourceFolder + modFile;
             string modFileLocation = RedirectFolder + modFile;
             applicationFileLocation = Path.GetFullPath(applicationFileLocation);
             modFileLocation         = Path.GetFullPath(modFileLocation);
@@ -100,11 +102,5 @@ public class ModRedirectorDictionary : IDisposable
         _watcher.Created += (sender, args) => { SetupFileRedirects(); };
         _watcher.Deleted += (sender, args) => { SetupFileRedirects(); };
         _watcher.Renamed += (sender, args) => { SetupFileRedirects(); };
-    }
-
-    /* Gets path of the source folder to redirect from. */
-    private string GetSourceFolderPath(IApplicationConfigV1 config, string sourceFolder)
-    {
-        return Path.GetDirectoryName(config.AppLocation) + sourceFolder;
     }
 }
