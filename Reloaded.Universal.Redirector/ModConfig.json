@@ -2,7 +2,7 @@
   "ModId": "reloaded.universal.redirector",
   "ModName": "Reloaded File Redirector",
   "ModAuthor": "Sewer56",
-  "ModVersion": "1.2.3",
+  "ModVersion": "1.2.4",
   "ModDescription": "File Redirector for Reloaded II",
   "ModDll": "Reloaded.Universal.Redirector.dll",
   "ModIcon": "Preview.png",
