@@ -29,6 +29,10 @@ This project is a set of mods for [Reloaded II](https://github.com/Reloaded-Proj
 
 A. Add a dependency on this mod in your mod configuration.
 
+Either in the `Edit Mod` Dialog  
+![Example](./docs/images/Example.png)  
+
+Or by editing the `ModConfig.json` file directly.  
 ```json
 "ModDependencies": ["reloaded.universal.redirector"]
 ```
