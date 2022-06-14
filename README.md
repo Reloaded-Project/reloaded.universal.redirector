@@ -7,11 +7,6 @@
     <b>Id: reloaded.universal.monitor</b>
 </div>
 
-# Prerequisites
-
-The CRI FS Hook uses the [Hooks Shared Library](https://github.com/Sewer56/Reloaded.SharedLib.Hooks).
-Please download and extract that mod first.
-
 # About This Project
 
 This project is a set of mods for [Reloaded II](https://github.com/Reloaded-Project/Reloaded-II) Mod Loader that provides support for file redirection that can be used by other mods.
