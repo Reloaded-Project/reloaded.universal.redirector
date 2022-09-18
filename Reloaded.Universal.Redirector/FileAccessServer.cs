@@ -42,6 +42,10 @@ public unsafe class FileAccessServer
         lock (_lock)
         {
             var attributes = objectAttributes;
+            if (attributes->ObjectName == null)
+                return _ntCreateFileHook.OriginalFunction.Value.Invoke(fileHandle, access, objectAttributes, ioStatus,
+                    allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
+            
             if (!TryGetNewPath(attributes->ObjectName->ToString(), out string newFilePath))
                 return _ntCreateFileHook.OriginalFunction.Value.Invoke(fileHandle, access, objectAttributes, ioStatus,
                     allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
