@@ -36,6 +36,10 @@
       "RepositoryName": "Reloaded.Universal.Redirector",
       "UseReleaseTag": false,
       "AssetFileName": ""
+    },
+    "GameBanana": {
+      "ItemType": "Mod",
+      "ItemId": 51225
     }
   },
   "IsUniversalMod": false,
@@ -43,5 +47,6 @@
     "reloaded.sharedlib.hooks"
   ],
   "OptionalDependencies": [],
-  "SupportedAppId": []
+  "SupportedAppId": [],
+  "ProjectUrl": "https://github.com/Reloaded-Project/reloaded.universal.redirector"
 }

@@ -1,20 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Structures;
 
+[module: SkipLocalsInit]
 namespace Reloaded.Universal.Redirector;
 
 public class Redirector
 {
+    private readonly IModLoader _modLoader;
     private List<ModRedirectorDictionary> _redirections = new List<ModRedirectorDictionary>();
     private ModRedirectorDictionary _customRedirections = new ModRedirectorDictionary();
     private bool _isDisabled = false;
 
     /* Constructor */
-    public Redirector(IEnumerable<IModConfigV1> modConfigurations)
+    public Redirector(IEnumerable<IModConfigV1> modConfigurations, IModLoader modLoader)
     {
+        _modLoader = modLoader;
         foreach (var config in modConfigurations)
         {
             Add(config);
@@ -85,7 +90,7 @@ public class Redirector
         return false;
     }
 
-    private string GetRedirectFolder(string modId) => Program.ModLoader.GetDirectoryForModId(modId) + "\\Redirector";
+    private string GetRedirectFolder(string modId) => _modLoader.GetDirectoryForModId(modId) + "\\Redirector";
 
     public void Disable() => _isDisabled = true;
     public void Enable() => _isDisabled = false;

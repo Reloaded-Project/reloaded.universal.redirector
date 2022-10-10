@@ -12,14 +12,15 @@
     <RepositoryType>git</RepositoryType>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression />
-    <Version>1.1.0</Version>
-    <LangVersion>preview</LangVersion>
+    <Version>1.1.1</Version>
+    <LangVersion>10.0</LangVersion>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\LICENSE-INTERFACES.md">
       <Pack>True</Pack>
-      <PackagePath></PackagePath>
+      <PackagePath>.</PackagePath>
     </None>
   </ItemGroup>
 

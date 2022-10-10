@@ -51,8 +51,8 @@ public interface IRedirectorControllerV2
 
 public interface IRedirectorController : IRedirectorControllerV2, IRedirectorControllerV3, IRedirectorControllerV4
 {
-    Redirecting Redirecting { get; set; }
-    Loading Loading { get; set; }
+    Redirecting? Redirecting { get; set; }
+    Loading? Loading { get; set; }
 
     /// <summary>
     /// Adds a file to be redirected.

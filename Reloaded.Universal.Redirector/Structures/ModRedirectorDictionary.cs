@@ -11,19 +11,19 @@ public class ModRedirectorDictionary : IDisposable
 {
     public Dictionary<string, string> FileRedirects { get; set; } = new Dictionary<String,String>(StringComparer.OrdinalIgnoreCase);
 
-    private static string ProgramFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
+    private static string _programFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!;
 
     /// <summary>
     /// Target folder the redirection is pointing towards.
     /// </summary>
-    public string RedirectFolder { get; private set; }
+    public string RedirectFolder { get; private set; } = string.Empty;
 
     /// <summary>
     /// Path of the source folder to redirect from inside the application directory.
     /// </summary>
-    public string SourceFolder { get; private set; }
+    public string SourceFolder { get; private set; } = string.Empty;
 
-    private FileSystemWatcher _watcher;
+    private FileSystemWatcher _watcher = null!;
 
     /* Creation/Destruction */
     public ModRedirectorDictionary() { }
@@ -61,7 +61,7 @@ public class ModRedirectorDictionary : IDisposable
     public bool GetRedirection(string path, out string newPath)
     {
         var fileRedirects = FileRedirects;
-        if (fileRedirects.TryGetValue(path, out newPath))
+        if (fileRedirects.TryGetValue(path, out newPath!))
             return true;
 
         newPath = path;
@@ -79,7 +79,7 @@ public class ModRedirectorDictionary : IDisposable
 
         foreach (string modFile in allModFiles)
         {
-            string applicationFileLocation = ProgramFolder + SourceFolder + modFile;
+            string applicationFileLocation = _programFolder + SourceFolder + modFile;
             string modFileLocation = RedirectFolder + modFile;
             applicationFileLocation = Path.GetFullPath(applicationFileLocation);
             modFileLocation         = Path.GetFullPath(modFileLocation);
