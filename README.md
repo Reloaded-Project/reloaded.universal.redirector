@@ -9,12 +9,13 @@
 
 # About This Project
 
-This project is a set of mods for [Reloaded II](https://github.com/Reloaded-Project/Reloaded-II) Mod Loader that provides support for file redirection that can be used by other mods.
+This project is a set of mods for [Reloaded II](https://github.com/Reloaded-Project/Reloaded-II) Mod Loader that provides support for file redirection that can be used by other mods.  
+In other words, it makes games load files from your mod folders rather than the game folder.  
 
 ## Inside This Repository
 
 #### Mods
-- [Redirector](./README-REDIRECTOR.md): *Provides file redirection support for other mods.  
+- [Redirector (Tutorial Here!)](./README-REDIRECTOR.md): *Makes games/programs load different than original files.  
 - [Monitor](./README-MONITOR.md): *Prints out the files being accessed by the application.  
 - [RedirectorMonitor](./README-REDIRECTORMONITOR.md): *Prints out the files being redirected by the redirector.  
 
