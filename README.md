@@ -14,36 +14,11 @@ This project is a set of mods for [Reloaded II](https://github.com/Reloaded-Proj
 ## Inside This Repository
 
 #### Mods
-- Redirector: *Provides file redirection support for other mods.
+- [Redirector](./README-REDIRECTOR.md): *Provides file redirection support for other mods.  
+- [Monitor](./README-MONITOR.md): *Prints out the files being accessed by the application.  
+- [RedirectorMonitor](./README-REDIRECTORMONITOR.md): *Prints out the files being redirected by the redirector.  
 
-- Monitor: *Prints out the files being accessed by the application.
-
-- RedirectorMonitor: *Prints out the files being redirected by the redirector.
-
-## How to Use
-
-A. Add a dependency on this mod in your mod configuration.
-
-Either in the `Edit Mod` Dialog  
-![Example](./docs/images/Example.png)  
-
-Or by editing the `ModConfig.json` file directly.  
-```json
-"ModDependencies": ["reloaded.universal.redirector"]
-```
-
-B. Add a folder called `Redirector` in your mod folder.
-
-C. Add files to be redirected in the `Redirector` folder.
-
-Files are mapped by their location relative to the EXE of the application you are using the Redirector with.
-
-#### Example
-
-For a game at `E:/SonicHeroes/TSonic_win.exe`
-The paths are relative to: ``E:/SonicHeroes/`
-
-To replace a music file at `E:/SonicHeroes/dvdroot/bgm/SNG_STG26.adx`, your mod should place the file at `Redirector/dvdroot/bgm/SNG_STG26.adx`.
+(Click to read individual mods' readmes)
 
 ## How to Use The API (Programmers)
 
