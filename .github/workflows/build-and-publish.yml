@@ -12,12 +12,15 @@ on:
 env: 
   PUBLISH_COMMON_PATH: ./Publish/ToUpload/
 
+  PUBLISH_GAMEBANANA_MONITOR_PATH: ./Publish/ToUpload/Monitor/GameBanana
   PUBLISH_GITHUB_MONITOR_PATH: ./Publish/ToUpload/Monitor/Generic
   PUBLISH_NUGET_MONITOR_PATH: ./Publish/ToUpload/Monitor/NuGet
   
+  PUBLISH_GAMEBANANA_REDIRECTOR_PATH: ./Publish/ToUpload/Redirector/GameBanana
   PUBLISH_GITHUB_REDIRECTOR_PATH: ./Publish/ToUpload/Redirector/Generic
   PUBLISH_NUGET_REDIRECTOR_PATH: ./Publish/ToUpload/Redirector/NuGet
   
+  PUBLISH_GAMEBANANA_REDIRECTORMONITOR_PATH: ./Publish/ToUpload/RedirectorMonitor/GameBanana
   PUBLISH_GITHUB_REDIRECTORMONITOR_PATH: ./Publish/ToUpload/RedirectorMonitor/Generic
   PUBLISH_NUGET_REDIRECTORMONITOR_PATH: ./Publish/ToUpload/RedirectorMonitor/NuGet
   
@@ -70,6 +73,17 @@ jobs:
     - name: Build
       run: ./PublishAll.ps1
       
+    - name: Upload GameBanana Release Artifact
+      uses: actions/upload-artifact@v2.2.4
+      with:
+        # Artifact name
+        name: GameBanana Release
+        # A file, directory or wildcard pattern that describes what to upload
+        path: |
+          ${{ env.PUBLISH_GAMEBANANA_MONITOR_PATH }}/*
+          ${{ env.PUBLISH_GAMEBANANA_REDIRECTOR_PATH }}/*
+          ${{ env.PUBLISH_GAMEBANANA_REDIRECTORMONITOR_PATH }}/*
+
     - name: Upload GitHub Release Artifact
       uses: actions/upload-artifact@v2.2.4
       with:
