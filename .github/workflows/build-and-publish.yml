@@ -71,7 +71,7 @@ jobs:
         }
         
     - name: Build
-      run: ./PublishAll.ps1
+      run: ./PublishAll.ps1 -ChangelogPath "$env:PUBLISH_CHANGELOG_PATH"
       
     - name: Upload GameBanana Release Artifact
       uses: actions/upload-artifact@v2.2.4
