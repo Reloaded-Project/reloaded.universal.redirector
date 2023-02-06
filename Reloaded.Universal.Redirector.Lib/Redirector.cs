@@ -1,40 +1,24 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using Reloaded.Mod.Interfaces;
-using Reloaded.Mod.Interfaces.Internal;
-using Reloaded.Universal.Redirector.Structures;
+﻿using Reloaded.Universal.Redirector.Lib.Structures;
+#pragma warning disable CS1591
 
-[module: SkipLocalsInit]
-namespace Reloaded.Universal.Redirector;
+namespace Reloaded.Universal.Redirector.Lib;
 
+[Obsolete]
 public class Redirector
 {
-    private readonly IModLoader _modLoader;
-    private List<ModRedirectorDictionary> _redirections = new List<ModRedirectorDictionary>();
-    private ModRedirectorDictionary _customRedirections = new ModRedirectorDictionary();
-    private bool _isDisabled = false;
-
-    /* Constructor */
-    public Redirector(IEnumerable<IModConfigV1> modConfigurations, IModLoader modLoader)
-    {
-        _modLoader = modLoader;
-        foreach (var config in modConfigurations)
-        {
-            Add(config);
-        }
-    }
+    private List<ModRedirectorDictionary> _redirections = new();
+    private Dictionary<string, string> _customRedirections = new(StringComparer.OrdinalIgnoreCase);
+    private bool _isDisabled;
 
     /* Business Logic */
     public void AddCustomRedirect(string oldPath, string newPath)
     {
-        _customRedirections.FileRedirects[oldPath] = newPath;
+        _customRedirections[oldPath] = newPath;
     }
 
     public void RemoveCustomRedirect(string oldPath)
     {
-        _customRedirections.FileRedirects.Remove(oldPath);
+        _customRedirections.Remove(oldPath);
     }
 
     public void Add(string redirectFolder)
@@ -42,14 +26,9 @@ public class Redirector
         _redirections.Add(new ModRedirectorDictionary(redirectFolder));
     }
 
-    internal void Add(string folderPath, string sourceFolder)
+    public void Add(string folderPath, string sourceFolder)
     {
         _redirections.Add(new ModRedirectorDictionary(folderPath, sourceFolder));
-    }
-
-    public void Add(IModConfigV1 configuration)
-    {
-        Add(GetRedirectFolder(configuration.ModId));
     }
 
     public void Remove(string redirectFolder, string sourceFolder)
@@ -62,12 +41,7 @@ public class Redirector
     {
         _redirections = _redirections.Where(x => !x.RedirectFolder.Equals(redirectFolder, StringComparison.OrdinalIgnoreCase)).ToList();
     }
-
-    public void Remove(IModConfigV1 configuration)
-    {
-        Remove(GetRedirectFolder(configuration.ModId));
-    }
-
+    
     public bool TryRedirect(string path, out string newPath)
     {
         // Check if disabled.
@@ -76,7 +50,7 @@ public class Redirector
             return false;
 
         // Custom redirections.
-        if (_customRedirections.GetRedirection(path, out newPath))
+        if (_customRedirections.TryGetValue(path, out newPath!))
             return true;
 
         // Doing this in reverse because mods with highest priority get loaded last.
@@ -89,8 +63,6 @@ public class Redirector
 
         return false;
     }
-
-    private string GetRedirectFolder(string modId) => _modLoader.GetDirectoryForModId(modId) + "\\Redirector";
 
     public void Disable() => _isDisabled = true;
     public void Enable() => _isDisabled = false;

@@ -2,6 +2,7 @@
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Interfaces;
+using Reloaded.Universal.Redirector.Lib.Extensions;
 using Reloaded.Universal.Redirector.Template;
 
 namespace Reloaded.Universal.Redirector;
@@ -42,8 +43,8 @@ public class Mod : ModBase, IExports // <= Do not Remove.
     /// </summary>
     private readonly IModConfig _modConfig;
     
-    private RedirectorController _redirectorController;
-    private Redirector _redirector;
+    private RedirectorApi _redirectorApi;
+    private Lib.Redirector _redirector;
     
     public Mod(ModContext context)
     {
@@ -60,17 +61,17 @@ public class Mod : ModBase, IExports // <= Do not Remove.
         // and some other neat features, override the methods in ModBase.
 
         var modConfigs  = _modLoader.GetActiveMods().Select(x => x.Generic);
-        _redirector           = new Redirector(modConfigs, _modLoader);
-        _redirectorController = new RedirectorController(_redirector);
-        FileAccessServer.Initialize(_hooks!, _redirector, _redirectorController);
+        _redirector = ModLoaderRedirectorExtensions.Create(modConfigs, _modLoader);
+        _redirectorApi = new RedirectorApi(_redirector);
+        FileAccessServer.Initialize(_hooks!, _redirector, _redirectorApi);
 
-        _modLoader.AddOrReplaceController<IRedirectorController>(_owner, _redirectorController);
+        _modLoader.AddOrReplaceController<IRedirectorController>(_owner, _redirectorApi);
         _modLoader.ModLoading   += ModLoading;
         _modLoader.ModUnloading += ModUnloading;
     }
     
-    private void ModLoading(IModV1 mod, IModConfigV1 config)   => _redirector.Add(config);
-    private void ModUnloading(IModV1 mod, IModConfigV1 config) => _redirector.Remove(config);
+    private void ModLoading(IModV1 mod, IModConfigV1 config)   => _redirector.Add(config.ModId, _modLoader);
+    private void ModUnloading(IModV1 mod, IModConfigV1 config) => _redirector.Remove(config.ModId, _modLoader);
 
     public override void Suspend() => FileAccessServer.Disable();
     public override void Resume()  => FileAccessServer.Enable();

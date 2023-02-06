@@ -1,27 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using Reloaded.Mod.Interfaces.Internal;
-using Reloaded.Universal.Redirector.Utility;
+﻿using System.Diagnostics;
 
-namespace Reloaded.Universal.Redirector.Structures;
+#pragma warning disable CS1591
 
+namespace Reloaded.Universal.Redirector.Lib.Structures;
+
+[Obsolete]
 public class ModRedirectorDictionary : IDisposable
 {
-    public Dictionary<string, string> FileRedirects { get; set; } = new Dictionary<String,String>(StringComparer.OrdinalIgnoreCase);
+    // TODO:
+    // - Mapping of subdirectory to files contained inside.
+    //    - Dictionary<string, HashSet<string>>: Relative Folder Path to Files.
+    //    - Do not cache filesystem info; assume file search is an uncommon/startup operation for purpose of running game.
+
+    private Dictionary<string, string> FileRedirects { get; set; } = new Dictionary<String,String>(StringComparer.OrdinalIgnoreCase);
 
     private static string _programFolder = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule!.FileName)!;
 
     /// <summary>
     /// Target folder the redirection is pointing towards.
     /// </summary>
-    public string RedirectFolder { get; private set; } = string.Empty;
+    public string RedirectFolder { get; } = string.Empty;
 
     /// <summary>
     /// Path of the source folder to redirect from inside the application directory.
     /// </summary>
-    public string SourceFolder { get; private set; } = string.Empty;
+    public string SourceFolder { get; } = string.Empty;
 
     private FileSystemWatcher _watcher = null!;
 
@@ -71,6 +74,8 @@ public class ModRedirectorDictionary : IDisposable
     /* Setup the dictionary of file redirections. */
     private void SetupFileRedirects()
     {
+        throw new NotImplementedException();
+        /*
         if (!Directory.Exists(RedirectFolder)) 
             return;
 
@@ -80,7 +85,7 @@ public class ModRedirectorDictionary : IDisposable
         foreach (string modFile in allModFiles)
         {
             string applicationFileLocation = _programFolder + SourceFolder + modFile;
-            string modFileLocation = RedirectFolder + modFile;
+            string modFileLocation  = RedirectFolder + modFile;
             applicationFileLocation = Path.GetFullPath(applicationFileLocation);
             modFileLocation         = Path.GetFullPath(modFileLocation);
 
@@ -88,6 +93,7 @@ public class ModRedirectorDictionary : IDisposable
         }
 
         FileRedirects = redirects;
+        */
     }
 
     /* Sets up the FileSystem watcher that will update redirect paths on file add/modify/delete. */
@@ -99,8 +105,8 @@ public class ModRedirectorDictionary : IDisposable
         _watcher = new FileSystemWatcher(RedirectFolder);
         _watcher.EnableRaisingEvents   = true;
         _watcher.IncludeSubdirectories = true;
-        _watcher.Created += (sender, args) => { SetupFileRedirects(); };
-        _watcher.Deleted += (sender, args) => { SetupFileRedirects(); };
-        _watcher.Renamed += (sender, args) => { SetupFileRedirects(); };
+        _watcher.Created += (_, _) => { SetupFileRedirects(); };
+        _watcher.Deleted += (_, _) => { SetupFileRedirects(); };
+        _watcher.Renamed += (_, _) => { SetupFileRedirects(); };
     }
 }

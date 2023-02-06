@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Reloaded.Hooks.Definitions;
-using Reloaded.Universal.Redirector.Utility;
+using Reloaded.Universal.Redirector.Lib.Utility;
 using IReloadedHooks = Reloaded.Hooks.ReloadedII.Interfaces.IReloadedHooks;
 
 namespace Reloaded.Universal.Redirector;
@@ -13,15 +13,62 @@ namespace Reloaded.Universal.Redirector;
 /// </summary>
 public unsafe class FileAccessServer
 {
-    private static Redirector _redirector = null!;
-    private static RedirectorController _redirectorController = null!;
+/*
+    Sewer's Grand API Mapping Table:
+    
+    This comment shows a listing of hooks and their corresponding APIs they successfully handle.
+    i.e. Often API 1 will call API 2 under the hood in Windows.
+    
+    Confirmed by looking at Windows (7, 8.1, 10 & 11), older versions are no longer 
+    supported by me, MSFT or .NET runtime.
+    
+    Windows Native APIs:
+        NtCreateFile_Hook           -> NtCreateFile 
+        NtOpenFile_Hook             -> NtOpenFile
+        NtQueryDirectoryFileEx_Hook -> NtQueryDirectoryFileEx
+                                       NtQueryDirectoryFile
+                                       
+        Note: NtQueryDirectoryFileEx on Win10 >=, hook NtQueryDirectoryFile on Wine and Earlier
+    
+    Win32 APIs:
+    
+        Listing of Win32 counterparts and the corresponding NT hooks that handle them.
+        
+        FindFirstFileA   -> FindFirstFileExW -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
+        FindFirstFileExA -> FindFirstFileExW -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
+        FindFirstFileW   -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
+        FindFirstFileExW -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
+        FindFirstFileExFromAppW -> FindFirstFileExW -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
+        
+        FindNextFileA -> FindNextFileW -> NtQueryDirectoryFileEx Hook
+        FindNextFileW -> NtQueryDirectoryFileEx Hook
+        
+        Ignore: 
+            FindFirstFileName | We don't deal with hardlinks.
+            
+    Not Hooking: 
+        NtQueryAttributesFile 
+        NtQueryFullAttributesFile
+    
+        Justification: 
+            
+            These attributes are considered internal Windows APIs and can be changed or removed 
+            between individual versions of Windows. [and in fact, they have been; NtQueryFullAttributesFile is no
+            longer with us].  
+            
+            End user applications should never hit these APIs, directly or indirectly without going through
+            any of the other hooked APIs; so this should be okay.
+*/
+    
+    private static Lib.Redirector _redirector;
+    private static RedirectorApi _redirectorApi = null!;
     private static IHook<Native.NtCreateFile> _ntCreateFileHook = null!;
     private const string _prefix = "\\??\\";
 
-    public static void Initialize(IReloadedHooks hooks, Redirector redirector, RedirectorController redirectorController)
+    public static void Initialize(IReloadedHooks hooks, Lib.Redirector redirector, RedirectorApi redirectorApi)
     {
         _redirector = redirector;
-        _redirectorController = redirectorController;
+        _redirectorApi = redirectorApi;
 
         // Get Hooks
         var ntdllHandle = Native.LoadLibraryW("ntdll");
@@ -77,12 +124,12 @@ public unsafe class FileAccessServer
             oldFilePath = Path.GetFullPath(oldFilePath);
 
             // Get redirected path.
-            _redirectorController.Loading?.Invoke(oldFilePath);
+            _redirectorApi.Loading?.Invoke(oldFilePath);
 
             if (_redirector.TryRedirect(oldFilePath, out newFilePath))
             {
                 string newPath = newFilePath;
-                _redirectorController.Redirecting?.Invoke(oldFilePath, newPath);
+                _redirectorApi.Redirecting?.Invoke(oldFilePath, newPath);
 
                 return true;
             }
