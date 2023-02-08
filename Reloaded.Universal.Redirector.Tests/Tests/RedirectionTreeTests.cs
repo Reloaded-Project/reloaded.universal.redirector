@@ -12,7 +12,7 @@ public class RedirectionTreeTests
     [Fact]
     public void Add_WithSingleNode()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"c:\", @"d:\");
         
         Assert.True(tree.RootNode.Children.ContainsKey("c:"));
@@ -25,7 +25,7 @@ public class RedirectionTreeTests
     [Fact]
     public void Add_WithNestedNode()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"c:\", @"d:\");
         tree.AddPath(@"c:\kitten", @"d:\kitten"); // should register as subnode of C:\
         
@@ -33,8 +33,8 @@ public class RedirectionTreeTests
         Assert.Equal(1, tree.RootNode.Children.Count);
 
         var child = tree.RootNode.Children.GetValueRef("c:");
-        Assert.True(child.Files.ContainsKey("kitten"));
-        Assert.Equal(1, child.Files.Count);
+        Assert.True(child.Items.ContainsKey("kitten"));
+        Assert.Equal(1, child.Items.Count);
     }
     
     /// <summary>
@@ -43,15 +43,15 @@ public class RedirectionTreeTests
     [Fact]
     public void Add_WithNestedNode_NoExistingParent()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"c:\kitten", @"d:\kitten"); // should register as subnode of C:\
         
         Assert.True(tree.RootNode.Children.ContainsKey("c:"));
         Assert.Equal(1, tree.RootNode.Children.Count);
 
         var child = tree.RootNode.Children.GetValueRef("c:");
-        Assert.True(child.Files.ContainsKey("kitten"));
-        Assert.Equal(1, child.Files.Count);
+        Assert.True(child.Items.ContainsKey("kitten"));
+        Assert.Equal(1, child.Items.Count);
     }
     
     /// <summary>
@@ -60,7 +60,7 @@ public class RedirectionTreeTests
     [Fact]
     public void Add_WithMultiLevelNestedNode()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"c:\kitten\kitty", @"d:\kitten\kitty"); // should register as subnode of C:\
         
         Assert.True(tree.RootNode.Children.ContainsKey("c:"));
@@ -71,8 +71,8 @@ public class RedirectionTreeTests
         Assert.Equal(1, child.Children.Count);
 
         child = child.Children.GetValueRef("kitten");
-        Assert.True(child.Files.ContainsKey("kitty"));
-        Assert.Equal(1, child.Files.Count);
+        Assert.True(child.Items.ContainsKey("kitty"));
+        Assert.Equal(1, child.Items.Count);
     }
     
     /// <summary>
@@ -81,7 +81,7 @@ public class RedirectionTreeTests
     [Fact]
     public void AddFolder()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddFolderPaths(@"c:\kitten", new[]
         {
             "cat",
@@ -97,9 +97,28 @@ public class RedirectionTreeTests
         Assert.Equal(1, child.Children.Count);
 
         child = child.Children.GetValueRef("kitten");
-        Assert.True(child.Files.ContainsKey("kitty"));
-        Assert.True(child.Files.ContainsKey("cat"));
-        Assert.True(child.Files.ContainsKey("nya-nyan"));
-        Assert.Equal(3, child.Files.Count);
+        Assert.True(child.Items.ContainsKey("kitty"));
+        Assert.True(child.Items.ContainsKey("cat"));
+        Assert.True(child.Items.ContainsKey("nya-nyan"));
+        Assert.Equal(3, child.Items.Count);
+    }
+    
+    /// <summary>
+    /// Test for resolving existing path in redirection tree.
+    /// </summary>
+    [Fact]
+    public void ResolvePath_BaseLine()
+    {
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
+        tree.AddPath(@"c:\kitten\kitty", @"d:\kitten\kitty"); // should register as subnode of C:\
+
+        // Should resolve to 'c:\kitten'
+        var node = tree.ResolvePath(@"c:\kitten\kittykat.png");
+        Assert.Equal(1, node?.Items.Count); // 'kitty'
+        Assert.Equal("kitty", node?.Items.GetFirstItem(out _).FileName); // 'kitty'
+        
+        // Fail to resolve
+        node = tree.ResolvePath(@"d:\kitten\kittykat.png");
+        Assert.False(node.HasValue);
     }
 }

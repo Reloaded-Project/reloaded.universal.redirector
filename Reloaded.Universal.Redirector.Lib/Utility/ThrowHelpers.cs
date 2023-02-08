@@ -9,5 +9,5 @@ internal class ThrowHelpers
 {
     /// <summary/>
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void ThrowNotImplementedException(string message) => throw new NotImplementedException();
+    public static void ThrowNotImplementedException(string message) => throw new NotImplementedException(message);
 }

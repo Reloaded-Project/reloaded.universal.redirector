@@ -31,9 +31,9 @@ public class RedirectionTreeBuildBenchmark : IBenchmark
     // Note: For benchmarks we just map directories to self. This does not affect our runtime.
     
     [Benchmark(Baseline = true)]
-    public RedirectionTree BuildTree_WithAddFile()
+    public RedirectionTree<RedirectionTreeTarget> BuildTree_WithAddFile()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         foreach (var file in Files)
             tree.AddPath(file, file);
 
@@ -41,9 +41,9 @@ public class RedirectionTreeBuildBenchmark : IBenchmark
     }
     
     [Benchmark]
-    public RedirectionTree BuildTree_WithAddFiles()
+    public RedirectionTree<RedirectionTreeTarget> BuildTree_WithAddFiles()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         foreach (var group in Groups)
             tree.AddFolderPaths(group.Directory.FullPath, group.Files, group.Directory.FullPath);
 
@@ -51,9 +51,9 @@ public class RedirectionTreeBuildBenchmark : IBenchmark
     }
     
     [Benchmark]
-    public RedirectionTree BuildTree_WithAddFiles_WithSorting()
+    public RedirectionTree<RedirectionTreeTarget> BuildTree_WithAddFiles_WithSorting()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         Array.Sort(Groups, (a, b) => b.Directory.FullPath.Length.CompareTo(a.Directory.FullPath.Length));
         foreach (var group in Groups)
             tree.AddFolderPaths(group.Directory.FullPath, group.Files, group.Directory.FullPath);

@@ -8,15 +8,16 @@ namespace Reloaded.Universal.Redirector.Benchmarks.Benchmarks;
 [MemoryDiagnoser, DisassemblyDiagnoser(int.MaxValue, printInstructionAddresses: true, printSource: true)]
 public class FilePathLookupBenchmark : IBenchmark
 {
-    public string LookupDirectory { get; set; }
-    public string LookupFile { get; set; }
-    public string LookupDirectoryLongest { get; set; }
-    public string LookupFileLongest { get; set; }
-    public string LookupDirectoryLongestLower { get; set; }
-    public string LookupFileLongestLower { get; set; }
-    public string LookupDirectoryLower { get; set; }
-    public string LookupFileLower { get; set; }
-    public LookupTree Tree { get; set; }
+    public string LookupDirectory { get; set; } = null!;
+    public string LookupFile { get; set; } = null!;
+    public string LookupDirectoryLongest { get; set; } = null!;
+    public string LookupFileLongest { get; set; } = null!;
+    public string LookupDirectoryLongestUpper { get; set; } = null!;
+    public string LookupFileLongestUpper { get; set; } = null!;
+    public string LookupDirectoryUpper { get; set; } = null!;
+    public string LookupFileUpper { get; set; } = null!;
+    public LookupTree<RedirectionTreeTarget> Tree { get; set; }
+    public RedirectionTree<RedirectionTreeTarget> RedirectionTree { get; set; }
     
     [GlobalSetup]
     public void Setup()
@@ -27,25 +28,26 @@ public class FilePathLookupBenchmark : IBenchmark
         WindowsDirectorySearcher.GetDirectoryContentsRecursiveGrouped(searchPath, out var groupsLst, false);
         var groups = groupsLst.ToArray();
         
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         foreach (var group in groups)
         {
-            var directoryLower = group.Directory.FullPath.ToUpperInvariant();
-            tree.AddFolderPaths(directoryLower, group.Files.Select(x => x.ToUpperInvariant()).ToArray(), directoryLower);
+            var directoryUpper = group.Directory.FullPath.ToUpperInvariant();
+            tree.AddFolderPaths(directoryUpper, group.Files.Select(x => x.ToUpperInvariant()).ToArray(), directoryUpper);
         }
 
-        Tree = new LookupTree(tree);
+        RedirectionTree = tree;
+        Tree = new LookupTree<RedirectionTreeTarget>(tree);
         var lookupDirShortest = groupsLst.Where(x => x.Files.Length > 0).MinBy(x => x.Directory.FullPath.Length);
         LookupDirectory = lookupDirShortest.Directory.FullPath;
         LookupFile = Path.Combine(LookupDirectory, lookupDirShortest.Files[0]);
-        LookupDirectoryLower = LookupDirectory.ToUpperInvariant();
-        LookupFileLower = LookupFile.ToUpperInvariant();
+        LookupDirectoryUpper = LookupDirectory.ToUpperInvariant();
+        LookupFileUpper = LookupFile.ToUpperInvariant();
 
         var lookupDirLongest = groupsLst.Where(x => x.Files.Length > 0).MaxBy(x => x.Directory.FullPath.Length);
         LookupDirectoryLongest = lookupDirLongest!.Directory.FullPath;
         LookupFileLongest = Path.Combine(LookupDirectoryLongest, lookupDirLongest.Files.MaxBy(x => x.Length)!);
-        LookupDirectoryLongestLower = LookupDirectoryLongest.ToUpperInvariant();
-        LookupFileLongestLower = LookupFileLongest.ToUpperInvariant();
+        LookupDirectoryLongestUpper = LookupDirectoryLongest.ToUpperInvariant();
+        LookupFileLongestUpper = LookupFileLongest.ToUpperInvariant();
         Console.WriteLine($"Lookup Dir: {LookupDirectory}, Lookup File: {Path.GetFileName(LookupFile)}");
         Console.WriteLine($"Longest Lookup Dir: {LookupDirectoryLongest}, Lookup File: {Path.GetFileName(LookupFileLongest)}");
     }
@@ -57,10 +59,16 @@ public class FilePathLookupBenchmark : IBenchmark
     public bool LookupFolderPath() => Tree.TryGetFolder(LookupDirectory, out _);
     
     [Benchmark]
-    public bool LookupFilePathLower() => Tree.TryGetFileUpper(LookupFileLower, out _);
+    public bool LookupFilePathUpper() => Tree.TryGetFileUpper(LookupFileUpper, out _);
 
     [Benchmark]
-    public bool LookupFolderPathLower() => Tree.TryGetFolderUpper(LookupDirectoryLower, out _);
+    public bool LookupFolderPathUpper() => Tree.TryGetFolderUpper(LookupDirectoryUpper, out _);
+    
+    [Benchmark]
+    public RedirectionTreeNode<RedirectionTreeTarget>? RedirLookupFilePathUpper() => RedirectionTree.ResolvePath(LookupFileUpper);
+
+    [Benchmark]
+    public RedirectionTreeNode<RedirectionTreeTarget>? RedirLookupFolderPathUpper() => RedirectionTree.ResolvePath(LookupDirectoryUpper);
     
     [Benchmark]
     public bool LookupFilePathLongest() => Tree.TryGetFile(LookupFileLongest, out _);
@@ -69,8 +77,14 @@ public class FilePathLookupBenchmark : IBenchmark
     public bool LookupFolderPathLongest() => Tree.TryGetFolder(LookupDirectoryLongest, out _);
     
     [Benchmark]
-    public bool LookupFilePathLongestLower() => Tree.TryGetFileUpper(LookupFileLongestLower, out _);
+    public bool LookupFilePathLongestUpper() => Tree.TryGetFileUpper(LookupFileLongestUpper, out _);
 
     [Benchmark]
-    public bool LookupFolderPathLongestLower() => Tree.TryGetFolderUpper(LookupDirectoryLongestLower, out _);
+    public bool LookupFolderPathLongestUpper() => Tree.TryGetFolderUpper(LookupDirectoryLongestUpper, out _);
+    
+    [Benchmark]
+    public void RedirLookupFilePathLongestUpper() => RedirectionTree.ResolvePath(LookupFileLongestUpper);
+
+    [Benchmark]
+    public void RedirLookupFolderPathLongestUpper() => RedirectionTree.ResolvePath(LookupDirectoryLongestUpper);
 }

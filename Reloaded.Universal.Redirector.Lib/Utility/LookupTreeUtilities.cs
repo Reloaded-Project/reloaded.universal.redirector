@@ -16,14 +16,14 @@ public class LookupTreeUtilities
     /// <param name="currentNode">Node from which to build the tree.</param>
     /// <param name="currentSubfolder">Preallocated string builder instance.</param>
     /// <param name="subToFiles">Dictionary that maps subfolders to individual files.</param>
-    public static void BuildSubfolderToFilesRecursive(RedirectionTreeNode currentNode, StringBuilder currentSubfolder, SpanOfCharDict<SpanOfCharDict<RedirectionTreeTarget>> subToFiles)
+    public static void BuildSubfolderToFilesRecursive<TTarget>(RedirectionTreeNode<TTarget> currentNode, StringBuilder currentSubfolder, SpanOfCharDict<SpanOfCharDict<TTarget>> subToFiles)
     {
         // Add if we have files at this level.
         // Note: We subtract 1 to remove trailing slash.
-        if (currentNode.Files.Count > 0)
+        if (currentNode.Items.Count > 0)
         {
             var folderName = currentSubfolder.ToString(0, currentSubfolder.Length > 0 ? currentSubfolder.Length - 1 : currentSubfolder.Length);
-            subToFiles.AddOrReplace(StringPool.Shared.GetOrAdd(folderName), currentNode.Files.Clone());
+            subToFiles.AddOrReplace(StringPool.Shared.GetOrAdd(folderName), currentNode.Items.Clone());
         }
 
         int stringBuilderOriginalLength = currentSubfolder.Length;
@@ -44,7 +44,7 @@ public class LookupTreeUtilities
     /// Counts all subdirectories of a redirection tree node recursively.
     /// </summary>
     /// <param name="currentNode">The node to count subdirectories from.</param>
-    public static int CountSubdirectoriesRecursive(RedirectionTreeNode currentNode)
+    public static int CountSubdirectoriesRecursive<TTarget>(RedirectionTreeNode<TTarget> currentNode)
     {
         int result = 0;
         CountSubdirectoriesRecursive(currentNode, ref result);
@@ -56,7 +56,7 @@ public class LookupTreeUtilities
     /// </summary>
     /// <param name="currentNode">The node to count subdirectories from.</param>
     /// <param name="numSubdirectories">Total number of subdirectories.</param>
-    public static void CountSubdirectoriesRecursive(RedirectionTreeNode currentNode, ref int numSubdirectories)
+    public static void CountSubdirectoriesRecursive<TTarget>(RedirectionTreeNode<TTarget> currentNode, ref int numSubdirectories)
     {
         // Note: Converted to iteration by JIT; so kept recursive for readability.
         var enumerator = currentNode.Children.GetEntryEnumerator();

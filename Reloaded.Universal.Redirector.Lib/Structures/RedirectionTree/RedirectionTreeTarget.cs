@@ -44,4 +44,7 @@ public struct RedirectionTreeTarget
     {
         return string.Concat(Directory, Path.DirectorySeparatorChar, FileName);
     }
+    
+    /// <summary/>
+    public static implicit operator RedirectionTreeTarget(string s) => new(s);
 }

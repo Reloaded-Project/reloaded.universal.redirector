@@ -14,7 +14,7 @@ public class StringHashBenchmark : IBenchmark
     [Params(12, 64, 96, 128, 256, 1024)]
     public int CharacterCount { get; set; }
     
-    public string[] Input { get; set; }
+    public string[] Input { get; set; } = null!;
     
     [GlobalSetup]
     public void Setup()

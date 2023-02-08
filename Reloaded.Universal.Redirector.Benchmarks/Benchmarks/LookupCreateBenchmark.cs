@@ -8,7 +8,7 @@ namespace Reloaded.Universal.Redirector.Benchmarks.Benchmarks;
 [MemoryDiagnoser, DisassemblyDiagnoser(int.MaxValue, printSource: true, printInstructionAddresses: true, exportCombinedDisassemblyReport: true)]
 public class LookupCreateBenchmark : IBenchmark
 {
-    public RedirectionTree Tree { get; set; }
+    public RedirectionTree<RedirectionTreeTarget> Tree { get; set; }
 
     [GlobalSetup]
     public void Setup()
@@ -19,14 +19,14 @@ public class LookupCreateBenchmark : IBenchmark
         WindowsDirectorySearcher.GetDirectoryContentsRecursiveGrouped(searchPath, out var groupsLst, false);
         var groups = groupsLst.ToArray();
         
-        Tree = RedirectionTree.Create();
+        Tree = RedirectionTree<RedirectionTreeTarget>.Create();
         foreach (var group in groups)
             Tree.AddFolderPaths(group.Directory.FullPath, group.Files, group.Directory.FullPath);
     }
 
     [Benchmark]
-    public LookupTree Build()
+    public LookupTree<RedirectionTreeTarget> Build()
     {
-        return new LookupTree(Tree);
+        return new LookupTree<RedirectionTreeTarget>(Tree);
     }
 }

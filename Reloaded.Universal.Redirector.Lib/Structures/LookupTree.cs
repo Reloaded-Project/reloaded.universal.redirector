@@ -9,7 +9,7 @@ namespace Reloaded.Universal.Redirector.Lib.Structures;
 /// <summary>
 /// A version of <see cref="RedirectionTree"/> optimised for faster lookups in the scenario of use with game folders.
 /// </summary>
-public struct LookupTree
+public struct LookupTree<TTarget>
 {
     /*
         An O(3) lookup tree that uses the following strategy:  
@@ -33,14 +33,14 @@ public struct LookupTree
     /// <summary>
     /// Dictionary that maps individual subfolders to map of files.
     /// </summary>
-    public SpanOfCharDict<SpanOfCharDict<RedirectionTreeTarget>> SubfolderToFiles { get; private set; }
+    public SpanOfCharDict<SpanOfCharDict<TTarget>> SubfolderToFiles { get; private set; }
 
     /// <summary>
     /// Creates a lookup tree given an existing redirection tree.
     /// </summary>
     /// <param name="tree">The tree to create the lookup tree from.</param>
 #pragma warning disable CS8618
-    public LookupTree(RedirectionTree.RedirectionTree tree) => CreateFromRedirectionTree(tree);
+    public LookupTree(RedirectionTree.RedirectionTree<TTarget> tree) => CreateFromRedirectionTree(tree);
 #pragma warning restore CS8618
 
     /// <summary>
@@ -51,7 +51,7 @@ public struct LookupTree
     /// <returns>True if found, else false.</returns>
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetFolder(ReadOnlySpan<char> folderPath, out SpanOfCharDict<RedirectionTreeTarget> value)
+    public bool TryGetFolder(ReadOnlySpan<char> folderPath, out SpanOfCharDict<TTarget> value)
     {
         // TODO: This can be optimised for long paths.
         // Convert to uppercase, on stack if possible.
@@ -70,7 +70,7 @@ public struct LookupTree
     /// <param name="value">The returned folder instance.</param>
     /// <returns>True if found, else false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetFolderUpper(ReadOnlySpan<char> folderPath, out SpanOfCharDict<RedirectionTreeTarget> value)
+    public bool TryGetFolderUpper(ReadOnlySpan<char> folderPath, out SpanOfCharDict<TTarget> value)
     {
         // Must be O(1)
         value = default!;        
@@ -101,7 +101,7 @@ public struct LookupTree
     /// <returns>True if found, else false.</returns>
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetFile(ReadOnlySpan<char> filePath, out RedirectionTreeTarget value)
+    public bool TryGetFile(ReadOnlySpan<char> filePath, out TTarget value)
     {
         value = default!;   
         
@@ -122,7 +122,7 @@ public struct LookupTree
     /// <param name="value">The returned file instance.</param>
     /// <returns>True if found, else false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetFileUpper(ReadOnlySpan<char> filePath, out RedirectionTreeTarget value)
+    public bool TryGetFileUpper(ReadOnlySpan<char> filePath, out TTarget value)
     {
         value = default!;
 
@@ -143,12 +143,12 @@ public struct LookupTree
         return false;
     }
     
-    private void CreateFromRedirectionTree(RedirectionTree.RedirectionTree tree)
+    private void CreateFromRedirectionTree(RedirectionTree.RedirectionTree<TTarget> tree)
     {
         // Find longest prefix path.
         var prefixBuilder = new StringBuilder(128);
         var currentNode = tree.RootNode;
-        while (currentNode.Children.Count == 1 && currentNode.Files.Count == 0)
+        while (currentNode.Children.Count == 1 && currentNode.Items.Count == 0)
         {
             currentNode = currentNode.Children.GetFirstItem(out var key);
             prefixBuilder.Append(key);
@@ -163,7 +163,7 @@ public struct LookupTree
 
         // Get subdir count.
         int subdirectoryCount = LookupTreeUtilities.CountSubdirectoriesRecursive(currentNode);
-        SubfolderToFiles = new SpanOfCharDict<SpanOfCharDict<RedirectionTreeTarget>>(subdirectoryCount);
+        SubfolderToFiles = new SpanOfCharDict<SpanOfCharDict<TTarget>>(subdirectoryCount);
 
         // Now walk all child nodes. 
         // Note: Generous initial capacity, since it's hard to tell without walking children.

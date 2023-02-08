@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
@@ -219,29 +220,25 @@ public static class Strings
                         
                         return  hash1 + (hash2 * 1566083941);
                     }
-                    else
-                    {
-                        // The future is now.
-                        ThrowHelpers.ThrowNotImplementedException("Non 32/64-bit platform.");
-                    }
+                    
+                    // The future is now.
+                    return NonRandomizedHashCode_Fallback(src, length);
                 }
-                else
+
+                // Non-vector accelerated version here.
+                // 32/64 byte loop
+                while (length >= (sizeof(nuint) / sizeof(char)) * 8)
                 {
-                    // Non-vector accelerated version here.
-                    // 32/64 byte loop
-                    while (length >= (sizeof(nuint) / sizeof(char)) * 8)
-                    {
-                        length -= (sizeof(nuint) / sizeof(char)) * 8;
-                        hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[0];
-                        hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[1];
-                        hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[2];
-                        hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[3];
-                        hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[4];
-                        hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[5];
-                        hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[6];
-                        hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[7];
-                        ptr += 8;
-                    }
+                    length -= (sizeof(nuint) / sizeof(char)) * 8;
+                    hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[0];
+                    hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[1];
+                    hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[2];
+                    hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[3];
+                    hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[4];
+                    hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[5];
+                    hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[6];
+                    hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[7];
+                    ptr += 8;
                 }
 
                 // 16/32 byte
@@ -270,31 +267,34 @@ public static class Strings
 
                 return hash1 + (hash2 * 1566083941);
             }
-            else
-            {
-                // Version for when input data is smaller than native int. This one is taken from the runtime.
-                // For tiny strings like 'C:'
-                uint hash1 = (5381 << 16) + 5381;
-                uint hash2 = hash1;
-                uint* ptr = (uint*)src;
-                
-                while (length > 2)
-                {
-                    length -= 4;
-                    // Where length is 4n-1 (e.g. 3,7,11,15,19) this additionally consumes the null terminator
-                    hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[0];
-                    hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[1];
-                    ptr += 2;
-                }
 
-                if (length > 0)
-                {
-                    // Where length is 4n-3 (e.g. 1,5,9,13,17) this additionally consumes the null terminator
-                    hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[0];
-                }
-
-                return hash1 + (hash2 * 1566083941);
-            }
+            return NonRandomizedHashCode_Fallback(src, length);
         }
+    }
+
+    private static unsafe nuint NonRandomizedHashCode_Fallback(char* src, int length)
+    {
+        // Version for when input data is smaller than native int. This one is taken from the runtime.
+        // For tiny strings like 'C:'
+        uint hash1 = (5381 << 16) + 5381;
+        uint hash2 = hash1;
+        uint* ptr = (uint*)src;
+
+        while (length > 2)
+        {
+            length -= 4;
+            // Where length is 4n-1 (e.g. 3,7,11,15,19) this additionally consumes the null terminator
+            hash1 = (BitOperations.RotateLeft(hash1, 5) + hash1) ^ ptr[0];
+            hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[1];
+            ptr += 2;
+        }
+
+        if (length > 0)
+        {
+            // Where length is 4n-3 (e.g. 1,5,9,13,17) this additionally consumes the null terminator
+            hash2 = (BitOperations.RotateLeft(hash2, 5) + hash2) ^ ptr[0];
+        }
+
+        return hash1 + (hash2 * 1566083941);
     }
 }

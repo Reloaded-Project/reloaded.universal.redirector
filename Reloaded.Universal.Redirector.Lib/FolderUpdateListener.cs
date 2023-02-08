@@ -1,9 +1,14 @@
-﻿namespace Reloaded.Universal.Redirector.Lib;
+﻿using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
+using Reloaded.Universal.Redirector.Lib.Interfaces;
+using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
+using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTreeManager;
+
+namespace Reloaded.Universal.Redirector.Lib;
 
 /// <summary>
 /// Class that listens for updates of all folder redirections.
 /// </summary>
-public class FolderUpdateListener : IDisposable
+public class FolderUpdateListener<TReceiver> : IDisposable where TReceiver : IFolderRedirectionUpdateReceiver
 {
     // TODO: Folder updates for items outside of common 'Mods' folder.
     
@@ -16,15 +21,29 @@ public class FolderUpdateListener : IDisposable
     /// The file system watcher listening for events under the base folder.
     /// </summary>
     public FileSystemWatcher Watcher { get; private set; }
+
+    /// <summary>
+    /// Maps source from which files are to be redirected to a folder which handles the redirection.
+    /// </summary>
+    public RedirectionTree<FolderRedirection> SourceToFolder = RedirectionTree<FolderRedirection>.Create();
+    
+    /// <summary>
+    /// The item that receives file add/remove notifications.
+    /// </summary>
+    public TReceiver Receiver { get; private set; }
     
     /// <summary/>
     /// <param name="baseFolder">The base folder whose events we are listening to.</param>
-    public FolderUpdateListener(string baseFolder)
+    /// <param name="receiver">The notification receiver.</param>
+    public FolderUpdateListener(string baseFolder, TReceiver receiver)
     {
-        BaseFolder = baseFolder;
+        Receiver = receiver;
+        BaseFolder = TextInfo.ChangeCase<TextInfo.ToUpperConversion>(Path.GetFullPath(baseFolder));
         
-        // Note: Technically FileSystemWatcher is not foolproof; but 
-        //       with large buffer is reliable enough for our needs.
+        /*
+            Technically FileSystemWatcher is not foolproof; but  
+            with large buffer is reliable enough for our needs.  
+        */ 
         Watcher = new FileSystemWatcher(BaseFolder);
         Watcher.IncludeSubdirectories = true;
         Watcher.InternalBufferSize = ushort.MaxValue;
@@ -47,6 +66,24 @@ public class FolderUpdateListener : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Registers the given redirection to receive update vents.
+    /// </summary>
+    /// <param name="redirection">The redirection to register.</param>
+    public void Register(FolderRedirection redirection)
+    {
+        
+    }
+
+    /// <summary>
+    /// Unregisters the given redirection from update events.
+    /// </summary>
+    /// <param name="redirection">The redirection to unregister.</param>
+    public void Unregister(FolderRedirection redirection)
+    {
+        
+    }
+
     private void WatcherOnRenamed(object sender, RenamedEventArgs e)
     {
         throw new NotImplementedException();
@@ -59,6 +96,17 @@ public class FolderUpdateListener : IDisposable
 
     private void WatcherOnCreated(object sender, FileSystemEventArgs e)
     {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Tries to resolve a folder redirection based on a path.
+    /// </summary>
+    /// <param name="result">The found redirection.</param>
+    /// <returns>True if found; else false.</returns>
+    private bool TryResolveFolderRedirection(out FolderRedirection result)
+    {
+        
         throw new NotImplementedException();
     }
 }

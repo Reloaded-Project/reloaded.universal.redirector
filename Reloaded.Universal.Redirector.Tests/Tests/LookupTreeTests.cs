@@ -11,11 +11,11 @@ public class LookupTreeTests
     [Fact]
     public void Create_FromRedirectionTree_WithNoSubPaths()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"C:\KITTEN\CAT", @"D:\KITTEN\CAT");
         tree.AddPath(@"C:\KITTEN\NEKO", @"D:\KITTEN\NEKO");
 
-        var lookup = new LookupTree(tree);
+        var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         
         Assert.Equal(@"C:\KITTEN", lookup.Prefix, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(1, lookup.SubfolderToFiles.Count);
@@ -29,13 +29,13 @@ public class LookupTreeTests
     [Fact]
     public void Create_FromRedirectionTree_WithSubPaths()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"C:\KITTEN\CAT.PNG", @"D:\KITTEN\CAT.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO.PNG", @"D:\KITTEN\NEKO.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO\CAR\VROOM.PNG", @"D:\KITTEN\NEKO\CAR\VROOM.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO\MOBILE\BURENYA.PNG", @"D\KITTEN\NEKO\MOBILE\BURENYA.PNG");
 
-        var lookup = new LookupTree(tree);
+        var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         
         Assert.Equal(@"C:\KITTEN", lookup.Prefix, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(3, lookup.SubfolderToFiles.Count);
@@ -52,11 +52,11 @@ public class LookupTreeTests
     [Fact]
     public void Get_Folder_WithNoSubfolders()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"C:\KITTEN\CAT.PNG", @"D:\KITTEN\CAT.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO.PNG", @"D:\KITTEN\NEKO.PNG");
 
-        var lookup = new LookupTree(tree);
+        var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         Assert.True(lookup.TryGetFolder(@"C:\KITTEN", out var result));
         Assert.Equal(2, result.Count);
     }
@@ -67,11 +67,11 @@ public class LookupTreeTests
     [Fact]
     public void Get_File_WithNoSubfolders()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"C:\KITTEN\CAT.PNG", @"D:\KITTEN\CAT.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO.PNG", @"D:\KITTEN\NEKO.PNG");
 
-        var lookup = new LookupTree(tree);
+        var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         Assert.True(lookup.TryGetFile(@"C:\KITTEN\CAT.PNG", out var result));
         Assert.Equal(@"D:\KITTEN", result.Directory);
         Assert.Equal(@"CAT.PNG", result.FileName);
@@ -83,11 +83,11 @@ public class LookupTreeTests
     [Fact]
     public void Get_File_WithSubfolders()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"C:\KITTEN\CAT.PNG", @"D:\KITTEN\CAT.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO\CAR\VROOM.PNG", @"D:\KITTEN\NEKO\CAR\VROOM.PNG");
 
-        var lookup = new LookupTree(tree);
+        var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         Assert.True(lookup.TryGetFile(@"C:\KITTEN\CAT.PNG", out var result));
         Assert.Equal(@"D:\KITTEN", result.Directory);
         Assert.Equal(@"CAT.PNG", result.FileName);
@@ -103,13 +103,13 @@ public class LookupTreeTests
     [Fact]
     public void Get_Folder_WithSubfolders()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"C:\KITTEN\CAT.PNG", @"D:\KITTEN\CAT.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO.PNG", @"D:\KITTEN\NEKO.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO\CAR\VROOM.PNG", @"D:\KITTEN\NEKO\CAR\VROOM.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO\MOBILE\BURENYA.PNG", @"D\KITTEN\NEKO\MOBILE\BURENYA.PNG");
 
-        var lookup = new LookupTree(tree);
+        var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         
         // No subfolder
         Assert.True(lookup.TryGetFolder(@"C:\KITTEN", out var result));
@@ -131,11 +131,11 @@ public class LookupTreeTests
     [Fact]
     public void Get_Folder_WithNoSubfolders_WithIncorrectCase()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         tree.AddPath(@"C:\KITTEN\CAT.PNG", @"D:\KITTEN\CAT.PNG");
         tree.AddPath(@"C:\KITTEN\NEKO.PNG", @"D:\KITTEN\NEKO.PNG");
 
-        var lookup = new LookupTree(tree);
+        var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         Assert.True(lookup.TryGetFolder(@"C:\Kitten", out var result)); // <= incorrect case
         Assert.Equal(2, result.Count);
     }

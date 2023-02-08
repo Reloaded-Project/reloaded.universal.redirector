@@ -26,12 +26,12 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
     /// <summary>
     /// The redirection tree currently being built.
     /// </summary>
-    public RedirectionTree RedirectionTree { get; private set; }
+    public RedirectionTree<RedirectionTreeTarget> RedirectionTree { get; private set; }
     
     /// <summary>
     /// The current lookup tree.
     /// </summary>
-    public LookupTree Lookup { get; private set; }
+    public LookupTree<RedirectionTreeTarget> Lookup { get; private set; }
 
     /// <summary>
     /// True if the manager is currently using the lookup tree for lookups, else false.
@@ -125,7 +125,7 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
     /// </summary>
     private void Rebuild()
     {
-        var tree = RedirectionTree.Create();
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         
         ApplyFolderRedirections(tree);
         ApplyFileRedirections(tree);
@@ -164,29 +164,29 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
 
     private void Optimise_Impl()
     {
-        Lookup = new LookupTree(RedirectionTree);
+        Lookup = new LookupTree<RedirectionTreeTarget>(RedirectionTree);
         UsingLookupTree = true;
         RedirectionTree = default;
     }
     
-    private void ApplyFileRedirection(RedirectionTree tree, FileRedirection fileRedirection)
+    private void ApplyFileRedirection(RedirectionTree<RedirectionTreeTarget> tree, FileRedirection fileRedirection)
     {
         tree.AddPath(fileRedirection.OldPath, fileRedirection.NewPath);
     }
     
-    private void ApplyFolderRedirection(RedirectionTree tree, FolderRedirection folderRedirection)
+    private void ApplyFolderRedirection(RedirectionTree<RedirectionTreeTarget> tree, FolderRedirection folderRedirection)
     {
         throw new NotImplementedException();
         //tree.AddFolderPaths(folderRedirection.SourceFolder, fileRedirection.NewPath, folderRedirection.TargetFolder);
     }
     
-    private void ApplyFileRedirections(RedirectionTree tree)
+    private void ApplyFileRedirections(RedirectionTree<RedirectionTreeTarget> tree)
     {
         foreach (var fileRedirection in CollectionsMarshal.AsSpan(FileRedirections))
             ApplyFileRedirection(tree, fileRedirection);
     }
 
-    private void ApplyFolderRedirections(RedirectionTree tree)
+    private void ApplyFolderRedirections(RedirectionTree<RedirectionTreeTarget> tree)
     {
         foreach (var folder in CollectionsMarshal.AsSpan(FolderRedirections))
             ApplyFolderRedirection(tree, folder);

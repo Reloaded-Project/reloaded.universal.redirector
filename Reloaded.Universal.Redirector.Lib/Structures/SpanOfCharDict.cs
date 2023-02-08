@@ -30,12 +30,15 @@ public class SpanOfCharDict<T>
     public SpanOfCharDict(int targetSize)
     {
         // Min size.
-        if (targetSize <= 0)
-            targetSize = 8;
-        
-        // Round up to next power of 2
-        _buckets = new int[BitOperations.RoundUpToPowerOf2((uint)(targetSize))];
-        _entries = new DictionaryEntry[targetSize];
+        if (targetSize > 0)
+        {
+            _buckets = new int[BitOperations.RoundUpToPowerOf2((uint)(targetSize))];
+            _entries = new DictionaryEntry[targetSize];
+            return;
+        }
+
+        _buckets = Array.Empty<int>();
+        _entries = Array.Empty<DictionaryEntry>();
     }
     
     /// <summary>
@@ -131,9 +134,30 @@ public class SpanOfCharDict<T>
     [MethodImpl(MethodImplOptions.NoInlining)] // On a hot path but rarely call, do not inline.
     private void GrowDictionaryRare()
     {
-        var newEntries = new DictionaryEntry[_entries.Length * 2];
+        // Grow entries
+        var newEntries = new DictionaryEntry[Math.Max(1, _entries.Length * 2)];
         _entries.AsSpan().CopyTo(newEntries);
         _entries = newEntries;
+        
+        // Grow and re-populate bucket.
+        var bucketCount = BitOperations.RoundUpToPowerOf2((uint)(newEntries.Length));
+        if (bucketCount <= _buckets.Length) 
+            return;
+        
+        var bucket = new int[bucketCount];
+        var enumerator = GetEntryEnumerator();
+        int count = 0;
+        while (enumerator.MoveNext())
+        {
+            var hash = enumerator.Current.HashCode;
+            ref var entryIndex = ref GetBucketEntry(bucket, hash);
+            if (entryIndex <= 0)
+                entryIndex = count + 1;
+            
+            count++;
+        }
+        
+        _buckets = bucket;
     }
 
     /// <summary>
@@ -154,6 +178,9 @@ public class SpanOfCharDict<T>
     public bool TryGetValue(ReadOnlySpan<char> key, [MaybeNullWhen(false)] out T value)
     {
         value = default;
+        if (_buckets.Length <= 0)
+            return false;
+        
         var hashCode   = key.GetNonRandomizedHashCode();
         var entryIndex = GetBucketEntry(hashCode);
 
@@ -338,6 +365,14 @@ public class SpanOfCharDict<T>
         return -1;
     }
 
+    /// <summary>
+    /// Gets index of first entry from bucket.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private ref int GetBucketEntry(int[] bucket, nuint hashCode)
+    {
+        return ref bucket.DangerousGetReferenceAt((int)hashCode & (bucket.Length - 1));
+    }
 
     /// <summary>
     /// Gets index of first entry from bucket.
@@ -345,7 +380,7 @@ public class SpanOfCharDict<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private ref int GetBucketEntry(nuint hashCode)
     {
-        return ref _buckets.DangerousGetReferenceAt((int)hashCode & (_buckets.Length - 1));
+        return ref GetBucketEntry(_buckets, hashCode);
     }
     
     /// <summary>
