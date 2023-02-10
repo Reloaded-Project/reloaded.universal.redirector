@@ -72,7 +72,7 @@ public class FolderUpdateListener<TReceiver> : IDisposable where TReceiver : IFo
     /// <param name="redirection">The redirection to register.</param>
     public void Register(FolderRedirection redirection)
     {
-        
+        SourceToFolder.AddPath(redirection.SourceFolder, redirection);
     }
 
     /// <summary>
@@ -81,7 +81,8 @@ public class FolderUpdateListener<TReceiver> : IDisposable where TReceiver : IFo
     /// <param name="redirection">The redirection to unregister.</param>
     public void Unregister(FolderRedirection redirection)
     {
-        
+        // TODO: Remove from tree
+        // SourceToFolder.RemovePath(redirection.SourceFolder, redirection);
     }
 
     private void WatcherOnRenamed(object sender, RenamedEventArgs e)

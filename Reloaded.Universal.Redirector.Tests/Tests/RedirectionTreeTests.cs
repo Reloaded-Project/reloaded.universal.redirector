@@ -16,6 +16,7 @@ public class RedirectionTreeTests
         tree.AddPath(@"c:\", @"d:\");
         
         Assert.True(tree.RootNode.Children.ContainsKey("c:"));
+        Assert.Equal(1, tree.RootNode.Children.Allocated);
         Assert.Equal(1, tree.RootNode.Children.Count);
     }
 
@@ -30,10 +31,12 @@ public class RedirectionTreeTests
         tree.AddPath(@"c:\kitten", @"d:\kitten"); // should register as subnode of C:\
         
         Assert.True(tree.RootNode.Children.ContainsKey("c:"));
+        Assert.Equal(1, tree.RootNode.Children.Allocated);
         Assert.Equal(1, tree.RootNode.Children.Count);
 
         var child = tree.RootNode.Children.GetValueRef("c:");
         Assert.True(child.Items.ContainsKey("kitten"));
+        Assert.Equal(1, child.Items.Allocated);
         Assert.Equal(1, child.Items.Count);
     }
     
@@ -47,10 +50,12 @@ public class RedirectionTreeTests
         tree.AddPath(@"c:\kitten", @"d:\kitten"); // should register as subnode of C:\
         
         Assert.True(tree.RootNode.Children.ContainsKey("c:"));
+        Assert.Equal(1, tree.RootNode.Children.Allocated);
         Assert.Equal(1, tree.RootNode.Children.Count);
 
         var child = tree.RootNode.Children.GetValueRef("c:");
         Assert.True(child.Items.ContainsKey("kitten"));
+        Assert.Equal(1, child.Items.Allocated);
         Assert.Equal(1, child.Items.Count);
     }
     
@@ -64,14 +69,17 @@ public class RedirectionTreeTests
         tree.AddPath(@"c:\kitten\kitty", @"d:\kitten\kitty"); // should register as subnode of C:\
         
         Assert.True(tree.RootNode.Children.ContainsKey("c:"));
+        Assert.Equal(1, tree.RootNode.Children.Allocated);
         Assert.Equal(1, tree.RootNode.Children.Count);
 
         var child = tree.RootNode.Children.GetValueRef("c:");
         Assert.True(child.Children.TryGetValue("kitten", out _));
+        Assert.Equal(1, child.Children.Allocated);
         Assert.Equal(1, child.Children.Count);
 
         child = child.Children.GetValueRef("kitten");
         Assert.True(child.Items.ContainsKey("kitty"));
+        Assert.Equal(1, child.Items.Allocated);
         Assert.Equal(1, child.Items.Count);
     }
     
@@ -90,16 +98,19 @@ public class RedirectionTreeTests
         }, @"c:\kitten");
 
         Assert.True(tree.RootNode.Children.ContainsKey("c:"));
+        Assert.Equal(1, tree.RootNode.Children.Allocated);
         Assert.Equal(1, tree.RootNode.Children.Count);
 
         var child = tree.RootNode.Children.GetValueRef("c:");
         Assert.True(child.Children.TryGetValue("kitten", out _));
+        Assert.Equal(1, child.Children.Allocated);
         Assert.Equal(1, child.Children.Count);
 
         child = child.Children.GetValueRef("kitten");
         Assert.True(child.Items.ContainsKey("kitty"));
         Assert.True(child.Items.ContainsKey("cat"));
         Assert.True(child.Items.ContainsKey("nya-nyan"));
+        Assert.Equal(3, child.Items.Allocated);
         Assert.Equal(3, child.Items.Count);
     }
     
@@ -114,6 +125,7 @@ public class RedirectionTreeTests
 
         // Should resolve to 'c:\kitten'
         var node = tree.ResolvePath(@"c:\kitten\kittykat.png");
+        Assert.Equal(1, node?.Items.Allocated); // 'kitty'
         Assert.Equal(1, node?.Items.Count); // 'kitty'
         Assert.Equal("kitty", node?.Items.GetFirstItem(out _).FileName); // 'kitty'
         

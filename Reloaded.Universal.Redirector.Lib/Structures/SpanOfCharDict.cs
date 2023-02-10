@@ -21,9 +21,15 @@ public class SpanOfCharDict<T>
     private int[] _buckets; // pointers to first entry in each bucket. Encoded as 1 based, so default 0 value is seen as invalid.
     
     /// <summary>
-    /// Number of items stored in this dictionary.
+    /// Number of items stored in this dictionary.  
     /// </summary>
-    public int Count { get; private set; } // also index of next entry
+    public int Count { get; private set; }
+    
+    /// <summary>
+    /// Number of items allocated in this dictionary.  
+    /// This does not decrease with item removal.  
+    /// </summary>
+    public int Allocated { get; private set; } // also index of next entry
     
     /// <summary/>
     /// <param name="targetSize">Amount of expected items in this dictionary.</param>
@@ -47,13 +53,13 @@ public class SpanOfCharDict<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SpanOfCharDict<T> Clone()
     {
-        var result = new SpanOfCharDict<T>(Count);
+        var result = new SpanOfCharDict<T>(Allocated);
         
         // Copy existing items.
         // Inlined: GetValues for perf. Notably because hot path; so memory saving here might be not so bad.
         int x = 0;
-        int count = Count;
-        while (x < count)
+        int allocated = Allocated;
+        while (x < allocated)
         {
             x = GetNextItemIndex(x);
             if (x == -1) 
@@ -81,8 +87,8 @@ public class SpanOfCharDict<T>
     private void AddOrReplaceWithKnownHashCode(nuint hashCode, string key, T value)
     {
         // Grow if needed.
-        var count = Count;
-        if (count >= _entries.Length)
+        var allocated = Allocated;
+        if (allocated >= _entries.Length)
             GrowDictionaryRare();
         
         ref var entryIndex = ref GetBucketEntry(hashCode);
@@ -90,14 +96,15 @@ public class SpanOfCharDict<T>
         // No entry exists for this bucket.
         if (entryIndex <= 0)
         {
-            entryIndex = count + 1; // Bucket entries encoded as 1 indexed.
+            entryIndex = allocated + 1; // Bucket entries encoded as 1 indexed.
 
-            ref DictionaryEntry newEntry = ref _entries.DangerousGetReferenceAt(count);
+            ref DictionaryEntry newEntry = ref _entries.DangerousGetReferenceAt(allocated);
             newEntry.Key = key;
             newEntry.Value = value;
             newEntry.HashCode = hashCode;
             // newEntry.NextItem = 0; <= not needed, since we don't support removal and will already be initialised as 0.
-            Count = count + 1;
+            Allocated = allocated + 1;
+            Count++;
             return;
         }
 
@@ -116,19 +123,30 @@ public class SpanOfCharDict<T>
                 return;
             }
 
+            // Reallocate previously freed spot.
+            if (entry.IsFree())
+            {
+                entry.HashCode = hashCode;
+                entry.Key = key;
+                entry.Value = value;
+                Count++;
+                return;
+            }
+
             index = (int)(entry.NextItem - 1);
         } while (index > 0);
 
         // Item is not in there, we add and exit.
-        ref DictionaryEntry nextEntry = ref _entries.DangerousGetReferenceAt(count);
+        ref DictionaryEntry nextEntry = ref _entries.DangerousGetReferenceAt(allocated);
         nextEntry.Key = key;
         nextEntry.Value = value;
         nextEntry.HashCode = hashCode;
         // entry.NextItem = 0; <= not needed, since we don't support removal and will already be initialised as 0.
 
         // Update last in chain and total count.
-        entry.NextItem = (uint)count + 1;
-        Count = count + 1;
+        entry.NextItem = (uint)allocated + 1;
+        Allocated = allocated + 1;
+        Count++;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)] // On a hot path but rarely call, do not inline.
@@ -252,11 +270,71 @@ public class SpanOfCharDict<T>
     }
 
     /// <summary>
+    /// Tries to remove an entry from the dictionary.
+    /// </summary>
+    /// <param name="key">The key corresponding to the entry.</param>
+    /// <param name="entry">The entry that was just removed.</param>
+    /// <returns>Whether the entry removal operation was successful or not.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] 
+    public bool TryRemoveEntry(ReadOnlySpan<char> key, out DictionaryEntry entry)
+    {
+        var hashCode   = key.GetNonRandomizedHashCode();
+        var entryIndex = GetBucketEntry(hashCode);
+
+        // No entry exists for this bucket.
+        // Note: Do not invert branch. We assume it is not taken in ASM.
+        // It is written this way as entryindex <= 0 is the rare(r) case.
+        if (entryIndex > 0)
+        {
+            var index = entryIndex - 1; // Move up here because 3 instructions below [DangerousGetReferenceAt] depends on this.
+            ref DictionaryEntry curEntry  = ref Unsafe.NullRef<DictionaryEntry>();
+            var entries = _entries;
+
+            do
+            {
+                curEntry = ref entries.DangerousGetReferenceAt(index);
+                if (curEntry.HashCode == hashCode && key.SequenceEqual(curEntry.Key))
+                {
+                    // Return me.
+                    entry = curEntry;
+                    curEntry.Key = default;
+                    curEntry.HashCode = default;
+                    curEntry.Value = default;
+                    Count--;
+                    return true;
+                }
+                
+                index = (int)(curEntry.NextItem - 1);
+            } while (index > 0);
+
+            entry = default;
+            return false;
+        }
+
+        entry = default;
+        return false;
+    }
+    
+    /// <summary>
+    /// Tries to remove a value from the dictionary.
+    /// </summary>
+    /// <param name="key">The key to remove from the dictionary.</param>
+    /// <param name="value">The value obtained from the dictionary.</param>
+    /// <returns>Whether the value removal operation was successful or not.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)] 
+    public bool TryRemoveValue(ReadOnlySpan<char> key, out T value)
+    {
+        var result = TryRemoveEntry(key, out var entry);
+        value = entry.Value;
+        return result;
+    }
+
+    /// <summary>
     /// An optimised search implementation that returns the first value in dictionary by reference.
     /// </summary>
     /// <param name="key">The key of this item.</param>
     /// <remarks>
-    ///     This is intended to be used when <see cref="Count"/> == 1.
+    ///     This is intended to be used when <see cref="Allocated"/> == 1.
     ///     When this is not the case, element returned is undefined.
     /// </remarks>
     /// <returns>
@@ -303,7 +381,7 @@ public class SpanOfCharDict<T>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
-            while (CurrentIndex < Owner.Count)
+            while (CurrentIndex < Owner.Allocated)
             {
                 CurrentIndex = Owner.GetNextItemIndex(CurrentIndex);
                 
@@ -331,7 +409,7 @@ public class SpanOfCharDict<T>
     private int GetNextItemIndex(int x)
     {
         const int unrollFactor = 4; // for readability purposes
-        int maxItem = Math.Max(Count - unrollFactor, 0);
+        int maxItem = Math.Max(Allocated - unrollFactor, 0);
         for (; x < maxItem; x += unrollFactor)
         {
             ref var x0 = ref _entries.DangerousGetReferenceAt(x);
@@ -354,7 +432,7 @@ public class SpanOfCharDict<T>
         }
 
         // Not-unroll remainder
-        int count = Count;
+        int count = Allocated;
         for (; x < count; x++)
         {
             ref var x0 = ref _entries.DangerousGetReferenceAt(x);
@@ -407,5 +485,13 @@ public class SpanOfCharDict<T>
         /// Value for this item.
         /// </summary>
         public T Value;
+
+        /// <summary>
+        /// Returns true if this entry is free to use for subsequent allocations.
+        /// </summary>
+        public bool IsFree()
+        {
+            return HashCode == default && Key == default;
+        }
     }
 }     

@@ -18,6 +18,7 @@ public class LookupTreeTests
         var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         
         Assert.Equal(@"C:\KITTEN", lookup.Prefix, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(1, lookup.SubfolderToFiles.Allocated);
         Assert.Equal(1, lookup.SubfolderToFiles.Count);
         Assert.True(lookup.SubfolderToFiles.GetFirstItem(out _).ContainsKey("CAT"));
         Assert.True(lookup.SubfolderToFiles.GetFirstItem(out _).ContainsKey("NEKO"));
@@ -38,6 +39,7 @@ public class LookupTreeTests
         var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         
         Assert.Equal(@"C:\KITTEN", lookup.Prefix, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(3, lookup.SubfolderToFiles.Allocated);
         Assert.Equal(3, lookup.SubfolderToFiles.Count);
         Assert.True(lookup.SubfolderToFiles.GetValueRef("").ContainsKey("CAT.PNG"));
         Assert.True(lookup.SubfolderToFiles.GetValueRef("").ContainsKey("NEKO.PNG"));
@@ -58,6 +60,7 @@ public class LookupTreeTests
 
         var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         Assert.True(lookup.TryGetFolder(@"C:\KITTEN", out var result));
+        Assert.Equal(2, result.Allocated);
         Assert.Equal(2, result.Count);
     }
     
@@ -113,13 +116,16 @@ public class LookupTreeTests
         
         // No subfolder
         Assert.True(lookup.TryGetFolder(@"C:\KITTEN", out var result));
+        Assert.Equal(2, result.Allocated);
         Assert.Equal(2, result.Count);
         
         // Subfolder
         Assert.True(lookup.TryGetFolder(@"C:\KITTEN\NEKO\CAR", out result));
+        Assert.Equal(1, result.Allocated);
         Assert.Equal(1, result.Count);
         
         Assert.True(lookup.TryGetFolder(@"C:\KITTEN\NEKO\MOBILE", out result));
+        Assert.Equal(1, result.Allocated);
         Assert.Equal(1, result.Count);
     }
     
@@ -137,6 +143,7 @@ public class LookupTreeTests
 
         var lookup = new LookupTree<RedirectionTreeTarget>(tree);
         Assert.True(lookup.TryGetFolder(@"C:\Kitten", out var result)); // <= incorrect case
+        Assert.Equal(2, result.Allocated);
         Assert.Equal(2, result.Count);
     }
 }

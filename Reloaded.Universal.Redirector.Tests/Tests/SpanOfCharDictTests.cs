@@ -12,16 +12,45 @@ public class SpanOfCharDictTests
     public void Add_And_Get_Baseline()
     {
         var dict = new SpanOfCharDict<bool>(2);
+        Add_And_Get_Baseline_Impl(dict);
+    }
+
+    private static void Add_And_Get_Baseline_Impl(SpanOfCharDict<bool> dict)
+    {
         dict.AddOrReplace(@"a", true);
         dict.AddOrReplace(@"b", false);
         dict.AddOrReplace(@"c", true); // Grow
-        
+
         Assert.True(dict.TryGetValue("a", out var valueA));
         Assert.True(dict.TryGetValue("b", out var valueB));
         Assert.True(dict.TryGetValue("c", out var valueC));
         Assert.True(valueA);
         Assert.False(valueB);
         Assert.True(valueC);
+    }
+
+    /// <summary>
+    /// Tests adding an item to the redirection tree.
+    /// </summary>
+    [Fact]
+    public void Add_And_Remove_Baseline()
+    {
+        var dict = new SpanOfCharDict<bool>(2);
+        Add_And_Get_Baseline_Impl(dict);
+        
+        // Let's remove an item now.
+        var allocated = dict.Allocated;
+        var count = dict.Count;
+        Assert.True(dict.TryRemoveEntry(@"a", out var entry));
+        Assert.Equal(allocated, dict.Allocated);
+        Assert.Equal(count - 1, dict.Count);
+        Assert.False(dict.TryGetValue("a", out _));
+        Assert.Equal(@"a", entry.Key);
+        
+        // Let's re-add the item now.
+        dict.AddOrReplace(@"a", true);
+        Assert.True(dict.TryGetValue("a", out var valueA));
+        Assert.True(valueA);
     }
     
     /// <summary>
@@ -106,6 +135,7 @@ public class SpanOfCharDictTests
         for (int x = 0; x < count; x++)
             dict.AddOrReplace(x.ToString(), Convert.ToBoolean(x & 1));
 
+        Assert.Equal(count, dict.Allocated);
         Assert.Equal(count, dict.Count);
         for (int x = 0; x < count; x++)
         {
