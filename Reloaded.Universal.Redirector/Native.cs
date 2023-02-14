@@ -33,6 +33,22 @@ internal class Native
             int                                     // Return Value
         >Value;    
     }
+    
+    /// <summary>
+    /// Retrieves basic attributes for the specified file object.
+    /// (The description here is a partial, lazy copy from MSDN)
+    /// </summary>
+    [Hooks.Definitions.X64.Function(Hooks.Definitions.X64.CallingConventions.Microsoft)]
+    [Hooks.Definitions.X86.Function(Hooks.Definitions.X86.CallingConventions.Stdcall)]
+    public struct NtQueryAttributesFile
+    {
+        public FuncPtr
+        <
+            BlittablePointer<OBJECT_ATTRIBUTES>,    // objectAttributes
+            uint,                                   // fileAttributes
+            int                                     // Return Value
+        >Value;    
+    }
 
     /// <summary>
     /// A driver sets an IRP's I/O status block to indicate the final status of an I/O request, before calling IoCompleteRequest for the IRP.
@@ -88,8 +104,7 @@ internal class Native
         /// </summary>
         public IntPtr SecurityQualityOfService;
     }
-
-
+    
     /// <summary>
     /// Represents a singular unicode string.
     /// </summary>
