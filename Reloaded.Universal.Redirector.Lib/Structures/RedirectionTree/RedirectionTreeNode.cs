@@ -9,13 +9,13 @@ public struct RedirectionTreeNode<TTarget>
     /// Child nodes of this nodes.
     /// i.e. Maps 'folder' to next child.
     /// </summary>
-    public readonly SpanOfCharDict<RedirectionTreeNode<TTarget>> Children;
+    public SpanOfCharDict<RedirectionTreeNode<TTarget>> Children;
 
     /// <summary>
     /// Files present at this level of the tree.
     /// </summary>
-    public readonly SpanOfCharDict<TTarget> Items;
-
+    public SpanOfCharDict<TTarget> Items;
+    
     /// <summary/>
     /// <param name="expectedChildren">Number of expected child directories.</param>
     public RedirectionTreeNode(int expectedChildren)
@@ -31,5 +31,14 @@ public struct RedirectionTreeNode<TTarget>
     {
         Children = new SpanOfCharDict<RedirectionTreeNode<TTarget>>(expectedChildren);
         Items = new SpanOfCharDict<TTarget>(expectedFiles);
+    }
+
+    /// <summary>
+    /// Resets the value of this node to their defaults.
+    /// </summary>
+    public void Reset()
+    {
+        Children = new SpanOfCharDict<RedirectionTreeNode<TTarget>>(0);
+        Items = new SpanOfCharDict<TTarget>(0);
     }
 }

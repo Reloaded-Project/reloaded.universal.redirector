@@ -53,38 +53,38 @@ public class FilePathLookupBenchmark : IBenchmark
     }
 
     [Benchmark]
-    public bool LookupFilePath() => Tree.TryGetFile(LookupFile, out _);
+    public bool LookupFilePath() => Tree.TryGetFile(LookupFile, out _, out _);
 
     [Benchmark]
     public bool LookupFolderPath() => Tree.TryGetFolder(LookupDirectory, out _);
     
     [Benchmark]
-    public bool LookupFilePathUpper() => Tree.TryGetFileUpper(LookupFileUpper, out _);
+    public bool LookupFilePathUpper() => Tree.TryGetFileUpper(LookupFileUpper, out _, out _);
 
     [Benchmark]
     public bool LookupFolderPathUpper() => Tree.TryGetFolderUpper(LookupDirectoryUpper, out _);
     
     [Benchmark]
-    public RedirectionTreeNode<RedirectionTreeTarget>? RedirLookupFilePathUpper() => RedirectionTree.ResolvePath(LookupFileUpper);
+    public RedirectionTreeNode<RedirectionTreeTarget>? RedirLookupFilePathUpper() => RedirectionTree.ResolvePartialPath(LookupFileUpper);
 
     [Benchmark]
-    public RedirectionTreeNode<RedirectionTreeTarget>? RedirLookupFolderPathUpper() => RedirectionTree.ResolvePath(LookupDirectoryUpper);
+    public RedirectionTreeNode<RedirectionTreeTarget>? RedirLookupFolderPathUpper() => RedirectionTree.ResolvePartialPath(LookupDirectoryUpper);
     
     [Benchmark]
-    public bool LookupFilePathLongest() => Tree.TryGetFile(LookupFileLongest, out _);
+    public bool LookupFilePathLongest() => Tree.TryGetFile(LookupFileLongest, out _, out _);
 
     [Benchmark]
     public bool LookupFolderPathLongest() => Tree.TryGetFolder(LookupDirectoryLongest, out _);
     
     [Benchmark]
-    public bool LookupFilePathLongestUpper() => Tree.TryGetFileUpper(LookupFileLongestUpper, out _);
+    public bool LookupFilePathLongestUpper() => Tree.TryGetFileUpper(LookupFileLongestUpper, out _, out _);
 
     [Benchmark]
     public bool LookupFolderPathLongestUpper() => Tree.TryGetFolderUpper(LookupDirectoryLongestUpper, out _);
     
     [Benchmark]
-    public void RedirLookupFilePathLongestUpper() => RedirectionTree.ResolvePath(LookupFileLongestUpper);
+    public void RedirLookupFilePathLongestUpper() => RedirectionTree.ResolvePartialPath(LookupFileLongestUpper);
 
     [Benchmark]
-    public void RedirLookupFolderPathLongestUpper() => RedirectionTree.ResolvePath(LookupDirectoryLongestUpper);
+    public void RedirLookupFolderPathLongestUpper() => RedirectionTree.ResolvePartialPath(LookupDirectoryLongestUpper);
 }

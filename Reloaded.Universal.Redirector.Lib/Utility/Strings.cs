@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
 
 namespace Reloaded.Universal.Redirector.Lib.Utility;
 
@@ -24,6 +24,15 @@ public static class Strings
     }
 
     /// <summary>
+    /// Normalizes a file path passed in from an external API.
+    /// </summary>
+    /// <returns></returns>
+    public static string NormalizePath(this string originalPath)
+    {
+        return TextInfo.ChangeCase<TextInfo.ToUpperConversion>(Path.GetFullPath(originalPath));
+    }
+    
+    /// <summary>
     /// Faster hashcode for strings; but does not randomize between application runs.
     /// Inspired by .NET Runtime's own implementation; combining unrolled djb-like and FNV-1.
     /// </summary>
@@ -32,6 +41,7 @@ public static class Strings
     ///     'Use this if and only if 'Denial of Service' attacks are not a concern (i.e. never used for free-form user input),
     ///      or are otherwise mitigated
     /// </remarks>
+    [ExcludeFromCodeCoverage(Justification = "Cannot be accurately measured without multiple architectures.")]
     [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static unsafe nuint GetNonRandomizedHashCode(this ReadOnlySpan<char> text)
     {
@@ -271,9 +281,13 @@ public static class Strings
             return NonRandomizedHashCode_Fallback(src, length);
         }
     }
-
+    
+    [ExcludeFromCodeCoverage(Justification = "Cannot be accurately measured without multiple architectures.")]
     private static unsafe nuint NonRandomizedHashCode_Fallback(char* src, int length)
     {
+        // -1 because we cannot assume string has null terminator at end unlike runtime.
+        length -= 1;
+        
         // Version for when input data is smaller than native int. This one is taken from the runtime.
         // For tiny strings like 'C:'
         uint hash1 = (5381 << 16) + 5381;

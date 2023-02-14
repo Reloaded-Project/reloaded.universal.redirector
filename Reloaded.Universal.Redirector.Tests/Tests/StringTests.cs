@@ -32,9 +32,9 @@ public class StringTests
     [Fact]
     public void ToUpper()
     {
-        const int MaxChars = 257;
-        Span<char> actualBuf = stackalloc char[MaxChars];
-        for (int x = 0; x < MaxChars; x++)
+        const int maxChars = 257;
+        Span<char> actualBuf = stackalloc char[maxChars];
+        for (int x = 0; x < maxChars; x++)
         {
             var text = RandomStringLower(x);
             var expected = text.ToUpperInvariant();

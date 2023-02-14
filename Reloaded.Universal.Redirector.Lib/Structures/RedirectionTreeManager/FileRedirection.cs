@@ -20,8 +20,8 @@ public struct FileRedirection : IEquatable<FileRedirection>
     /// <summary/>
     public FileRedirection(string oldPath, string newPath)
     {
-        OldPath = oldPath;
-        NewPath = newPath;
+        OldPath = oldPath.NormalizePath();
+        NewPath = newPath.NormalizePath();
     }
 
     /// <summary/>

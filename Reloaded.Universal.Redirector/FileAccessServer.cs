@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Universal.Redirector.Lib.Utility;
@@ -46,7 +44,7 @@ public unsafe class FileAccessServer
         Ignore: 
             FindFirstFileName | We don't deal with hardlinks.
             
-    Not Hooking: 
+    Potentially Not Hooking or only Hooking based on OS: 
         NtQueryAttributesFile 
         NtQueryFullAttributesFile
     
@@ -126,6 +124,8 @@ public unsafe class FileAccessServer
             // Get redirected path.
             _redirectorApi.Loading?.Invoke(oldFilePath);
 
+            throw new NotImplementedException();
+            /*
             if (_redirector.TryRedirect(oldFilePath, out newFilePath))
             {
                 string newPath = newFilePath;
@@ -133,6 +133,7 @@ public unsafe class FileAccessServer
 
                 return true;
             }
+            */
         }
 
         newFilePath = oldFilePath;

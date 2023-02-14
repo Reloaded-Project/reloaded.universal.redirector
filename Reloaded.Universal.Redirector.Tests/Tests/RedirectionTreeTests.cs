@@ -124,13 +124,32 @@ public class RedirectionTreeTests
         tree.AddPath(@"c:\kitten\kitty", @"d:\kitten\kitty"); // should register as subnode of C:\
 
         // Should resolve to 'c:\kitten'
-        var node = tree.ResolvePath(@"c:\kitten\kittykat.png");
+        var node = tree.ResolvePartialPath(@"c:\kitten\kittykat.png");
         Assert.Equal(1, node?.Items.Allocated); // 'kitty'
         Assert.Equal(1, node?.Items.Count); // 'kitty'
         Assert.Equal("kitty", node?.Items.GetFirstItem(out _).FileName); // 'kitty'
         
         // Fail to resolve
-        node = tree.ResolvePath(@"d:\kitten\kittykat.png");
+        node = tree.ResolvePartialPath(@"d:\kitten\kittykat.png");
         Assert.False(node.HasValue);
+    }
+    
+    /// <summary>
+    /// Test for resolving existing path in redirection tree.
+    /// </summary>
+    [Fact]
+    public void GetFolder_BaseLine()
+    {
+        var tree = RedirectionTree<RedirectionTreeTarget>.Create();
+        tree.AddPath(@"c:\kitten\kitty", @"d:\kitten\kitty"); // should register as subnode of C:\
+
+        // Should resolve to 'c:\kitten'
+        Assert.True(tree.TryGetFolder(@"c:\kitten", out var node));
+        Assert.Equal(1, node.Items.Allocated); // 'kitty'
+        Assert.Equal(1, node.Items.Count); // 'kitty'
+        Assert.Equal("kitty", node.Items.GetFirstItem(out _).FileName); // 'kitty'
+        
+        // Fail to resolve
+        Assert.False(tree.TryGetFolder(@"d:\kitten", out node));
     }
 }

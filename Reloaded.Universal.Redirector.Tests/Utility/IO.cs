@@ -3,7 +3,8 @@
 /// <summary>
 /// Various methods related to IO workloads.
 /// </summary>
-public class IO
+// ReSharper disable once InconsistentNaming
+public static class IO
 {
     /// <summary>
     /// Recursively copies files from one directory to another.

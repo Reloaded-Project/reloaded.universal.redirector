@@ -1,8 +1,8 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
 using Reloaded.Universal.Redirector.Lib.Utility;
-using RedirectionTreeTarget = Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree.RedirectionTreeTarget;
 
 namespace Reloaded.Universal.Redirector.Lib.Structures;
 
@@ -97,11 +97,12 @@ public struct LookupTree<TTarget>
     /// Tries to get file from the lookup tree.
     /// </summary>
     /// <param name="filePath">The file to find.</param>
+    /// <param name="folder">The folder inside which the file is located.</param>
     /// <param name="value">The returned file instance.</param>
     /// <returns>True if found, else false.</returns>
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetFile(ReadOnlySpan<char> filePath, out TTarget value)
+    public bool TryGetFile(ReadOnlySpan<char> filePath, [MaybeNullWhen(false)] out SpanOfCharDict<TTarget> folder, [MaybeNullWhen(false)] out TTarget value)
     {
         value = default!;   
         
@@ -112,17 +113,18 @@ public struct LookupTree<TTarget>
             : GC.AllocateUninitializedArray<char>(filePath.Length); // super cold path, basically never hit
         
         TextInfo.ChangeCase<TextInfo.ToUpperConversion>(filePath, filePathUpper);
-        return TryGetFileUpper(filePathUpper, out value);
+        return TryGetFileUpper(filePathUpper, out folder, out value);
     }
-    
+
     /// <summary>
     /// Tries to get file from the lookup tree, assuming the file path is already in upper case.
     /// </summary>
     /// <param name="filePath">The file to find.</param>
+    /// <param name="folder">The folder inside which the file is located.</param>
     /// <param name="value">The returned file instance.</param>
     /// <returns>True if found, else false.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool TryGetFileUpper(ReadOnlySpan<char> filePath, out TTarget value)
+    public bool TryGetFileUpper(ReadOnlySpan<char> filePath, [MaybeNullWhen(false)] out SpanOfCharDict<TTarget> folder, [MaybeNullWhen(false)] out TTarget value)
     {
         value = default!;
 
@@ -133,13 +135,14 @@ public struct LookupTree<TTarget>
         var directoryIndex = filePath.LastIndexOf(Path.DirectorySeparatorChar);
         if (directoryIndex != -1)
         {
-            if (TryGetFolderUpper(filePath.Slice(0, directoryIndex), out var files))
+            if (TryGetFolderUpper(filePath.Slice(0, directoryIndex), out folder))
             {
                 var fileName = filePath.Slice(directoryIndex + 1);
-                return files.TryGetValue(fileName, out value);
+                return folder.TryGetValue(fileName, out value);
             }
         }
-        
+
+        folder = default;
         return false;
     }
     

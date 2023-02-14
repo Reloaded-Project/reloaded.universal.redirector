@@ -5,7 +5,7 @@ public static class Paths
     /// <summary>
     /// The location where the current program is located.
     /// </summary>
-    public static readonly string ProgramFolder = Path.GetDirectoryName(new Uri(AppContext.BaseDirectory).LocalPath);
+    public static readonly string ProgramFolder = Path.GetDirectoryName(new Uri(AppContext.BaseDirectory).LocalPath)!;
     
     /// <summary>
     /// Folder containing the assets.

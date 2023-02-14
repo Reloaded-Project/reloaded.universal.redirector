@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance.Buffers;
 using FileEmulationFramework.Lib.IO;
 using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
-using Reloaded.Universal.Redirector.Lib.Interfaces;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 using Reloaded.Universal.Redirector.Lib.Utility;
 
@@ -27,47 +26,40 @@ public class FolderRedirection : IEquatable<FolderRedirection>
     */
 
     /// <summary>
-    /// Path of the old folder.
+    /// Path of the old folder. [Game folder etc.]
     /// </summary>
     public string SourceFolder { get; }
 
     /// <summary>
-    /// Path of the new folder.
+    /// Path of the new folder. [Mod folder etc.]
     /// </summary>
     public string TargetFolder { get; }
-
-    /// <summary>
-    /// The owner to whom update events are sent to.
-    /// </summary>
-    public IFolderRedirectionUpdateReceiver Receiver { get; }
 
     /// <summary>
     /// A map of all known subdirectories to files.
     /// </summary>
     /// <remarks>
     ///     By storing RedirectionTreeTarget here directly, we can ensure or better communicate the strings here are to be reused.  
-    ///     The key of this is deduplicated with <see cref="LookupTree"/> by using a string pool.  
+    ///     The key of this is deduplicated with <see cref="LookupTree{TTarget}"/> by using a string pool.  
     /// </remarks>
     public SpanOfCharDict<List<RedirectionTreeTarget>> SubdirectoryToFilesMap { get; private set; } = null!;
 
     /// <summary>
     /// Creates a new folder redirection command/info.
     /// </summary>
-    /// <param name="sourceFolder">The folder to map files from.</param>
-    /// <param name="targetFolder">The folder to map files to.</param>
-    /// <param name="receiver">The item to send update events to.</param>
-    public FolderRedirection(string sourceFolder, string targetFolder, Lib.RedirectionTreeManager receiver)
+    /// <param name="sourceFolder">The folder to map files from. [Game folder]</param>
+    /// <param name="targetFolder">The folder to map files to. [Mod folder]</param>
+    public FolderRedirection(string sourceFolder, string targetFolder)
     {
-        SourceFolder = TextInfo.ChangeCase<TextInfo.ToUpperConversion>(Path.GetFullPath(sourceFolder));
-        TargetFolder = TextInfo.ChangeCase<TextInfo.ToUpperConversion>(Path.GetFullPath(targetFolder));
-        Receiver = receiver;
+        SourceFolder = sourceFolder.NormalizePath();
+        TargetFolder = targetFolder.NormalizePath();
         Initialise();
     }
 
     private void Initialise()
     {
         // Initialise.
-        WindowsDirectorySearcher.GetDirectoryContentsRecursiveGrouped(SourceFolder, out var groups);
+        WindowsDirectorySearcher.GetDirectoryContentsRecursiveGrouped(TargetFolder, out var groups);
         var subdirToFiles = new SpanOfCharDict<List<RedirectionTreeTarget>>(groups.Count);
         
         foreach (var group in CollectionsMarshal.AsSpan(groups))
@@ -80,9 +72,9 @@ public class FolderRedirection : IEquatable<FolderRedirection>
     {
         // Get Normalized Subfolder
         var dirPath          = group.Directory.FullPath;
-        var hasSubfolder     = SourceFolder.Length != dirPath.Length;
+        var hasSubfolder     = TargetFolder.Length != dirPath.Length;
         var hasSubfolderByte = Unsafe.As<bool, byte>(ref hasSubfolder);
-        var nextFolder       = dirPath.AsSpan(SourceFolder.Length + hasSubfolderByte);
+        var nextFolder       = dirPath.AsSpan(TargetFolder.Length + hasSubfolderByte);
 
         var dirPathUpper = nextFolder.Length <= 512
             ? stackalloc char[nextFolder.Length]

@@ -61,7 +61,8 @@ public class Mod : ModBase, IExports // <= Do not Remove.
         // and some other neat features, override the methods in ModBase.
 
         var modConfigs  = _modLoader.GetActiveMods().Select(x => x.Generic);
-        _redirector = ModLoaderRedirectorExtensions.Create(modConfigs, _modLoader);
+        var modsFolder = Path.GetDirectoryName(_modLoader.GetDirectoryForModId(context.ModConfig.ModId));
+        _redirector = ModLoaderRedirectorExtensions.Create(modConfigs, _modLoader, modsFolder);
         _redirectorApi = new RedirectorApi(_redirector);
         FileAccessServer.Initialize(_hooks!, _redirector, _redirectorApi);
 

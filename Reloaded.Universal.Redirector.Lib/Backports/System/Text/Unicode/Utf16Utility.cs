@@ -3,11 +3,13 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 
 namespace Reloaded.Universal.Redirector.Lib.Backports.System.Text.Unicode;
 
+[ExcludeFromCodeCoverage(Justification = "Taken from .NET Runtime")]
 internal static class Utf16Utility
 {
     /// <summary>

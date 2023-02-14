@@ -117,6 +117,7 @@ public class SpanOfCharDictTests
 
         // Verify the 'by ref' part works.
         valueA = false;
+        // ReSharper disable once InconsistentNaming
         ref var valueAB = ref dict.GetValueRef("a");
         Assert.Equal(valueA, valueAB);
         

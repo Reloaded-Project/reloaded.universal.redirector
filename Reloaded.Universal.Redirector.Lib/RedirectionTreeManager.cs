@@ -1,8 +1,12 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
 using Reloaded.Universal.Redirector.Lib.Interfaces;
 using Reloaded.Universal.Redirector.Lib.Structures;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTreeManager;
+using Reloaded.Universal.Redirector.Lib.Utility;
 
 namespace Reloaded.Universal.Redirector.Lib;
 
@@ -22,11 +26,11 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
     /// List of folder redirections.
     /// </summary>
     public List<FolderRedirection> FolderRedirections { get; private set; } = new();
-    
+
     /// <summary>
     /// The redirection tree currently being built.
     /// </summary>
-    public RedirectionTree<RedirectionTreeTarget> RedirectionTree { get; private set; }
+    public RedirectionTree<RedirectionTreeTarget> RedirectionTree { get; private set; } = new();
     
     /// <summary>
     /// The current lookup tree.
@@ -52,9 +56,7 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
            Note: Update of existing lookup tree can only be done if the existing prefix is shared.
            If prefix of item does not map; full tree needs reconstruction.
     */
-    
-    // TODO: Implement Folder Mapping Add File Event w/o Rebuild.
-    
+
     /// <summary>
     /// Adds an individual file redirection to the manager.
     /// </summary>
@@ -136,15 +138,92 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
     }
     
     /// <inheritdoc />
-    public void OnOtherUpdate(FolderRedirection sender)
-    {
-        throw new NotImplementedException();
-    }
+    public void OnOtherUpdate(FolderRedirection sender) => Rebuild();
 
     /// <inheritdoc />
-    public void OnFileAddition(FolderRedirection sender, string filePath)
+    public void OnFileAddition(FolderRedirection sender, ReadOnlySpan<char> relativePath)
     {
-        throw new NotImplementedException();
+        // Check if file is previously mapped.
+        // If it is not, we can add it to existing tree(s).
+        var src = string.Concat(sender.SourceFolder, relativePath);
+        var tgt = string.Concat(sender.TargetFolder, relativePath);
+        var fileName = Path.GetFileName(relativePath);
+        
+        if (UsingLookupTree)
+        {
+            if (!Lookup.TryGetFileUpper(src, out var folder, out _))
+            {
+                var relativeDirName = Path.GetDirectoryName(relativePath[1..]).ToString();
+                var items = folder ?? new SpanOfCharDict<RedirectionTreeTarget>(0);
+                items.AddOrReplace(fileName.ToString(), new RedirectionTreeTarget(tgt));
+                Lookup.SubfolderToFiles.AddOrReplace(relativeDirName, items);
+                return;
+            }
+
+            Rebuild();
+        }
+        else
+        {
+            if (!RedirectionTree.TryGetFolder(relativePath, out var node))
+            {
+                RedirectionTree.AddPath(src, new RedirectionTreeTarget(tgt));
+                return;
+            }
+            
+            if (!node.Items.ContainsKey(fileName))
+                node.Items.AddOrReplace(fileName.ToString(), new RedirectionTreeTarget(tgt));
+            else
+                Rebuild();
+        }
+    }
+
+    /// <summary>
+    /// Tries to get a given file from the manager.
+    /// </summary>
+    /// <param name="filePath">Path to the file to fetch.</param>
+    /// <param name="value">The redirection where the file is stored.</param>
+    /// <returns>True if found, else false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public unsafe bool TryGetFile(ReadOnlySpan<char> filePath, out RedirectionTreeTarget value)
+    {
+        var separatorIndex = filePath.LastIndexOf(Path.DirectorySeparatorChar);
+        if (TryGetFolder(filePath[..separatorIndex], out var result))
+        {
+            var fileName = filePath[(separatorIndex + 1)..];
+            Span<char> fileNameUpper = stackalloc char[fileName.Length];
+            
+            TextInfo.ChangeCase<TextInfo.ToUpperConversion>(fileName, fileNameUpper);
+            if (result.TryGetValue(fileNameUpper, out value))
+                return true;
+        }
+
+        value = default;
+        return false;
+    }
+    
+    /// <summary>
+    /// Tries to get a given folder path from the manager.
+    /// </summary>
+    /// <param name="filePath">Path to the folder to fetch the files.</param>
+    /// <param name="value">Mapping of file names to locations.</param>
+    /// <returns>True if found, else false.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetFolder(ReadOnlySpan<char> filePath, [MaybeNullWhen(false)] out SpanOfCharDict<RedirectionTreeTarget> value)
+    {
+        // Convert to uppercase, on stack if possible.
+        var pathLength = filePath.Length; // + 1 to potentially add directory separator if needed
+        var folderPathUpper = pathLength <= 512 
+            ? stackalloc char[pathLength]
+            : GC.AllocateUninitializedArray<char>(pathLength); // super cold path, basically never hit
+        
+        TextInfo.ChangeCase<TextInfo.ToUpperConversion>(filePath, folderPathUpper);
+        
+        if (UsingLookupTree)
+            return Lookup.TryGetFolderUpper(folderPathUpper, out value);
+
+        var result = RedirectionTree.TryGetFolder(folderPathUpper, out var node);
+        value = node.Items;
+        return result;
     }
 
     /// <summary>
@@ -176,8 +255,19 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
     
     private void ApplyFolderRedirection(RedirectionTree<RedirectionTreeTarget> tree, FolderRedirection folderRedirection)
     {
-        throw new NotImplementedException();
-        //tree.AddFolderPaths(folderRedirection.SourceFolder, fileRedirection.NewPath, folderRedirection.TargetFolder);
+        using var enumerator = folderRedirection.SubdirectoryToFilesMap.GetEntryEnumerator();
+        while (enumerator.MoveNext())
+        {
+            var current = enumerator.Current;
+            var currentSource = Path.Combine(folderRedirection.SourceFolder, current.Key!);
+            var currentTarget = Path.Combine(folderRedirection.TargetFolder, current.Key!);
+            using var filesRental = new ArrayRental<string>(current.Value.Count);
+            var files = filesRental.RawArray;
+            for (int x = 0; x < files.Length; x++)
+                files[x] = current.Value[x].FileName;
+
+            tree.AddFolderPaths(currentSource, files, currentTarget);
+        }
     }
     
     private void ApplyFileRedirections(RedirectionTree<RedirectionTreeTarget> tree)

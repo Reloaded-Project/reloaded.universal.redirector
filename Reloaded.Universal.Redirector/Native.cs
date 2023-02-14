@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Security;
 using Reloaded.Hooks.Definitions.Structs;
 using Reloaded.Universal.Redirector.Structures;

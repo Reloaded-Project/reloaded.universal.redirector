@@ -75,7 +75,7 @@ public class LookupTreeTests
         tree.AddPath(@"C:\KITTEN\NEKO.PNG", @"D:\KITTEN\NEKO.PNG");
 
         var lookup = new LookupTree<RedirectionTreeTarget>(tree);
-        Assert.True(lookup.TryGetFile(@"C:\KITTEN\CAT.PNG", out var result));
+        Assert.True(lookup.TryGetFile(@"C:\KITTEN\CAT.PNG", out _, out var result));
         Assert.Equal(@"D:\KITTEN", result.Directory);
         Assert.Equal(@"CAT.PNG", result.FileName);
     }
@@ -91,11 +91,11 @@ public class LookupTreeTests
         tree.AddPath(@"C:\KITTEN\NEKO\CAR\VROOM.PNG", @"D:\KITTEN\NEKO\CAR\VROOM.PNG");
 
         var lookup = new LookupTree<RedirectionTreeTarget>(tree);
-        Assert.True(lookup.TryGetFile(@"C:\KITTEN\CAT.PNG", out var result));
+        Assert.True(lookup.TryGetFile(@"C:\KITTEN\CAT.PNG", out _, out var result));
         Assert.Equal(@"D:\KITTEN", result.Directory);
         Assert.Equal(@"CAT.PNG", result.FileName);
         
-        Assert.True(lookup.TryGetFile(@"C:\KITTEN\NEKO\CAR\VROOM.PNG", out result));
+        Assert.True(lookup.TryGetFile(@"C:\KITTEN\NEKO\CAR\VROOM.PNG", out _, out result));
         Assert.Equal(@"D:\KITTEN\NEKO\CAR", result.Directory);
         Assert.Equal(@"VROOM.PNG", result.FileName);
     }

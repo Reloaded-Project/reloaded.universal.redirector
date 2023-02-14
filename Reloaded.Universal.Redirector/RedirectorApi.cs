@@ -4,9 +4,6 @@ namespace Reloaded.Universal.Redirector;
 
 public class RedirectorApi : IRedirectorController
 {
-    // TODO: Fast Rebuild Mode toggle which either caches or not caches all files.
-    //       Not big memory overhead since we'd reuse same strings in redirection targets.
-    
     private Lib.Redirector _redirector;
 
     public RedirectorApi(Lib.Redirector redirector)

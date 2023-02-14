@@ -299,7 +299,7 @@ public class SpanOfCharDict<T>
                     entry = curEntry;
                     curEntry.Key = default;
                     curEntry.HashCode = default;
-                    curEntry.Value = default;
+                    curEntry.Value = default!;
                     Count--;
                     return true;
                 }

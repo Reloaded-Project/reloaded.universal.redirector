@@ -1,7 +1,9 @@
-﻿using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
+﻿using System.Diagnostics.CodeAnalysis;
+using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
 using Reloaded.Universal.Redirector.Lib.Interfaces;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTreeManager;
+using Reloaded.Universal.Redirector.Lib.Utility;
 
 namespace Reloaded.Universal.Redirector.Lib;
 
@@ -38,7 +40,7 @@ public class FolderUpdateListener<TReceiver> : IDisposable where TReceiver : IFo
     public FolderUpdateListener(string baseFolder, TReceiver receiver)
     {
         Receiver = receiver;
-        BaseFolder = TextInfo.ChangeCase<TextInfo.ToUpperConversion>(Path.GetFullPath(baseFolder));
+        BaseFolder = baseFolder.NormalizePath();
         
         /*
             Technically FileSystemWatcher is not foolproof; but  
@@ -72,7 +74,7 @@ public class FolderUpdateListener<TReceiver> : IDisposable where TReceiver : IFo
     /// <param name="redirection">The redirection to register.</param>
     public void Register(FolderRedirection redirection)
     {
-        SourceToFolder.AddPath(redirection.SourceFolder, redirection);
+        SourceToFolder.AddPath(redirection.TargetFolder, redirection);
     }
 
     /// <summary>
@@ -81,33 +83,70 @@ public class FolderUpdateListener<TReceiver> : IDisposable where TReceiver : IFo
     /// <param name="redirection">The redirection to unregister.</param>
     public void Unregister(FolderRedirection redirection)
     {
-        // TODO: Remove from tree
-        // SourceToFolder.RemovePath(redirection.SourceFolder, redirection);
+        if (SourceToFolder.TryGetFolder(redirection.TargetFolder, out var result))
+            result.Reset(); ;
     }
 
     private void WatcherOnRenamed(object sender, RenamedEventArgs e)
     {
-        throw new NotImplementedException();
+        if (TryResolveFolderRedirection(e.FullPath, out var result))
+            Receiver.OnOtherUpdate(result);
     }
 
     private void WatcherOnDeleted(object sender, FileSystemEventArgs e)
     {
-        throw new NotImplementedException();
+        if (TryResolveFolderRedirection(e.FullPath, out var result))
+            Receiver.OnOtherUpdate(result);
     }
 
     private void WatcherOnCreated(object sender, FileSystemEventArgs e)
     {
-        throw new NotImplementedException();
+        var filePath = e.FullPath;
+        var filePathUpper = filePath.Length <= 512
+            ? stackalloc char[filePath.Length]
+            : GC.AllocateUninitializedArray<char>(filePath.Length); // super cold path, basically never hit
+        
+        TextInfo.ChangeCase<TextInfo.ToUpperConversion>(filePath, filePathUpper);
+        if (TryResolveFolderRedirectionUpper(filePathUpper, out var result))
+            Receiver.OnFileAddition(result, filePathUpper[result.TargetFolder.Length..]);
     }
 
     /// <summary>
     /// Tries to resolve a folder redirection based on a path.
     /// </summary>
+    /// <param name="filePath">Path of the file modified/affected/changed.</param>
     /// <param name="result">The found redirection.</param>
     /// <returns>True if found; else false.</returns>
-    private bool TryResolveFolderRedirection(out FolderRedirection result)
+    private bool TryResolveFolderRedirection(ReadOnlySpan<char> filePath, [MaybeNullWhen(false)] out FolderRedirection result)
     {
+        var filePathUpper = filePath.Length <= 512
+            ? stackalloc char[filePath.Length]
+            : GC.AllocateUninitializedArray<char>(filePath.Length); // super cold path, basically never hit
         
-        throw new NotImplementedException();
+        TextInfo.ChangeCase<TextInfo.ToUpperConversion>(filePath, filePathUpper);
+        return TryResolveFolderRedirectionUpper(filePathUpper, out result);
+    }
+    
+    /// <summary>
+    /// Tries to resolve a folder redirection based on a path.
+    /// </summary>
+    /// <param name="filePathUpper">Path of the file modified/affected/changed. Upper case.</param>
+    /// <param name="result">The found redirection.</param>
+    /// <returns>True if found; else false.</returns>
+    private bool TryResolveFolderRedirectionUpper(ReadOnlySpan<char> filePathUpper, [MaybeNullWhen(false)] out FolderRedirection result)
+    {
+        var resolved = SourceToFolder.ResolvePartialPath(filePathUpper);
+        if (resolved.HasValue)
+        {
+            var items = resolved.GetValueOrDefault().Items;
+            if (items.Count >= 1)
+            {
+                result = items.GetFirstItem(out _);
+                return true;
+            }
+        }
+
+        result = default;
+        return false;
     }
 }

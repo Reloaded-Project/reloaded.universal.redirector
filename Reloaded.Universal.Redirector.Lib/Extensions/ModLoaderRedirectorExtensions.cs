@@ -15,9 +15,10 @@ public static class ModLoaderRedirectorExtensions
     /// </summary>
     /// <param name="modConfigurations">The mod configurations with which to initialise with.</param>
     /// <param name="modLoader">The mod loader in question.</param>
-    public static Redirector Create(IEnumerable<IModConfigV1> modConfigurations, IModLoader modLoader)
+    /// <param name="baseFolder">Folder under which all mods are stored under.</param>
+    public static Redirector Create(IEnumerable<IModConfigV1> modConfigurations, IModLoader modLoader, string baseFolder)
     {
-        var redirector = new Redirector();
+        var redirector = new Redirector(baseFolder);
         foreach (var config in modConfigurations)
             redirector.Add(config.ModId, modLoader);
 

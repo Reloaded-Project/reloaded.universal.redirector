@@ -17,6 +17,10 @@ public interface IFolderRedirectionUpdateReceiver
     /// Called whenever a file is added to the folder redirection.
     /// </summary>
     /// <param name="sender">The sender.</param>
-    /// <param name="filePath">The path of the file.</param>
-    public void OnFileAddition(FolderRedirection sender, string filePath);
+    /// <param name="relativePath">
+    ///     The relative path of the file (to source folder).
+    ///     This is assumed to be upper case and sanitised; and start with a slash
+    ///     such that the string can be concatenated to <see cref="FolderRedirection.SourceFolder"/>.
+    /// </param>
+    public void OnFileAddition(FolderRedirection sender, ReadOnlySpan<char> relativePath);
 }

@@ -1,69 +1,117 @@
-﻿using Reloaded.Universal.Redirector.Lib.Structures;
+﻿using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTreeManager;
+using Reloaded.Universal.Redirector.Lib.Utility;
+
 #pragma warning disable CS1591
 
 namespace Reloaded.Universal.Redirector.Lib;
 
-[Obsolete]
-public class Redirector
+/// <summary>
+/// The class that ties all functionality together.
+/// Contains legacy as well as current API.
+/// </summary>
+public struct Redirector : IDisposable
 {
-    private List<ModRedirectorDictionary> _redirections = new();
-    private Dictionary<string, string> _customRedirections = new(StringComparer.OrdinalIgnoreCase);
-    private bool _isDisabled;
+    /// <summary>
+    /// The manager responsible for handling the redirection tree.
+    /// </summary>
+    public RedirectionTreeManager Manager { get; private set; }
+    
+    /// <summary>
+    /// Class that listens to individual file change events.
+    /// </summary>
+    public FolderUpdateListener<RedirectionTreeManager> Listener { get; private set; }
 
+    /// <summary>
+    /// True if redirector should be disabled, else false.
+    /// </summary>
+    public bool IsDisabled { get; private set; } = false;
+
+    /// <summary>
+    /// Creates a new instance of the redirector.
+    /// </summary>
+    /// <param name="baseFolder">Folder under which all mods are stored under.</param>
+    public Redirector(string baseFolder)
+    {
+        Manager = new RedirectionTreeManager();
+        Listener = new FolderUpdateListener<RedirectionTreeManager>(baseFolder, Manager);
+    }
+    
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        Listener.Dispose();
+    }
+    
     /* Business Logic */
+
+    #region Legacy API
+    // Flawed API.
     public void AddCustomRedirect(string oldPath, string newPath)
     {
-        _customRedirections[oldPath] = newPath;
+        Manager.AddFileRedirection(new FileRedirection(oldPath, newPath));
     }
 
     public void RemoveCustomRedirect(string oldPath)
     {
-        _customRedirections.Remove(oldPath);
+        oldPath = oldPath.NormalizePath();
+        for (var x = Manager.FileRedirections.Count - 1; x >= 0; x--)
+        {
+            var redir = Manager.FileRedirections[x];
+            if (redir.OldPath != oldPath) 
+                continue;
+            
+            Manager.RemoveFileRedirection(redir);
+            return;
+        }
     }
 
-    public void Add(string redirectFolder)
-    {
-        _redirections.Add(new ModRedirectorDictionary(redirectFolder));
-    }
+    public void Add(string targetFolder) => Add(targetFolder, Environment.CurrentDirectory);
 
-    public void Add(string folderPath, string sourceFolder)
+    public void Add(string targetFolder, string sourceFolder)
     {
-        _redirections.Add(new ModRedirectorDictionary(folderPath, sourceFolder));
-    }
-
-    public void Remove(string redirectFolder, string sourceFolder)
-    {
-        _redirections = _redirections.Where(x => !x.RedirectFolder.Equals(redirectFolder, StringComparison.OrdinalIgnoreCase) &&
-                                                 !x.SourceFolder.Equals(sourceFolder, StringComparison.OrdinalIgnoreCase)).ToList();
-    }
-
-    public void Remove(string redirectFolder)
-    {
-        _redirections = _redirections.Where(x => !x.RedirectFolder.Equals(redirectFolder, StringComparison.OrdinalIgnoreCase)).ToList();
+        targetFolder = targetFolder.NormalizePath();
+        sourceFolder = sourceFolder.NormalizePath();
+        
+        var folderRedirect = new FolderRedirection(sourceFolder, targetFolder);
+        Manager.AddFolderRedirection(folderRedirect);
+        Listener.Register(folderRedirect);
     }
     
-    public bool TryRedirect(string path, out string newPath)
+    public void Remove(string targetFolder, string sourceFolder)
     {
-        // Check if disabled.
-        newPath = path;
-        if (_isDisabled)
-            return false;
-
-        // Custom redirections.
-        if (_customRedirections.TryGetValue(path, out newPath!))
-            return true;
-
-        // Doing this in reverse because mods with highest priority get loaded last.
-        // We want to look at those mods first.
-        for (int i = _redirections.Count - 1; i >= 0; i--)
+        targetFolder = targetFolder.NormalizePath();
+        sourceFolder = sourceFolder.NormalizePath();
+        
+        for (var x = Manager.FolderRedirections.Count - 1; x >= 0; x--)
         {
-            if (_redirections[i].GetRedirection(path, out newPath))
-                return true;
+            var folderRedir = Manager.FolderRedirections[x];
+            if (!folderRedir.SourceFolder.Equals(sourceFolder, StringComparison.OrdinalIgnoreCase) ||
+                !folderRedir.TargetFolder.Equals(targetFolder, StringComparison.OrdinalIgnoreCase)) 
+                continue;
+            
+            Manager.RemoveFolderRedirection(folderRedir);
+            Listener.Unregister(folderRedir);
+            return;
         }
-
-        return false;
     }
 
-    public void Disable() => _isDisabled = true;
-    public void Enable() => _isDisabled = false;
+    public void Remove(string targetFolder)
+    {
+        targetFolder = targetFolder.NormalizePath();
+        
+        for (var x = Manager.FolderRedirections.Count - 1; x >= 0; x--)
+        {
+            var folderRedir = Manager.FolderRedirections[x];
+            if (!folderRedir.TargetFolder.Equals(targetFolder, StringComparison.OrdinalIgnoreCase)) 
+                continue;
+            
+            Manager.RemoveFolderRedirection(folderRedir);
+            Listener.Unregister(folderRedir);
+            return;
+        }
+    }
+    #endregion
+
+    public void Disable() => IsDisabled = true;
+    public void Enable() => IsDisabled = false;
 }

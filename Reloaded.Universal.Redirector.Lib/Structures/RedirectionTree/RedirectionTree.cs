@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 
@@ -7,13 +8,11 @@ namespace Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 /// </summary>
 public struct RedirectionTree<TTarget>
 {
-    public static readonly RedirectionTree<TTarget> Empty = default;
-    
     /// <summary>
     /// Root nodes, e.g. would store drive: C:/D:/E: etc.
     /// In most cases there is only one.
     /// </summary>
-    public RedirectionTreeNode<TTarget> RootNode { get; private set; } // I expect 3 roots/drives max.
+    public RedirectionTreeNode<TTarget> RootNode { get; private set; } = new(0);
     
     /// <summary/>
     public RedirectionTree() { }
@@ -53,12 +52,40 @@ public struct RedirectionTree<TTarget>
     }
 
     /// <summary>
+    /// Gets a specific folder from the redirection tree..  
+    /// </summary>
+    /// <param name="path">The path to resolve.</param>
+    /// <param name="result">The result of the search operation.</param>
+    /// <returns>Node associated with this partial path.</returns>
+    public bool TryGetFolder(ReadOnlySpan<char> path, out RedirectionTreeNode<TTarget> result)
+    {
+        result = default;
+        RedirectionTreeNode<TTarget> currentNode = RootNode;
+        
+        while (true)
+        {
+            var splitSpan = SplitDir(path);
+            
+            // Navigate to next node if possible.
+            if (!currentNode.Children.TryGetValue(splitSpan, out var existingNode)) 
+                break;
+
+            var startPos = Math.Min(splitSpan.Length + 1, path.Length);
+            path = path[(startPos)..];
+            currentNode = existingNode;
+            result = currentNode;
+        }
+
+        return path.Length <= 0;
+    }
+
+    /// <summary>
     /// Travels through the Redirection tree as far as the path matches what's in the tree.  
     /// i.e. It resolves a full path to a partial path [directory] already in the tree.
     /// </summary>
     /// <param name="path">The path to resolve.</param>
     /// <returns>Node associated with this partial path.</returns>
-    public RedirectionTreeNode<TTarget>? ResolvePath(ReadOnlySpan<char> path)
+    public RedirectionTreeNode<TTarget>? ResolvePartialPath(ReadOnlySpan<char> path)
     {
         RedirectionTreeNode<TTarget>? result = default;
         ReadOnlySpan<char> splitSpan;
@@ -70,7 +97,7 @@ public struct RedirectionTree<TTarget>
             if (!currentNode.Children.TryGetValue(splitSpan, out var existingNode)) 
                 break;
             
-            path = path.Slice(splitSpan.Length + 1);
+            path = path[(splitSpan.Length + 1)..];
             currentNode = existingNode;
             result = currentNode;
         }
@@ -127,6 +154,7 @@ public static class RedirectionTreeExtensions
     /// Adds multiple paths that belong under the same subfolder to the redirection tree.
     /// Assumes input strings are all within same subfolder and canonical [Path.GetFullPath] + upper case.
     /// </summary>
+    /// <param name="tree">The tree to add the paths to.</param>
     /// <param name="directory">The directory to add. Not expected to end with slash, upper case.</param>
     /// <param name="files">The files to to add.</param>
     /// <param name="targetDirectory">The target directory where redirected files are pointed to.</param>
