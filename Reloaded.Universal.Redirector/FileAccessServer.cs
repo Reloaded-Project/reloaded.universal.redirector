@@ -18,6 +18,9 @@ public unsafe class FileAccessServer
     private static IHook<Native.NtCreateFile> _ntCreateFileHook = null!;
     private static IHook<Native.NtQueryAttributesFile> _ntQueryAttributesFileHook = null!;
     private const string _prefix = "\\??\\";
+    
+    [ThreadStatic]
+    private static bool _inQueryAttributesFile;
 
     public static void Initialize(IReloadedHooks hooks, Redirector redirector,
         RedirectorController redirectorController)
@@ -48,32 +51,43 @@ public unsafe class FileAccessServer
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtQueryAttributesFileHookFn(Native.OBJECT_ATTRIBUTES* objectAttributes, uint fileAttributes)
     {
-        var attributes = objectAttributes;
-        if (attributes->ObjectName == null)
-            return _ntQueryAttributesFileHook.OriginalFunction.Value.Invoke( objectAttributes, fileAttributes);
+        if (_inQueryAttributesFile)
+            return _ntQueryAttributesFileHook.OriginalFunction.Value.Invoke(objectAttributes, fileAttributes);
 
-        if (!TryGetNewPath(attributes->ObjectName->ToString(), out string newFilePath))
-            return _ntQueryAttributesFileHook.OriginalFunction.Value.Invoke( objectAttributes, fileAttributes);
-
-        var newObjectPath = _prefix + newFilePath;
-        fixed (char* address = newObjectPath)
+        _inQueryAttributesFile = true;
+        try
         {
-            // Backup original string.
-            var originalObjectName = attributes->ObjectName;
-            var originalDirectory = attributes->RootDirectory;
+            var attributes = objectAttributes;
+            if (attributes->ObjectName == null)
+                return _ntQueryAttributesFileHook.OriginalFunction.Value.Invoke(objectAttributes, fileAttributes);
 
-            // Set new file path
-            var newObjectName = new Native.UNICODE_STRING(address, newObjectPath.Length);
-            attributes->ObjectName = &newObjectName;
-            attributes->RootDirectory = IntPtr.Zero;
+            if (!TryGetNewPath(attributes->ObjectName->ToString(), out string newFilePath))
+                return _ntQueryAttributesFileHook.OriginalFunction.Value.Invoke(objectAttributes, fileAttributes);
 
-            // Call function with new file path.
-            var returnValue = _ntQueryAttributesFileHook.OriginalFunction.Value.Invoke( objectAttributes, fileAttributes);;
+            var newObjectPath = _prefix + newFilePath;
+            fixed (char* address = newObjectPath)
+            {
+                // Backup original string.
+                var originalObjectName = attributes->ObjectName;
+                var originalDirectory = attributes->RootDirectory;
 
-            // Reset original string.
-            attributes->ObjectName = originalObjectName;
-            attributes->RootDirectory = originalDirectory;
-            return returnValue;
+                // Set new file path
+                var newObjectName = new Native.UNICODE_STRING(address, newObjectPath.Length);
+                attributes->ObjectName = &newObjectName;
+                attributes->RootDirectory = IntPtr.Zero;
+
+                // Call function with new file path.
+                var returnValue = _ntQueryAttributesFileHook.OriginalFunction.Value.Invoke(objectAttributes, fileAttributes);;
+
+                // Reset original string.
+                attributes->ObjectName = originalObjectName;
+                attributes->RootDirectory = originalDirectory;
+                return returnValue;
+            }
+        }
+        finally
+        {
+            _inQueryAttributesFile = false;
         }
     }
 
