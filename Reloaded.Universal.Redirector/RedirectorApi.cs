@@ -4,21 +4,34 @@ namespace Reloaded.Universal.Redirector;
 
 public class RedirectorApi : IRedirectorController
 {
-    private Lib.Redirector _redirector;
+    internal Lib.Redirector Redirector;
+    
+    /// <summary>
+    /// Called when the hooks should be disabled.
+    /// </summary>
+    public event Action? OnDisable;
+    
+    /// <summary>
+    /// Called when the hooks should be enabled.
+    /// </summary>
+    public event Action? OnEnable;
 
     public RedirectorApi(Lib.Redirector redirector)
     {
-        _redirector = redirector;
+        Redirector = redirector;
     }
 
+    [Obsolete] 
     public Redirecting? Redirecting { get; set; }
+    
+    [Obsolete]
     public Loading? Loading { get; set; }
-    public void AddRedirect(string oldFilePath, string newFilePath) => _redirector.AddCustomRedirect(oldFilePath, newFilePath);
-    public void RemoveRedirect(string oldFilePath)                  => _redirector.RemoveCustomRedirect(oldFilePath);
-    public void AddRedirectFolder(string folderPath)                => _redirector.Add(folderPath);
-    public void RemoveRedirectFolder(string folderPath)             => _redirector.Remove(folderPath);
-    public void AddRedirectFolder(string folderPath, string sourceFolder) => _redirector.Add(folderPath, sourceFolder);
-    public void RemoveRedirectFolder(string folderPath, string sourceFolder) => _redirector.Remove(folderPath, sourceFolder);
-    public void Disable() => _redirector.Disable();
-    public void Enable() => _redirector.Enable();
+    public void AddRedirect(string oldFilePath, string newFilePath) => Redirector.AddCustomRedirect(oldFilePath, newFilePath);
+    public void RemoveRedirect(string oldFilePath)                  => Redirector.RemoveCustomRedirect(oldFilePath);
+    public void AddRedirectFolder(string folderPath)                => Redirector.Add(folderPath);
+    public void RemoveRedirectFolder(string folderPath)             => Redirector.Remove(folderPath);
+    public void AddRedirectFolder(string folderPath, string sourceFolder) => Redirector.Add(folderPath, sourceFolder);
+    public void RemoveRedirectFolder(string folderPath, string sourceFolder) => Redirector.Remove(folderPath, sourceFolder);
+    public void Disable() => OnDisable?.Invoke();
+    public void Enable() => OnEnable?.Invoke();
 }

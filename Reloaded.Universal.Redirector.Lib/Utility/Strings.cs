@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
+using Reloaded.Universal.Redirector.Lib.Extensions;
 
 namespace Reloaded.Universal.Redirector.Lib.Utility;
 
@@ -12,15 +13,42 @@ namespace Reloaded.Universal.Redirector.Lib.Utility;
 public static class Strings
 {
     /// <summary>
-    /// Replaces the first occurrence of a piece of text in a string.
+    /// Prefix used for sending file paths straight to filesystem.
+    /// </summary>
+    public const string PrefixNoParsingStr = @"\\?\";
+    
+    /// <summary>
+    /// Prefix used by NT apis for devices and files.
+    /// </summary>
+    public const string PrefixLocalDeviceStr = @"\??\";
+    
+    /// <summary>
+    /// Prefix used for devices only.
+    /// </summary>
+    public const string PrefixLocalDevice2Str = @"\\.\";
+    
+    // Note: Little Endian.
+    private const long PrefixNoParsing    = 0x5C003F005C005C; /* \\?\ */ // Send straight to filesystem.
+    private const long PrefixLocalDevice  = 0x5C003F003F005C; /* \??\ */ // Devices & files only
+    private const long PrefixLocalDevice2 = 0x5C002E005C005C; /* \\.\ */ // Devices only
+
+    /// <summary>
+    /// Trims Windows NT file name prefixes from a given path.
     /// </summary>
     /// <param name="text">The string to trim.</param>
-    /// <param name="search">The text from start to remove.</param>
-    /// <param name="comparison">The comparison to perform.</param>
-    public static string TrimStart(this string text, string search, StringComparison comparison = StringComparison.OrdinalIgnoreCase)
+    public static unsafe ReadOnlySpan<char> TrimWindowsPrefixes(this ReadOnlySpan<char> text)
     {
-        int position = text.IndexOf(search, comparison);
-        return position < 0 ? text : text.Substring(position + search.Length);
+        if (text.Length < 4)
+            return text;
+        
+        fixed (char* data = &text[0])
+        {
+            var value = *(long*)data;
+            if (value is PrefixNoParsing or PrefixLocalDevice or PrefixLocalDevice2)
+                return text.SliceFast(4);
+
+            return text;
+        }
     }
 
     /// <summary>
@@ -29,9 +57,9 @@ public static class Strings
     /// <returns></returns>
     public static string NormalizePath(this string originalPath)
     {
-        return TextInfo.ChangeCase<TextInfo.ToUpperConversion>(Path.GetFullPath(originalPath));
+        return TextInfo.ChangeCaseInPlace<TextInfo.ToUpperConversion>(Path.GetFullPath(originalPath));
     }
-    
+
     /// <summary>
     /// Faster hashcode for strings; but does not randomize between application runs.
     /// Inspired by .NET Runtime's own implementation; combining unrolled djb-like and FNV-1.

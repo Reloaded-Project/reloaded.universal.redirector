@@ -3,6 +3,7 @@
 using System.Reflection;
 using BenchmarkDotNet.Running;
 using Reloaded.Universal.Redirector.Benchmarks;
+using Reloaded.Universal.Redirector.Benchmarks.Benchmarks;
 
 var benchmarks = Assembly.GetExecutingAssembly()
     .GetTypes()

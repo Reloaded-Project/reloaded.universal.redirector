@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Reloaded.Universal.Redirector.Lib.Utility;
 
 namespace Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 
@@ -43,6 +44,14 @@ public struct RedirectionTreeTarget
     public string GetFullPath()
     {
         return string.Concat(Directory, Path.DirectorySeparatorChar, FileName);
+    }
+    
+    /// <summary>
+    /// Returns the full path of the file.
+    /// </summary>
+    public string GetFullPathWithDevicePrefix()
+    {
+        return string.Concat(Strings.PrefixLocalDeviceStr, Directory, Path.DirectorySeparatorChar, FileName);
     }
     
     /// <summary/>

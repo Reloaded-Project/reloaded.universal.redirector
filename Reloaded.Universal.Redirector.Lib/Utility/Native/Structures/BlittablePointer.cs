@@ -1,4 +1,4 @@
-﻿namespace Reloaded.Universal.Redirector.Structures;
+﻿namespace Reloaded.Universal.Redirector.Lib.Utility.Native.Structures;
 
 /// <summary>
 /// Blittable single level pointer type that you can use with generic types.

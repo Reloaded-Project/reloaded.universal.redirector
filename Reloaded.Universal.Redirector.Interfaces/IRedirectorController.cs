@@ -1,4 +1,6 @@
-﻿namespace Reloaded.Universal.Redirector.Interfaces;
+﻿using System;
+
+namespace Reloaded.Universal.Redirector.Interfaces;
 
 public interface IRedirectorControllerV4
 {
@@ -51,7 +53,10 @@ public interface IRedirectorControllerV2
 
 public interface IRedirectorController : IRedirectorControllerV2, IRedirectorControllerV3, IRedirectorControllerV4
 {
+    [Obsolete("This API was removed in Virtual FileSystem Rewrite. If you need this, please let me know.")]
     Redirecting? Redirecting { get; set; }
+    
+    [Obsolete("This API was removed in Virtual FileSystem Rewrite. If you need this, please let me know.")]
     Loading? Loading { get; set; }
 
     /// <summary>
@@ -73,6 +78,7 @@ public interface IRedirectorController : IRedirectorControllerV2, IRedirectorCon
 /// </summary>
 /// <param name="oldPath">The path that was originally going to be opened.</param>
 /// <param name="newPath">The new path of the file.</param>
+[Obsolete("This API was removed in Virtual FileSystem Rewrite. If you need this, please let me know.")]
 public delegate void Redirecting(string oldPath, string newPath);
 
 /// <summary>
@@ -80,4 +86,5 @@ public delegate void Redirecting(string oldPath, string newPath);
 /// Note: This is before redirection takes place, see <see cref="Redirecting"/> if you want to know redirected paths.
 /// </summary>
 /// <param name="path">The path to be loaded.</param>
+[Obsolete("This API was removed in Virtual FileSystem Rewrite. If you need this, please let me know.")]
 public delegate void Loading(string path);

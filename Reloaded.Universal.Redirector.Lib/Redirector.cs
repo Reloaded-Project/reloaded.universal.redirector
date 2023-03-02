@@ -22,11 +22,6 @@ public struct Redirector : IDisposable
     public FolderUpdateListener<RedirectionTreeManager> Listener { get; private set; }
 
     /// <summary>
-    /// True if redirector should be disabled, else false.
-    /// </summary>
-    public bool IsDisabled { get; private set; } = false;
-
-    /// <summary>
     /// Creates a new instance of the redirector.
     /// </summary>
     /// <param name="baseFolder">Folder under which all mods are stored under.</param>
@@ -111,7 +106,4 @@ public struct Redirector : IDisposable
         }
     }
     #endregion
-
-    public void Disable() => IsDisabled = true;
-    public void Enable() => IsDisabled = false;
 }

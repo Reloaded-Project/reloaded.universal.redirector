@@ -15,30 +15,60 @@ public static class Paths
     /// <summary>
     /// Base folder for testing redirections.
     /// </summary>
-    public static readonly string Base = Path.Combine(AssetsFolder, "Base");
+    public static readonly string Base = GetBase(AssetsFolder);
+    
+    /// <summary>
+    /// Base folder for testing redirections.
+    /// </summary>
+    public static string GetBase(string baseFolder) => Path.Combine(baseFolder, "Base");
     
     /// <summary>
     /// Base folder (wish subfolders) for testing redirections.
     /// </summary>
-    public static readonly string BaseWithSubfolders = Path.Combine(AssetsFolder, "Base with Subfolder");
+    public static string BaseWithSubfolders => GetBaseWithSubfolders(AssetsFolder);
+    
+    /// <summary>
+    /// Base folder (wish subfolders) for testing redirections.
+    /// </summary>
+    public static string GetBaseWithSubfolders(string baseFolder) => Path.Combine(baseFolder, "Base with Subfolder");
     
     /// <summary>
     /// An overlay folder that combines with the base folder.
     /// </summary>
-    public static readonly string Overlay1 = Path.Combine(AssetsFolder, "Overlay1");
+    public static readonly string Overlay1 = GetOverlay1(AssetsFolder);
     
     /// <summary>
     /// An overlay folder that combines with the base folder.
     /// </summary>
-    public static readonly string Overlay2 = Path.Combine(AssetsFolder, "Overlay2");
+    public static string GetOverlay1(string baseFolder) => Path.Combine(baseFolder, "Overlay1");
+    
+    /// <summary>
+    /// An overlay folder that combines with the base folder.
+    /// </summary>
+    public static readonly string Overlay2 = GetOverlay2(AssetsFolder);
+    
+    /// <summary>
+    /// An overlay folder that combines with the base folder.
+    /// </summary>
+    public static string GetOverlay2(string baseFolder) => Path.Combine(baseFolder, "Overlay2");
     
     /// <summary>
     /// An overlay folder that overrides a file stored in the base folder.
     /// </summary>
-    public static readonly string Override1 = Path.Combine(AssetsFolder, "Override1");
+    public static readonly string Override1 = GetOverride1(AssetsFolder);
     
     /// <summary>
     /// An overlay folder that overrides a file stored in the base folder.
     /// </summary>
-    public static readonly string Override2 = Path.Combine(AssetsFolder, "Override2");
+    public static string GetOverride1(string baseFolder) => Path.Combine(baseFolder, "Override1");
+    
+    /// <summary>
+    /// An overlay folder that overrides a file stored in the base folder.
+    /// </summary>
+    public static readonly string Override2 = GetOverride2(AssetsFolder);
+    
+    /// <summary>
+    /// An overlay folder that overrides a file stored in the base folder.
+    /// </summary>
+    public static string GetOverride2(string baseFolder) => Path.Combine(baseFolder, "Override2");
 }

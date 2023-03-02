@@ -24,6 +24,19 @@ internal class TextInfo
     }
     
     /// <summary>
+    /// Custom overload for backported vectorised change case implementations from .NET 8.
+    /// </summary>
+    public static unsafe string ChangeCaseInPlace<TConversion>(string source) where TConversion : struct
+    {
+        fixed (char* data = source)
+        {
+            var span = new Span<char>(data, source.Length);
+            ChangeCase<TConversion>(span, span);
+            return source;
+        }
+    }
+    
+    /// <summary>
     /// Backported vectorised change case implementations from .NET 8.
     /// </summary>
     public static void ChangeCase<TConversion>(ReadOnlySpan<char> source, Span<char> destination) where TConversion : struct
@@ -38,7 +51,27 @@ internal class TextInfo
         }
         else
         {
-            source.ToUpperInvariant(destination);
+            bool toUpper = typeof(TConversion) == typeof(ToUpperConversion);
+            ChangeCase_Fallback(source, destination, toUpper);
+        }
+    }
+    
+    private static void ChangeCase_Fallback(ReadOnlySpan<char> source, Span<char> destination, bool toUpper)
+    {
+        try
+        {
+            if (toUpper)
+                source.ToUpperInvariant(destination);
+            else
+                source.ToLowerInvariant(destination);
+        }
+        catch (InvalidOperationException e)
+        {
+            // Overlapping buffers
+            if (toUpper)
+                source.ToString().AsSpan().ToUpperInvariant(destination);
+            else
+                source.ToString().AsSpan().ToLowerInvariant(destination);
         }
     }
     
@@ -96,9 +129,9 @@ internal class TextInfo
         // Fallback to ICU/NLS.
         // We modify this to fall back to current runtime impl.
         var length = charCount - (int)i;
-        MemoryExtensions.ToUpperInvariant(
-            MemoryMarshal.CreateSpan(ref Unsafe.Add(ref source, i), length),
-            MemoryMarshal.CreateSpan(ref Unsafe.Add(ref destination, i), length));
+        var srcSpan = MemoryMarshal.CreateSpan(ref Unsafe.Add(ref source, i), length);
+        var dstSpan = MemoryMarshal.CreateSpan(ref Unsafe.Add(ref destination, i), length);
+        ChangeCase_Fallback(srcSpan, dstSpan, toUpper);
     }
     
     /// <summary>
@@ -155,9 +188,9 @@ internal class TextInfo
         // Fallback to ICU/NLS.
         // We modify this to fall back to current runtime impl.
         var length = charCount - (int)i;
-        MemoryExtensions.ToUpperInvariant(
-            MemoryMarshal.CreateSpan(ref Unsafe.Add(ref source, i), length),
-            MemoryMarshal.CreateSpan(ref Unsafe.Add(ref destination, i), length));
+        var srcSpan = MemoryMarshal.CreateSpan(ref Unsafe.Add(ref source, i), length);
+        var dstSpan = MemoryMarshal.CreateSpan(ref Unsafe.Add(ref destination, i), length);
+        ChangeCase_Fallback(srcSpan, dstSpan, toUpper);
     }
 
     // A dummy struct that is used for 'ToUpper' in generic parameters
