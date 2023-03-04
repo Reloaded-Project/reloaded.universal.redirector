@@ -1,13 +1,15 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using FileEmulationFramework.Lib.Utilities;
-using FileEmulationFramework.Utilities;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
 using Reloaded.Universal.Redirector.Lib;
+using Reloaded.Universal.Redirector.Lib.Structures;
+using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 using Reloaded.Universal.Redirector.Lib.Utility;
 using Reloaded.Universal.Redirector.Lib.Utility.Native;
 using Reloaded.Universal.Redirector.Structures;
+using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native.FILE_INFORMATION_CLASS;
 using static Reloaded.Universal.Redirector.Structures.NativeIntList;
 using Native = Reloaded.Universal.Redirector.Lib.Utility.Native.Native;
 
@@ -69,6 +71,7 @@ public unsafe partial class FileAccessServer
     private bool _hooksApplied;
     private RedirectorApi _redirectorApi = null!;
     
+    private SemaphoreRecursionLock _queryDirectoryFileLock = new();
     private SemaphoreRecursionLock _deleteFileLock = new();
     private SemaphoreRecursionLock _createFileLock = new();
     private SemaphoreRecursionLock _openFileLock = new();
@@ -80,7 +83,8 @@ public unsafe partial class FileAccessServer
     private AHook<NativeHookDefinitions.NtOpenFile> _ntOpenFileHook = null!;
     private IAsmHook _closeHandleHook = null!;
     private Pinnable<NativeIntList> _closedHandleList = new(new NativeIntList());
-    private readonly Dictionary<nint, int> _handleMap = new();
+    private readonly Dictionary<nint, OpenHandleState> _fileHandles = new();
+    private Logger? _logger;
 
     public static void Initialize(IReloadedHooks hooks, RedirectorApi redirectorApi, string programDirectory, Logger? log = null)
     {
@@ -99,6 +103,7 @@ public unsafe partial class FileAccessServer
             return;
 
         _hooksApplied = true;
+        _logger = log;
         
         // Get Hooks
         var ntdllHandle = Native.LoadLibraryW("ntdll");
@@ -106,14 +111,14 @@ public unsafe partial class FileAccessServer
         var ntOpenFilePointer = Native.GetProcAddress(ntdllHandle, "NtOpenFile");
         var ntDeleteFilePointer = Native.GetProcAddress(ntdllHandle, "NtDeleteFile");
         var ntQueryDirectoryFilePointer = Native.GetProcAddress(ntdllHandle, "NtQueryDirectoryFile");
-        var ntQueryDirectoryFileExPointer = Native.GetProcAddress(ntdllHandle, "NtQueryDirectoryFileEx");
+        //var ntQueryDirectoryFileExPointer = Native.GetProcAddress(ntdllHandle, "NtQueryDirectoryFileEx");
 
         // Kick off the server
         HookMethod(ref _ntCreateFileHook, nameof(NtCreateFileHookFn), "NtCreateFile", hooks, log, ntCreateFilePointer);
         HookMethod(ref _ntOpenFileHook, nameof(NtOpenFileHookFn), "NtOpenFile", hooks, log, ntOpenFilePointer);
         HookMethod(ref _ntDeleteFileHook, nameof(NtDeleteFileHookFn), "NtDeleteFile", hooks, log, ntDeleteFilePointer);
         HookMethod(ref _ntQueryDirectoryFileHook, nameof(NtQueryDirectoryFileHookFn), "NtQueryDirectoryFile", hooks, log, ntQueryDirectoryFilePointer);
-        //HookMethod(ref _ntQueryDirectoryFileExHook, nameof(NtQueryDirectoryFileExHookFn), "NtQueryDirectoryFileEx", hooks, log, ntQueryDirectoryFilePointer);
+        //HookMethod(ref _ntQueryDirectoryFileExHook, nameof(NtQueryDirectoryFileExHookFn), "NtQueryDirectoryFileEx", hooks, log, ntQueryDirectoryFileExPointer);
 
         // We need to cook some assembly for NtClose, because Native->Managed
         // transition can invoke thread setup code which will call CloseHandle again
@@ -164,12 +169,8 @@ public unsafe partial class FileAccessServer
         for (int x = 0; x < nativeList.NumItems; x++)
         {
             var item = nativeList.ListPtr[x];
-            if (!_handleMap.Remove(item, out var value))
-                continue;
-
-            // TODO: Something with removed handles.
-            //value.File.CloseHandle(item, value);
-            //_logger.Debug("[FileAccessServer] Closed emulated handle: {0}, File: {1}", item, value.FilePath);
+            if (_fileHandles.Remove(item, out var value))
+                _logger?.Debug("[FileAccessServer] Closed handle: {0}, File: {1}", item, value.FilePath);
         }
 
         nativeList.NumItems = 0;
@@ -199,7 +200,9 @@ public unsafe partial class FileAccessServer
         _createFileLock.Lock(threadId);
 
         {
-            if (!TryResolvePath(attributes, out string newFilePath))
+            var path = ExtractPathFromObjectAttributes(attributes);
+            _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
+            if (!TryResolvePath(path, out string newFilePath))
             {
                 _createFileLock.Unlock();
                 goto fastReturn;
@@ -233,6 +236,8 @@ public unsafe partial class FileAccessServer
     private int NtOpenFileHookImpl(IntPtr* fileHandle, FileAccess access, Native.OBJECT_ATTRIBUTES* objectAttributes, 
         Native.IO_STATUS_BLOCK* ioStatus, FileShare share, uint openOptions)
     {
+        DequeueHandles();
+        
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
         if (_openFileLock.IsThisThread(threadId))
@@ -246,8 +251,9 @@ public unsafe partial class FileAccessServer
         _openFileLock.Lock(threadId);
 
         {
-            DequeueHandles();
-            if (!TryResolvePath(attributes, out string newFilePath))
+            var path = ExtractPathFromObjectAttributes(attributes);
+            _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
+            if (!TryResolvePath(path, out string newFilePath))
             {
                 _openFileLock.Unlock();
                 goto fastReturn;
@@ -324,19 +330,79 @@ public unsafe partial class FileAccessServer
         Native.IO_STATUS_BLOCK* ioStatusBlock, nint fileInformation, uint length, Native.FILE_INFORMATION_CLASS fileInformationClass, 
         int returnSingleEntry, Native.UNICODE_STRING* fileName, int restartScan)
     {
+        // Prevent recursion.
+        var threadId = Thread.CurrentThread.ManagedThreadId;
+        if (_queryDirectoryFileLock.IsThisThread(threadId))
+            goto fastReturn;
+        
+        // Check for any of the intercepted types.
+        if (fileInformationClass is FileDirectoryInformation
+            or FileFullDirectoryInformation or FileBothDirectoryInformation or FileNamesInformation
+            or FileIdBothDirectoryInformation or FileIdFullDirectoryInformation or FileIdGlobalTxDirectoryInformation
+            or FileIdExtdDirectoryInformation or FileIdExtdBothDirectoryInformation)
+        {
+            // Check if this is a handle we picked up/are redirecting.
+            // If this is not one of those handles.
+            if (!_fileHandles.TryGetValue(fileHandle, out var handleItem))
+            {
+                #if DEBUG
+                _logger?.Warning($"File Handle for {fileHandle} not found. This is likely a result of a bug.");
+                #endif
+                goto fastReturn;
+            }
 
+            // Fetch items we need 
+            if (handleItem.Items == null)
+            {
+                if (!_redirectorApi.Redirector.Manager.TryGetFolder(handleItem.FilePath, out var dict))
+                    goto fastReturn;
+                    
+                // Creates a copy; we need to ensure collection is unchanged during operation.
+                handleItem.Items = dict.GetValues();
+                handleItem.AlreadyInjected = new Dictionary<nint, bool>();
+            }
+
+            // Reset state if restart is requested.
+            if (restartScan == 1)
+                handleItem.Reset();
+
+            // TODO: Handle This
+            if (fileName != null)
+                handleItem.QueryFileName = fileName->ToSpan().ToString();
+
+            // Okay here our items.
+            var items = handleItem.Items;
+            _queryDirectoryFileLock.Lock(threadId);
+
+            bool moreFiles = true;
+            var remainingBytes = length;
+            while (moreFiles)
+            {
+                var currentBufferPtr = (IntPtr)fileInformation;
+                if (handleItem.CurrentItem < handleItem.Items.Length)
+                {
+                    
+                }
+            }
+            
+            int result = 0;
+            
+            // Okay, we first query the original directory.
+            _queryDirectoryFileLock.Unlock();
+            return result;
+        }
+        
+        fastReturn:
         return _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
             fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan);
     }
-    
+
     // TODO: fix
     private int NtQueryDirectoryFileExHookImpl(nint fileHandle, nint @event, nint apcRoutine, nint apcContext, Native.IO_STATUS_BLOCK* ioStatusBlock, 
         nint fileInformation, uint length, Native.FILE_INFORMATION_CLASS fileInformationClass, int boolReturnSingleEntry, nint fileName, int boolRestartScan)
     {
-        // TODO: Determine if we arrived from `NtQueryDirectoryFileHookImpl`
-        
+        // TODO: Determine if we arrived from `NtQueryDirectoryFileHookImpl`, by checking semaphore count and prevent call again.
         throw new NotImplementedException();
-        
     }
 
     /* Mod loader interface. */
@@ -409,4 +475,44 @@ public unsafe partial class FileAccessServer
             fileName, restartScan);
     }
     #endregion
+    
+    private class OpenHandleState
+    {
+        /// <summary>
+        /// Path to redirected/handled file or folder.
+        /// </summary>
+        public string FilePath { get; set; }
+        
+        /// <summary>
+        /// File name set by call to <see cref="NtQueryDirectoryFile"/>.
+        /// </summary>
+        public string? QueryFileName { get; set; }
+        
+        /// <summary>
+        /// Items to be injected into the result.
+        /// </summary>
+        public SpanOfCharDict<RedirectionTreeTarget>.ItemEntry[]? Items { get; set; }
+
+        /// <summary>
+        /// This dictionary holds the set of items already injected into the search results.
+        /// </summary>
+        public Dictionary<nint, bool>? AlreadyInjected;
+
+        /// <summary>
+        /// Index of the current item to return.
+        /// </summary>
+        public int CurrentItem;
+
+        public OpenHandleState(string filePath)
+        {
+            FilePath = filePath;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Reset()
+        {
+            CurrentItem = 0;
+            AlreadyInjected?.Clear();
+        }
+    }
 }

@@ -26,4 +26,27 @@ public class NtQueryDirectoryFile : BaseHookTest
         var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method);
         Assert.Equal(count, files.Count);
     }
+    
+    [Theory]
+    [InlineData(FileDirectoryInformation)]
+    [InlineData(FileFullDirectoryInformation)]
+    [InlineData(FileBothDirectoryInformation)]
+    [InlineData(FileNamesInformation)]
+    [InlineData(FileIdBothDirectoryInformation)]
+    [InlineData(FileIdFullDirectoryInformation)]
+    [InlineData(FileIdGlobalTxDirectoryInformation)]
+    [InlineData(FileIdExtdDirectoryInformation)]
+    [InlineData(FileIdExtdBothDirectoryInformation)]
+    public void MapFolder_Baseline(Native.FILE_INFORMATION_CLASS method)
+    {
+        const int count = 4096;
+        using var items = new TemporaryJunkFolder(count);
+        using var newItems = new TemporaryJunkFolder(count);
+        
+        Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method);
+        Assert.Equal(count * 2, files.Count);
+    }
+    
+    // TODO: MapFolder_WithFileName
 }

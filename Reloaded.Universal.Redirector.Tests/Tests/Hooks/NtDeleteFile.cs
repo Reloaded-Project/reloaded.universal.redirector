@@ -1,5 +1,4 @@
 using Reloaded.Universal.Redirector.Tests.Tests.Hooks.Base;
-using static Reloaded.Universal.Redirector.Tests.Utility.WinApiHelpers;
 
 namespace Reloaded.Universal.Redirector.Tests.Tests.Hooks;
 

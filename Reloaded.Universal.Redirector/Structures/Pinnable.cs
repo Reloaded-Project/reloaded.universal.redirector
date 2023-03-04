@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace FileEmulationFramework.Utilities;
+namespace Reloaded.Universal.Redirector.Structures;
 
 /// <summary>
 /// Allows you to pin a native unmanaged object in a static location in memory, to be
@@ -14,7 +14,7 @@ public unsafe class Pinnable<T> : IDisposable where T : unmanaged
     /// </summary>
     public T* Pointer { get; private set; }
 
-    private T[] _pohReference;
+    private T[] _pohReference = null!;
     
     /* Constructor/Destructor */
     // Note: GCHandle.Alloc causes boxing(due to conversion to object), meaning our item is stored on the heap.

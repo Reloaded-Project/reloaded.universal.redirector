@@ -17,7 +17,7 @@ public partial class CheckHandle : IBenchmark
     }
 
     [GlobalCleanup]
-    public void Cleanup() => FileStream!.Dispose();
+    public void Cleanup() => FileStream.Dispose();
 
     [Benchmark]
     public uint GetFileType() => GetFileType(Handle);

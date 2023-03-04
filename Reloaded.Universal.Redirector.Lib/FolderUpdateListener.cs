@@ -84,7 +84,7 @@ public class FolderUpdateListener<TReceiver> : IDisposable where TReceiver : IFo
     public void Unregister(FolderRedirection redirection)
     {
         if (SourceToFolder.TryGetFolder(redirection.TargetFolder, out var result))
-            result.Reset(); ;
+            result.Reset();
     }
 
     private void WatcherOnRenamed(object sender, RenamedEventArgs e)

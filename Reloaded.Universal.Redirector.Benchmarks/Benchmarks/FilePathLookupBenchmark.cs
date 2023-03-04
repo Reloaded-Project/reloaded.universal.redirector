@@ -38,7 +38,7 @@ public class FilePathLookupBenchmark : IBenchmark
         RedirectionTree = tree;
         Tree = new LookupTree<RedirectionTreeTarget>(tree);
         var lookupDirShortest = groupsLst.Where(x => x.Files.Length > 0).MinBy(x => x.Directory.FullPath.Length);
-        LookupDirectory = lookupDirShortest.Directory.FullPath;
+        LookupDirectory = lookupDirShortest!.Directory.FullPath;
         LookupFile = Path.Combine(LookupDirectory, lookupDirShortest.Files[0]);
         LookupDirectoryUpper = LookupDirectory.ToUpperInvariant();
         LookupFileUpper = LookupFile.ToUpperInvariant();

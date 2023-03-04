@@ -1,4 +1,3 @@
-using FileEmulationFramework.Lib.IO;
 using Reloaded.Hooks.Definitions.Structs;
 using Reloaded.Universal.Redirector.Lib.Utility.Native.Structures;
 

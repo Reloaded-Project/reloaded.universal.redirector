@@ -356,6 +356,50 @@ public class SpanOfCharDict<T>
     }
 
     /// <summary>
+    /// Retrieves the values stored within this dictionary instance.
+    /// </summary>
+    public ItemEntry[] GetValues()
+    {
+        var entries = GC.AllocateUninitializedArray<ItemEntry>(Count);
+        int entryIndex = 0;
+        
+        const int unrollFactor = 4; // for readability purposes
+        int maxItem = Math.Max(Allocated - unrollFactor, 0);
+        int x = 0;
+        for (; x < maxItem; x += unrollFactor)
+        {
+            ref var x0 = ref _entries.DangerousGetReferenceAt(x);
+            ref var x1 = ref _entries.DangerousGetReferenceAt(x + 1);
+            ref var x2 = ref _entries.DangerousGetReferenceAt(x + 2);
+            ref var x3 = ref _entries.DangerousGetReferenceAt(x + 3);
+
+            // Remember, we are 1 indexed
+            if (x0.Key != null)
+                entries[entryIndex++] = new ItemEntry(x0);
+
+            if (x1.Key != null)
+                entries[entryIndex++] = new ItemEntry(x1);
+
+            if (x2.Key != null)
+                entries[entryIndex++] = new ItemEntry(x2);
+
+            if (x3.Key != null)
+                entries[entryIndex++] = new ItemEntry(x3);
+        }
+
+        // Not-unroll remainder
+        int count = Allocated;
+        for (; x < count; x++)
+        {
+            ref var x0 = ref _entries.DangerousGetReferenceAt(x);
+            if (x0.Key != null)
+                entries[entryIndex++] = new ItemEntry(x0);
+        }
+
+        return entries;
+    }
+    
+    /// <summary>
     /// Gets an enumerator that exposes all values available in this dictionary instance.
     /// </summary>
     public EntryEnumerator GetEntryEnumerator()
@@ -472,7 +516,7 @@ public class SpanOfCharDict<T>
         public uint NextItem;
         
         /// <summary>
-        /// Full hashcode for this item.
+        /// Full hashcode for this item key.
         /// </summary>
         public nuint HashCode;
         
@@ -485,6 +529,43 @@ public class SpanOfCharDict<T>
         /// Value for this item.
         /// </summary>
         public T Value;
+
+        /// <summary>
+        /// Returns true if this entry is free to use for subsequent allocations.
+        /// </summary>
+        public bool IsFree()
+        {
+            return HashCode == default && Key == default;
+        }
+    }
+    
+    /// <summary>
+    /// Individual item entry in this dictionary in a form suitable for returning.
+    /// </summary>
+    public struct ItemEntry
+    {
+        /// <summary>
+        /// Full hashcode for this item key.
+        /// </summary>
+        public nuint HashCode;
+        
+        /// <summary>
+        /// Key for this item.
+        /// </summary>
+        public string? Key;
+        
+        /// <summary>
+        /// Value for this item.
+        /// </summary>
+        public T Value;
+
+        /// <summary/>
+        public ItemEntry(DictionaryEntry dict)
+        {
+            HashCode = dict.HashCode;
+            Key = dict.Key;
+            Value = dict.Value;
+        }
 
         /// <summary>
         /// Returns true if this entry is free to use for subsequent allocations.

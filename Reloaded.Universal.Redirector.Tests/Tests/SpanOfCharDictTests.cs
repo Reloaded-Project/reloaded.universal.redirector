@@ -144,4 +144,20 @@ public class SpanOfCharDictTests
             Assert.Equal(Convert.ToBoolean(x & 1), result);
         }
     }
+    
+    /// <summary>
+    /// Tests retrieving all values from a dictionary
+    /// </summary>
+    [Fact]
+    public void GetValues()
+    {
+        int count = 20000;
+        var dict = new SpanOfCharDict<bool>(count / 2);
+        for (int x = 0; x < count; x++)
+            dict.AddOrReplace(x.ToString(), Convert.ToBoolean(x & 1));
+
+        var values = dict.GetValues();
+        for (int x = 0; x < count; x++)
+            Assert.Equal(Convert.ToBoolean(x & 1), values[x].Value);
+    }
 }
