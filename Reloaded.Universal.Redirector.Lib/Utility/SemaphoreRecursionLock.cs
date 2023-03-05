@@ -4,7 +4,7 @@ namespace Reloaded.Universal.Redirector.Lib.Utility;
 
 /// <summary>
 /// Represents a recursion lock implemented via an interlocked semaphore.
-/// This is a lock that basically ensures only 1 thread can run code wrapped around lock & unlock methods.
+/// This is a lock that basically ensures only 1 thread can run code wrapped around lock and unlock methods.
 /// </summary>
 public struct SemaphoreRecursionLock
 {

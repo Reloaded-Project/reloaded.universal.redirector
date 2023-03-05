@@ -9,9 +9,9 @@ using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 using Reloaded.Universal.Redirector.Lib.Utility;
 using Reloaded.Universal.Redirector.Lib.Utility.Native;
 using Reloaded.Universal.Redirector.Structures;
+using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native;
 using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native.FILE_INFORMATION_CLASS;
 using static Reloaded.Universal.Redirector.Structures.NativeIntList;
-using Native = Reloaded.Universal.Redirector.Lib.Utility.Native.Native;
 
 namespace Reloaded.Universal.Redirector;
 
@@ -106,18 +106,18 @@ public unsafe partial class FileAccessServer
         _logger = log;
         
         // Get Hooks
-        var ntdllHandle = Native.LoadLibraryW("ntdll");
-        var ntCreateFilePointer = Native.GetProcAddress(ntdllHandle, "NtCreateFile");
-        var ntOpenFilePointer = Native.GetProcAddress(ntdllHandle, "NtOpenFile");
-        var ntDeleteFilePointer = Native.GetProcAddress(ntdllHandle, "NtDeleteFile");
-        var ntQueryDirectoryFilePointer = Native.GetProcAddress(ntdllHandle, "NtQueryDirectoryFile");
+        var ntdllHandle = LoadLibraryW("ntdll");
+        var ntCreateFilePointer = GetProcAddress(ntdllHandle, "NtCreateFile");
+        var ntOpenFilePointer = GetProcAddress(ntdllHandle, "NtOpenFile");
+        var ntDeleteFilePointer = GetProcAddress(ntdllHandle, "NtDeleteFile");
+        //var ntQueryDirectoryFilePointer = GetProcAddress(ntdllHandle, "NtQueryDirectoryFile");
         //var ntQueryDirectoryFileExPointer = Native.GetProcAddress(ntdllHandle, "NtQueryDirectoryFileEx");
 
         // Kick off the server
         HookMethod(ref _ntCreateFileHook, nameof(NtCreateFileHookFn), "NtCreateFile", hooks, log, ntCreateFilePointer);
         HookMethod(ref _ntOpenFileHook, nameof(NtOpenFileHookFn), "NtOpenFile", hooks, log, ntOpenFilePointer);
         HookMethod(ref _ntDeleteFileHook, nameof(NtDeleteFileHookFn), "NtDeleteFile", hooks, log, ntDeleteFilePointer);
-        HookMethod(ref _ntQueryDirectoryFileHook, nameof(NtQueryDirectoryFileHookFn), "NtQueryDirectoryFile", hooks, log, ntQueryDirectoryFilePointer);
+        //HookMethod(ref _ntQueryDirectoryFileHook, nameof(NtQueryDirectoryFileHookFn), "NtQueryDirectoryFile", hooks, log, ntQueryDirectoryFilePointer);
         //HookMethod(ref _ntQueryDirectoryFileExHook, nameof(NtQueryDirectoryFileExHookFn), "NtQueryDirectoryFileEx", hooks, log, ntQueryDirectoryFileExPointer);
 
         // We need to cook some assembly for NtClose, because Native->Managed
@@ -126,8 +126,8 @@ public unsafe partial class FileAccessServer
 
         // Win32 APIs are guaranteed to exist.
 
-        var kernel32Handle = Native.LoadLibraryW("kernel32");
-        var closeHandle = Native.GetProcAddress(kernel32Handle, "CloseHandle");
+        var kernel32Handle = LoadLibraryW("kernel32");
+        var closeHandle = GetProcAddress(kernel32Handle, "CloseHandle");
         var listPtr = (long)_closedHandleList.Pointer;
         if (IntPtr.Size == 4)
         {
@@ -183,7 +183,7 @@ public unsafe partial class FileAccessServer
     // Note 2: Try-Finally below is now allowed because it prevents inlining.
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int NtCreateFileHookImpl(IntPtr* fileHandle, FileAccess access, Native.OBJECT_ATTRIBUTES* objectAttributes, Native.IO_STATUS_BLOCK* ioStatus, long* allocSize, uint fileattributes, FileShare share, uint createDisposition, uint createOptions, IntPtr eaBuffer, uint eaLength)
+    private int NtCreateFileHookImpl(IntPtr* fileHandle, FileAccess access, OBJECT_ATTRIBUTES* objectAttributes, IO_STATUS_BLOCK* ioStatus, long* allocSize, uint fileattributes, FileShare share, uint createDisposition, uint createOptions, IntPtr eaBuffer, uint eaLength)
     {
         DequeueHandles();
 
@@ -215,7 +215,7 @@ public unsafe partial class FileAccessServer
                 var originalDirectory = attributes->RootDirectory;
 
                 // Call function with new file path.
-                _ = new Native.UNICODE_STRING(address, newFilePath.Length, attributes);
+                _ = new UNICODE_STRING(address, newFilePath.Length, attributes);
                 var returnValue = _ntCreateFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus,
                     allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
 
@@ -233,8 +233,8 @@ public unsafe partial class FileAccessServer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int NtOpenFileHookImpl(IntPtr* fileHandle, FileAccess access, Native.OBJECT_ATTRIBUTES* objectAttributes, 
-        Native.IO_STATUS_BLOCK* ioStatus, FileShare share, uint openOptions)
+    private int NtOpenFileHookImpl(IntPtr* fileHandle, FileAccess access, OBJECT_ATTRIBUTES* objectAttributes, 
+        IO_STATUS_BLOCK* ioStatus, FileShare share, uint openOptions)
     {
         DequeueHandles();
         
@@ -266,7 +266,7 @@ public unsafe partial class FileAccessServer
                 var originalDirectory = attributes->RootDirectory;
 
                 // Call function with new file path.
-                _ = new Native.UNICODE_STRING(address, newFilePath.Length, attributes);
+                _ = new UNICODE_STRING(address, newFilePath.Length, attributes);
                 var returnValue = _ntOpenFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, share, openOptions);
 
                 // Reset original string.
@@ -282,7 +282,7 @@ public unsafe partial class FileAccessServer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int NtDeleteFileHookImpl(Native.OBJECT_ATTRIBUTES* objectAttributes)
+    private int NtDeleteFileHookImpl(OBJECT_ATTRIBUTES* objectAttributes)
     {
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
@@ -311,7 +311,7 @@ public unsafe partial class FileAccessServer
                 var originalDirectory  = attributes->RootDirectory;
 
                 // Call function with new file path.
-                _ = new Native.UNICODE_STRING(address, newFilePath.Length, attributes);
+                _ = new UNICODE_STRING(address, newFilePath.Length, attributes);
                 var returnValue = _ntDeleteFileHook.Original.Value.Invoke(objectAttributes);
                 
                 // Reset original string.
@@ -327,79 +327,115 @@ public unsafe partial class FileAccessServer
     }
     
     private int NtQueryDirectoryFileHookImpl(nint fileHandle, nint @event, nint apcRoutine, nint apcContext, 
-        Native.IO_STATUS_BLOCK* ioStatusBlock, nint fileInformation, uint length, Native.FILE_INFORMATION_CLASS fileInformationClass, 
-        int returnSingleEntry, Native.UNICODE_STRING* fileName, int restartScan)
+        IO_STATUS_BLOCK* ioStatusBlock, nint fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
+        int returnSingleEntry, UNICODE_STRING* fileName, int restartScan)
     {
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
         if (_queryDirectoryFileLock.IsThisThread(threadId))
             goto fastReturn;
         
-        // Check for any of the intercepted types.
-        if (fileInformationClass is FileDirectoryInformation
-            or FileFullDirectoryInformation or FileBothDirectoryInformation or FileNamesInformation
-            or FileIdBothDirectoryInformation or FileIdFullDirectoryInformation or FileIdGlobalTxDirectoryInformation
-            or FileIdExtdDirectoryInformation or FileIdExtdBothDirectoryInformation)
-        {
-            // Check if this is a handle we picked up/are redirecting.
-            // If this is not one of those handles.
-            if (!_fileHandles.TryGetValue(fileHandle, out var handleItem))
-            {
-                #if DEBUG
-                _logger?.Warning($"File Handle for {fileHandle} not found. This is likely a result of a bug.");
-                #endif
+        // Handle any of the possible intercepted types.
+        if (fileInformationClass == FileDirectoryInformation)
+            if (!HandleNtQueryDirectoryFileHook<FILE_DIRECTORY_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
                 goto fastReturn;
-            }
-
-            // Fetch items we need 
-            if (handleItem.Items == null)
-            {
-                if (!_redirectorApi.Redirector.Manager.TryGetFolder(handleItem.FilePath, out var dict))
-                    goto fastReturn;
-                    
-                // Creates a copy; we need to ensure collection is unchanged during operation.
-                handleItem.Items = dict.GetValues();
-                handleItem.AlreadyInjected = new Dictionary<nint, bool>();
-            }
-
-            // Reset state if restart is requested.
-            if (restartScan == 1)
-                handleItem.Reset();
-
-            // TODO: Handle This
-            if (fileName != null)
-                handleItem.QueryFileName = fileName->ToSpan().ToString();
-
-            // Okay here our items.
-            var items = handleItem.Items;
-            _queryDirectoryFileLock.Lock(threadId);
-
-            bool moreFiles = true;
-            var remainingBytes = length;
-            while (moreFiles)
-            {
-                var currentBufferPtr = (IntPtr)fileInformation;
-                if (handleItem.CurrentItem < handleItem.Items.Length)
-                {
-                    
-                }
-            }
-            
-            int result = 0;
-            
-            // Okay, we first query the original directory.
-            _queryDirectoryFileLock.Unlock();
-            return result;
-        }
         
+        if (fileInformationClass == FileFullDirectoryInformation)
+            if (!HandleNtQueryDirectoryFileHook<FILE_FULL_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+                goto fastReturn;
+        
+        if (fileInformationClass == FileBothDirectoryInformation)
+            if (!HandleNtQueryDirectoryFileHook<FILE_BOTH_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+                goto fastReturn;
+        
+        if (fileInformationClass == FileNamesInformation)
+            if (!HandleNtQueryDirectoryFileHook<FILE_NAMES_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+                goto fastReturn;
+        
+        if (fileInformationClass == FileIdBothDirectoryInformation)
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_BOTH_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+                goto fastReturn;
+        
+        if (fileInformationClass == FileIdFullDirectoryInformation)
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_FULL_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+                goto fastReturn;
+        
+        if (fileInformationClass == FileIdGlobalTxDirectoryInformation)
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+                goto fastReturn;
+        
+        if (fileInformationClass == FileIdExtdDirectoryInformation)
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+                goto fastReturn;
+        
+        if (fileInformationClass == FileIdExtdBothDirectoryInformation)
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+                goto fastReturn;
+
         fastReturn:
         return _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
             fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan);
     }
 
+    private bool HandleNtQueryDirectoryFileHook<TDirectoryInformation>(nint fileHandle, nint fileInformation, uint length, UNICODE_STRING* fileName, int restartScan,
+        int threadId)
+    {
+        // Check if this is a handle we picked up/are redirecting.
+        // If this is not one of those handles.
+        if (!_fileHandles.TryGetValue(fileHandle, out var handleItem))
+        {
+#if DEBUG
+            _logger?.Warning($"File Handle for {fileHandle} not found. This is likely a result of a bug.");
+#endif
+            return false;
+        }
+
+        // Fetch items we need 
+        if (handleItem.Items == null)
+        {
+            if (!_redirectorApi.Redirector.Manager.TryGetFolder(handleItem.FilePath, out var dict))
+                return false;
+
+            // Creates a copy; we need to ensure collection is unchanged during operation.
+            handleItem.Items = dict.GetValues();
+            handleItem.AlreadyInjected = new Dictionary<nint, bool>();
+        }
+
+        // Reset state if restart is requested.
+        if (restartScan == 1)
+            handleItem.Reset();
+
+        // TODO: Handle This
+        if (fileName != null)
+        {
+            handleItem.QueryFileName = fileName->ToSpan().ToString();
+            return false;
+        }
+
+        // Okay here our items.
+        var items = handleItem.Items;
+        _queryDirectoryFileLock.Lock(threadId);
+
+        bool moreFiles = true;
+        var remainingBytes = length;
+        
+        while (moreFiles)
+        {
+            var currentBufferPtr = (IntPtr)fileInformation;
+            if (handleItem.CurrentItem < handleItem.Items.Length)
+            {
+                
+            }
+        }
+
+        // Okay, we first query the original directory.
+        _queryDirectoryFileLock.Unlock();
+        return true;
+    }
+
     // TODO: fix
-    private int NtQueryDirectoryFileExHookImpl(nint fileHandle, nint @event, nint apcRoutine, nint apcContext, Native.IO_STATUS_BLOCK* ioStatusBlock, 
-        nint fileInformation, uint length, Native.FILE_INFORMATION_CLASS fileInformationClass, int boolReturnSingleEntry, nint fileName, int boolRestartScan)
+    private int NtQueryDirectoryFileExHookImpl(nint fileHandle, nint @event, nint apcRoutine, nint apcContext, IO_STATUS_BLOCK* ioStatusBlock, 
+        nint fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, int boolReturnSingleEntry, nint fileName, int boolRestartScan)
     {
         // TODO: Determine if we arrived from `NtQueryDirectoryFileHookImpl`, by checking semaphore count and prevent call again.
         throw new NotImplementedException();
@@ -412,7 +448,7 @@ public unsafe partial class FileAccessServer
         _ntOpenFileHook.Enable();
         _closeHandleHook.Enable();
         _ntDeleteFileHook.Enable();
-        _ntQueryDirectoryFileHook.Enable();
+        //_ntQueryDirectoryFileHook.Enable();
         //_ntQueryDirectoryFileExHook.Enable();
     }
 
@@ -422,7 +458,7 @@ public unsafe partial class FileAccessServer
         _ntOpenFileHook.Disable();
         _closeHandleHook.Disable();
         _ntDeleteFileHook.Disable();
-        _ntQueryDirectoryFileHook.Disable();
+        //_ntQueryDirectoryFileHook.Disable();
         //_ntQueryDirectoryFileExHook.Disable();
     }
 
@@ -432,7 +468,7 @@ public unsafe partial class FileAccessServer
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtCreateFileHookFn(IntPtr* fileHandle, FileAccess access,
-        Native.OBJECT_ATTRIBUTES* objectAttributes, Native.IO_STATUS_BLOCK* ioStatus, long* allocSize,
+        OBJECT_ATTRIBUTES* objectAttributes, IO_STATUS_BLOCK* ioStatus, long* allocSize,
         uint fileAttributes, FileShare share, uint createDisposition, uint createOptions, IntPtr eaBuffer,
         uint eaLength)
     {
@@ -442,22 +478,22 @@ public unsafe partial class FileAccessServer
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtOpenFileHookFn(IntPtr* fileHandle, FileAccess access,
-        Native.OBJECT_ATTRIBUTES* objectAttributes,
-        Native.IO_STATUS_BLOCK* ioStatus, FileShare share, uint openOptions)
+        OBJECT_ATTRIBUTES* objectAttributes,
+        IO_STATUS_BLOCK* ioStatus, FileShare share, uint openOptions)
     {
         return _instance.NtOpenFileHookImpl(fileHandle, access, objectAttributes, ioStatus, share, openOptions);
     }
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
-    private static int NtDeleteFileHookFn(Native.OBJECT_ATTRIBUTES* objectAttributes)
+    private static int NtDeleteFileHookFn(OBJECT_ATTRIBUTES* objectAttributes)
     {
         return _instance.NtDeleteFileHookImpl(objectAttributes);
     }
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtQueryDirectoryFileHookFn(IntPtr fileHandle, IntPtr @event, IntPtr apcRoutine, IntPtr apcContext,
-        Native.IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, Native.FILE_INFORMATION_CLASS fileInformationClass, 
-        int returnSingleEntry, Native.UNICODE_STRING* fileName, int restartScan)
+        IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
+        int returnSingleEntry, UNICODE_STRING* fileName, int restartScan)
     {
         return _instance.NtQueryDirectoryFileHookImpl(fileHandle, @event, apcRoutine, apcContext,
             ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry,
@@ -467,7 +503,7 @@ public unsafe partial class FileAccessServer
     // TODO: fix
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtQueryDirectoryFileExHookFn(IntPtr fileHandle, IntPtr @event, IntPtr apcRoutine, IntPtr apcContext,
-        Native.IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, Native.FILE_INFORMATION_CLASS fileInformationClass, 
+        IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
         int returnSingleEntry, IntPtr fileName, int restartScan)
     {
         return _instance.NtQueryDirectoryFileExHookImpl(fileHandle, @event, apcRoutine, apcContext,

@@ -17,9 +17,14 @@ public class BaseHookTest : IDisposable
         ClonedFolder = new TemporaryClonedFolder(Paths.AssetsFolder);
         Api = new RedirectorApi(new Lib.Redirector(ClonedFolder.FolderPath));
         FileAccessServer.Initialize(ReloadedHooks.Instance, Api, AppContext.BaseDirectory);
+        Api.Disable();
     }
 
-    public void Dispose() => ClonedFolder.Dispose();
+    public void Dispose()
+    {
+        ClonedFolder.Dispose();
+        Api.Disable();
+    }
 
     protected string GetBasePath() => Paths.GetBase(ClonedFolder.FolderPath);
     protected string GetOverlay1Path() => Paths.GetOverlay1(ClonedFolder.FolderPath);

@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Reloaded.Universal.Redirector.Lib.Utility.Native.FileDirectoryInformationDerivativeExtensions;
+
 // ReSharper disable InconsistentNaming
 #pragma warning disable CS1591
 
@@ -25,39 +27,31 @@ public partial class Native
         public string GetFileName(void* thisPtr)
         {
             var casted = (FILE_NAMES_INFORMATION*)thisPtr;
-            return Marshal.PtrToStringUni((nint)casted + 1, (int)FileNameLength / 2);
+            return Marshal.PtrToStringUni((nint)(casted + 1), (int)FileNameLength / 2);
         }
         
         /// <inheritdoc />
         [SkipLocalsInit]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryPopulate(void* thisPtr, nint handle)
+        public static bool TryPopulate(void* thisPtr, int length, nint handle)
         {
             var thisItem = (FILE_NAMES_INFORMATION*)thisPtr;
             var ioStatus = new IO_STATUS_BLOCK();
-            var buf      = Threading.NtQueryInformationFile64K;
+            
+            var buf      = Threading.Get64KBuffer();
             var status   = NtQueryInformationFile(handle, ref ioStatus, buf, Threading.Buffer64KLength, FILE_INFORMATION_CLASS.FileNameInformation);
             if (status != 0)
                 ThrowHelpers.Win32Exception(status);
 
+            // Verify available size.
             var result = (FILE_NAME_INFORMATION*)buf;
-            var size   = FILE_NAME_INFORMATION.GetSize(result);
+            if (!SufficientSize<FILE_NAMES_INFORMATION>(length, result->FileNameLength))
+                return false;
 
-            // 8 is amount this struct is bigger by
-            if (size > sizeof(FILE_NAMES_INFORMATION) - sizeof(FILE_NAME_INFORMATION))
-            {
-                
-            }
-            
-            var fileNamePtr = &thisItem->FileName;
+            thisItem->NextEntryOffset = (uint)(sizeof(FILE_NAMES_INFORMATION) + result->FileNameLength * sizeof(char));
+            thisItem->FileNameLength  = result->FileNameLength;
+            CopyString((char*)(result + 1), thisItem, thisItem->FileNameLength);
             return true;
-        }
-
-        [SkipLocalsInit]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool SufficientSize(int stringLength)
-        {
-            
         }
     }
 }

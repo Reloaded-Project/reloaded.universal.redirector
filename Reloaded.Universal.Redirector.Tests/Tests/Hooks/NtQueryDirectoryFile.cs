@@ -21,6 +21,8 @@ public class NtQueryDirectoryFile : BaseHookTest
     [InlineData(FileIdExtdBothDirectoryInformation)]
     public void GetFiles_Baseline(Native.FILE_INFORMATION_CLASS method)
     {
+        Api.Enable();
+        
         const int count = 4096;
         using var items = new TemporaryJunkFolder(count);
         var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method);
@@ -39,6 +41,8 @@ public class NtQueryDirectoryFile : BaseHookTest
     [InlineData(FileIdExtdBothDirectoryInformation)]
     public void MapFolder_Baseline(Native.FILE_INFORMATION_CLASS method)
     {
+        Api.Enable();
+        
         const int count = 4096;
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);

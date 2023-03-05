@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using static Reloaded.Universal.Redirector.Lib.Utility.Native.FileDirectoryInformationDerivativeExtensions;
 // ReSharper disable InconsistentNaming
 #pragma warning disable CS1591
 
@@ -13,12 +14,12 @@ public partial class Native
     {
         public uint NextEntryOffset;
         public uint FileIndex;
-        public ulong CreationTime;
-        public ulong LastAccessTime;
-        public ulong LastWriteTime;
-        public ulong ChangeTime;
-        public ulong EndOfFile;
-        public ulong AllocationSize;
+        public long CreationTime;
+        public long LastAccessTime;
+        public long LastWriteTime;
+        public long ChangeTime;
+        public long EndOfFile;
+        public long AllocationSize;
         public FileAttributes FileAttributes;
         public uint FileNameLength;
         public uint EaSize;
@@ -39,9 +40,30 @@ public partial class Native
         /// <inheritdoc />
         [SkipLocalsInit]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryPopulate(void* thisPtr, nint handle)
+        public static bool TryPopulate(void* thisPtr, int length, nint handle)
         {
-            throw new NotImplementedException();
+            var thisItem = (FILE_FULL_DIR_INFORMATION*)thisPtr;
+            var result = NtQueryInformationFileHelper(handle);
+
+            if (!SufficientSize<FILE_FULL_DIR_INFORMATION>(length, result->NameInformation.FileNameLength))
+                return false;
+
+            thisItem->CreationTime = result->BasicInformation.CreationTime;
+            thisItem->LastAccessTime = result->BasicInformation.LastAccessTime;
+            thisItem->LastWriteTime = result->BasicInformation.LastWriteTime;
+            thisItem->ChangeTime = result->BasicInformation.ChangeTime;
+            thisItem->EndOfFile = result->StandardInformation.EndOfFile;
+            thisItem->AllocationSize = result->StandardInformation.AllocationSize;
+            thisItem->FileAttributes = result->BasicInformation.FileAttributes;
+            thisItem->FileNameLength = result->NameInformation.FileNameLength;
+            thisItem->EaSize = result->EaInformation.EaSize;
+            thisItem->NextEntryOffset = (uint)(sizeof(FILE_FULL_DIR_INFORMATION) + thisItem->FileNameLength * sizeof(char));
+
+            // Unknowns
+            thisItem->FileIndex = 0;
+            
+            CopyString((char*)(result + 1), thisItem, thisItem->FileNameLength);
+            return true;
         }
     }
 }

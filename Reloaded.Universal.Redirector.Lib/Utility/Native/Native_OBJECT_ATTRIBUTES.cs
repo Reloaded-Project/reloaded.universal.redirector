@@ -73,7 +73,7 @@ public partial class Native
 
             // Cold Path
             var statusBlock = new IO_STATUS_BLOCK();
-            var fileNameBuf = Threading.NtQueryInformationFile64K;
+            var fileNameBuf = Threading.Get64KBuffer();
             int queryStatus = NtQueryInformationFile(RootDirectory, ref statusBlock, fileNameBuf,
                 Threading.Buffer64KLength, FILE_INFORMATION_CLASS.FileNameInformation);
                 

@@ -7,6 +7,8 @@ public class NtDeleteFile : BaseHookTest
     [Fact]
     public void NtDeleteFile_Baseline()
     {
+        Api.Enable();
+        
         var basePath = GetBaseFile("usvfs-poem.txt");
         var overridePath = GetOverride1File("usvfs-poem.txt");
         

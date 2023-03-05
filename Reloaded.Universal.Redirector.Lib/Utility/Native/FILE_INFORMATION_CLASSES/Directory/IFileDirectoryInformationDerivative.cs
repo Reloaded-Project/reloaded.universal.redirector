@@ -1,5 +1,8 @@
 // ReSharper disable once CheckNamespace
 // ReSharper disable CheckNamespace
+
+using System.Runtime.CompilerServices;
+
 #pragma warning disable CS1591
 namespace Reloaded.Universal.Redirector.Lib.Utility.Native;
 
@@ -28,9 +31,34 @@ public unsafe interface IFileDirectoryInformationDerivative
     /// Tries to populate the item given a handle to a native file to get data from.
     /// </summary>
     /// <param name="thisPtr">Pointer to 'this' item.</param>
+    /// <param name="availableSize">Available size in <paramref name="thisPtr"/>.</param>
     /// <param name="handle">Handle to the file.</param>
     /// <returns>
     ///     True if the structure can be populated, false if there isn't enough space to do so.
     /// </returns>
-    public bool TryPopulate(void* thisPtr, nint handle);
+    public static abstract bool TryPopulate(void* thisPtr, int availableSize, nint handle);
+}
+
+/// <summary>
+/// Extensions for <see cref="IFileDirectoryInformationDerivative"/>.
+/// </summary>
+public static class FileDirectoryInformationDerivativeExtensions 
+{
+    /// <summary>
+    /// Checks whether there is sufficient size available to create an instance of <see cref="T"/> with a string of the given length.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool SufficientSize<T>(int availableSpace, uint stringLength) where T : unmanaged, IFileDirectoryInformationDerivative
+    {
+        return availableSpace > (stringLength * sizeof(char)) + sizeof(T);
+    }
+    
+    /// <summary>
+    /// Checks whether there is sufficient size available to create an instance of <see cref="T"/> with a string of the given length.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe void CopyString<T>(char* source, T* destination, uint numChars) where T : unmanaged, IFileDirectoryInformationDerivative
+    {
+        Unsafe.CopyBlock(destination + 1, source, numChars * sizeof(char));
+    }
 }

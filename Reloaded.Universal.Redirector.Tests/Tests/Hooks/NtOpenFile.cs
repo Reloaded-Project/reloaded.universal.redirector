@@ -8,6 +8,8 @@ public class NtOpenFile : BaseHookTest
     [Fact]
     public void NtOpenFile_Baseline()
     {
+        Api.Enable();
+        
         // Setup.
         var notExpected = NtOpenFileReadAllText(GetBaseFilePrefixed("usvfs-poem.txt"));   // original
         var expected = NtOpenFileReadAllText(GetOverride1FilePrefixed("usvfs-poem.txt")); // expected

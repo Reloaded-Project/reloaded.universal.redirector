@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using CommunityToolkit.HighPerformance;
 using Reloaded.Universal.Redirector.Lib.Utility.Native.Structures;
 
 namespace Reloaded.Universal.Redirector.Lib.Utility;
@@ -14,11 +16,29 @@ public class Threading
     public const int Buffer64KLength = 65536;
 
     /// <summary>
-    /// A static pinned buffer for temporary use in NtQueryInformationFile P-Invokes in non-multithreaded scenarios.
-    /// Careful to not use this with other cases or for when NtQueryInformationFile is hooked from our code..
+    /// 
+    /// 
     /// </summary>
-    public static readonly unsafe byte* NtQueryInformationFile64K = (byte*)NativeMemory.Alloc(Buffer64KLength);
+    [ThreadStatic]
+    private static byte[]? _ntQueryInformationFile64K;
 
+    /// <summary>
+    /// Gets a static pinned buffer for temporary use in APIs e.g. NtQueryInformationFile.
+    /// Each thread has its own buffer. 
+    /// </summary>
+    /// <remarks>
+    ///     Returns single buffer only, ensure you're done/happy with previous result first.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe byte* Get64KBuffer()
+    {
+        if (_ntQueryInformationFile64K == null)
+            _ntQueryInformationFile64K = GC.AllocateUninitializedArray<byte>(Buffer64KLength, true);
+
+        // _ntQueryInformationFile64K is on Pinned Object Heap and thus would never be moved.
+        return (byte*)Unsafe.AsPointer(ref _ntQueryInformationFile64K.DangerousGetReferenceAt(0));
+    }
+    
     /// <summary>
     /// Rents an array from the pool.
     /// </summary>
