@@ -44,10 +44,7 @@ public unsafe partial class FileAccessServer
                 // Populate with custom files.
                 QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes, ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!);
                 if (returnSingleEntry != 0)
-                {
-                    _queryDirectoryFileLock.Unlock();
-                    return true;
-                }
+                    break;
             }
             else
             {
@@ -58,19 +55,14 @@ public unsafe partial class FileAccessServer
                 if (returnValue == NO_MORE_FILES)
                 {
                     ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
-                    _queryDirectoryFileLock.Unlock();
-                    return true;
+                    break;
                 }
                 
                 if (returnSingleEntry != 0)
-                {
-                    _queryDirectoryFileLock.Unlock();
-                    return true;
-                }
-                
+                    break;
+
                 FilterNtQueryDirectoryFileResults(currentBufferPtr, handleItem.AlreadyInjected!);
-                _queryDirectoryFileLock.Unlock();
-                return true;
+                break;
             }
         }
 

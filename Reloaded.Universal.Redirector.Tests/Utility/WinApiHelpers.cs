@@ -17,10 +17,11 @@ public static class WinApiHelpers
 {
     public static unsafe List<string> NtQueryDirectoryFileGetAllItems(string folderPath, FILE_INFORMATION_CLASS method)
     {
-        using var handle = new SafeFileHandle(NtCreateFileDirectoryOpen(folderPath), true);
+        var handleUnsafe = NtCreateFileDirectoryOpen(folderPath);
+        using var handle = new SafeFileHandle(handleUnsafe, true);
         
         // Note: Thanks to SkipLocalsInit, this memory is not zero'd so the allocation is virtually free.
-        const int bufferSize = 8192;
+        const int bufferSize = 4096;
         var files = new List<string>();
         byte* bufferPtr = stackalloc byte[bufferSize];
         
@@ -120,6 +121,7 @@ public static class WinApiHelpers
         }
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public static unsafe IntPtr NtCreateFileDirectoryOpen(string dirPath)
     {
         fixed (char* fileName = dirPath)

@@ -55,18 +55,18 @@ public static class FileDirectoryInformationDerivativeExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe bool SufficientSize<T>(int availableSpace, int stringLength) where T : unmanaged, IFileDirectoryInformationDerivative
     {
-        return availableSpace > (stringLength * sizeof(char)) + sizeof(T);
+        return availableSpace > stringLength * sizeof(char) + sizeof(T);
     }
 
     /// <summary>
     /// Checks whether there is sufficient size available to create an instance of <see cref="T"/> with a string of the given length.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe void CopyString<T>(ReadOnlySpan<char> source, T* destination, uint numChars) where T : unmanaged, IFileDirectoryInformationDerivative
+    public static unsafe void CopyString<T>(ReadOnlySpan<char> source, T* destination, uint numBytes) where T : unmanaged, IFileDirectoryInformationDerivative
     {
-        fixed (char* sourcePtr = &source[0])
+        fixed (char* sourcePtr = source)
         {
-            Unsafe.CopyBlock(destination + 1, sourcePtr, numChars * sizeof(char));
+            Unsafe.CopyBlock(destination + 1, sourcePtr, numBytes);
         }
     }
     

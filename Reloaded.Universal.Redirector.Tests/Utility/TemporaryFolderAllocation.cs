@@ -22,7 +22,7 @@ public class TemporaryFolderAllocation : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        try { Directory.Delete(FolderPath); }
+        try { Directory.Delete(FolderPath, true); }
         catch (Exception) { /* Ignored */ }
         GC.SuppressFinalize(this);
     }

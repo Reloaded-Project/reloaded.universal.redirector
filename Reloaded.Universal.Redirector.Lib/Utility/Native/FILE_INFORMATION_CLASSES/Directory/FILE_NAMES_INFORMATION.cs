@@ -53,6 +53,7 @@ public partial class Native
             if (!SufficientSize<FILE_NAMES_INFORMATION>(length, fileName.Length))
                 return false;
             
+            thisItem->FileIndex = 0;
             thisItem->FileNameLength  = (uint)fileName.Length * sizeof(char);
             thisItem->NextEntryOffset = (uint)(sizeof(FILE_NAMES_INFORMATION) + thisItem->FileNameLength);
             CopyString(fileName, thisItem, thisItem->FileNameLength);
