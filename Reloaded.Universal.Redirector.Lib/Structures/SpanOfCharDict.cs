@@ -71,6 +71,15 @@ public class SpanOfCharDict<T>
 
         return result;
     }
+    
+    /// <summary>
+    /// Empties the contents of the dictionary.
+    /// </summary>
+    public void Clear()
+    {
+        Count = 0;
+        Array.Fill(_buckets, 0);
+    }
 
     /// <summary>
     /// Adds or replaces a specified value in the dictionary.

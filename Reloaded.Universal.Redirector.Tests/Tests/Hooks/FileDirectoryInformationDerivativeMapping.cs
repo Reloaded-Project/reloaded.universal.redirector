@@ -244,7 +244,7 @@ public class FileDirectoryInformationDerivativeMapping : BaseHookTest
                     Assert.Fail($"Cannot populate {nameof(FILE_NAMES_INFORMATION)}");
 
                 // Assert fileName correctly transferred
-                var fileName = info->GetFileName(info);
+                var fileName = info->GetFileName(info).ToString();
                 Assert.Equal(fileNames[x][(Path.GetPathRoot(fileNames[x])!.Length - 1)..], fileName);
                 
                 // Assert custom
@@ -255,6 +255,4 @@ public class FileDirectoryInformationDerivativeMapping : BaseHookTest
             }
         }
     }
-
-    private static FileInfo GetFileSystemInfo(string filePath) => new FileInfo(filePath);
 }

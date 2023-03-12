@@ -37,6 +37,10 @@ public partial class Native
     
     [LibraryImport("ntdll.dll", SetLastError = true)]
     // ReSharper disable once MemberCanBePrivate.Global
+    public static unsafe partial int NtClose(IntPtr hObject);
+    
+    [LibraryImport("ntdll.dll", SetLastError = true)]
+    // ReSharper disable once MemberCanBePrivate.Global
     public static unsafe partial int NtQueryDirectoryFile(IntPtr fileHandle, IntPtr @event, IntPtr apcRoutine, IntPtr apcContext,
         IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
         int returnSingleEntry, UNICODE_STRING* fileName, int restartScan);

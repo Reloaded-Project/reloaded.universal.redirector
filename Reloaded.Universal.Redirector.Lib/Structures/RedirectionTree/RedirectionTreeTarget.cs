@@ -8,6 +8,8 @@ namespace Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 /// </summary>
 public struct RedirectionTreeTarget
 {
+    private static string _directorySeparatorCharStr = Path.DirectorySeparatorChar.ToString();
+    
     /// <summary>
     /// Path to the directory storing the file.
     /// </summary>
@@ -43,7 +45,7 @@ public struct RedirectionTreeTarget
     /// </summary>
     public string GetFullPath()
     {
-        return string.Concat(Directory, Path.DirectorySeparatorChar, FileName);
+        return string.Concat(Directory, _directorySeparatorCharStr, FileName);
     }
     
     /// <summary>
@@ -51,7 +53,7 @@ public struct RedirectionTreeTarget
     /// </summary>
     public string GetFullPathWithDevicePrefix()
     {
-        return string.Concat(Strings.PrefixLocalDeviceStr, Directory, Path.DirectorySeparatorChar, FileName);
+        return string.Concat(Strings.PrefixLocalDeviceStr, Directory, _directorySeparatorCharStr, FileName);
     }
     
     /// <summary/>

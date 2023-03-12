@@ -17,6 +17,11 @@ public unsafe interface IFileDirectoryInformationDerivative
     public int GetNextEntryOffset();
     
     /// <summary>
+    /// Sets the offset of next entry to this structure.
+    /// </summary>
+    public void SetNextEntryOffset(int offset);
+    
+    /// <summary>
     /// Returns the file attributes from this structure.
     /// </summary>
     public FileAttributes GetFileAttributes();
@@ -25,7 +30,7 @@ public unsafe interface IFileDirectoryInformationDerivative
     /// Retrieves the file name as a string.
     /// </summary>
     /// <param name="thisPtr">Pointer to 'this' object.</param>
-    public string GetFileName(void* thisPtr);
+    public ReadOnlySpan<char> GetFileName(void* thisPtr);
 
     /// <summary>
     /// Tries to populate the item given a handle to a native file to get data from.
@@ -60,5 +65,20 @@ public static class FileDirectoryInformationDerivativeExtensions
     public static unsafe void CopyString<T>(char* source, T* destination, uint numChars) where T : unmanaged, IFileDirectoryInformationDerivative
     {
         Unsafe.CopyBlock(destination + 1, source, numChars * sizeof(char));
+    }
+    
+    /// <summary>
+    /// Moves the pointer to the next item.
+    /// Returns false if there is no next item.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool GoToNext<T>(ref T* item) where T : unmanaged, IFileDirectoryInformationDerivative
+    {
+        var ofs = item->GetNextEntryOffset();
+        if (ofs == 0)
+            return false;
+
+        item = (T*)((byte*)item + ofs);
+        return true;
     }
 }

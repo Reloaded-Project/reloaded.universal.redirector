@@ -10,7 +10,7 @@ using Reloaded.Universal.Redirector.Lib.Backports.System.Text.Unicode;
 
 namespace Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
 
-internal class TextInfo
+public class TextInfo
 {
     /// <summary>
     /// Custom overload for backported vectorised change case implementations from .NET 8.

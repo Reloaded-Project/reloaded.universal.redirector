@@ -334,103 +334,56 @@ public unsafe partial class FileAccessServer
         var threadId = Thread.CurrentThread.ManagedThreadId;
         if (_queryDirectoryFileLock.IsThisThread(threadId))
             goto fastReturn;
-        
+
         // Handle any of the possible intercepted types.
         if (fileInformationClass == FileDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_DIRECTORY_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+            if (!HandleNtQueryDirectoryFileHook<FILE_DIRECTORY_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
                 goto fastReturn;
+            else return result;
         
         if (fileInformationClass == FileFullDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_FULL_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+            if (!HandleNtQueryDirectoryFileHook<FILE_FULL_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
                 goto fastReturn;
+            else return result;
         
         if (fileInformationClass == FileBothDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_BOTH_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+            if (!HandleNtQueryDirectoryFileHook<FILE_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
                 goto fastReturn;
+            else return result;
         
         if (fileInformationClass == FileNamesInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_NAMES_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+            if (!HandleNtQueryDirectoryFileHook<FILE_NAMES_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
                 goto fastReturn;
+            else return result;
         
         if (fileInformationClass == FileIdBothDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_BOTH_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
                 goto fastReturn;
+            else return result;
         
         if (fileInformationClass == FileIdFullDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_FULL_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_FULL_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
                 goto fastReturn;
+            else return result;
         
         if (fileInformationClass == FileIdGlobalTxDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
                 goto fastReturn;
+            else return result;
         
         if (fileInformationClass == FileIdExtdDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
                 goto fastReturn;
+            else return result;
         
         if (fileInformationClass == FileIdExtdBothDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(fileHandle, fileInformation, length, fileName, restartScan, threadId))
+            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
                 goto fastReturn;
-
+            else return result;
+        
         fastReturn:
         return _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
             fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan);
-    }
-
-    private bool HandleNtQueryDirectoryFileHook<TDirectoryInformation>(nint fileHandle, nint fileInformation, uint length, UNICODE_STRING* fileName, int restartScan,
-        int threadId)
-    {
-        // Check if this is a handle we picked up/are redirecting.
-        // If this is not one of those handles.
-        if (!_fileHandles.TryGetValue(fileHandle, out var handleItem))
-        {
-#if DEBUG
-            _logger?.Warning($"File Handle for {fileHandle} not found. This is likely a result of a bug.");
-#endif
-            return false;
-        }
-
-        // Fetch items we need 
-        if (handleItem.Items == null)
-        {
-            if (!_redirectorApi.Redirector.Manager.TryGetFolder(handleItem.FilePath, out var dict))
-                return false;
-
-            // Creates a copy; we need to ensure collection is unchanged during operation.
-            handleItem.Items = dict.GetValues();
-            handleItem.AlreadyInjected = new Dictionary<nint, bool>();
-        }
-
-        // Reset state if restart is requested.
-        if (restartScan == 1)
-            handleItem.Reset();
-
-        // TODO: Handle This
-        if (fileName != null)
-        {
-            handleItem.QueryFileName = fileName->ToSpan().ToString();
-            return false;
-        }
-
-        // Okay here our items.
-        var items = handleItem.Items;
-        _queryDirectoryFileLock.Lock(threadId);
-
-        bool moreFiles = true;
-        var remainingBytes = length;
-        
-        while (moreFiles)
-        {
-            var currentBufferPtr = (IntPtr)fileInformation;
-            if (handleItem.CurrentItem < handleItem.Items.Length)
-            {
-                
-            }
-        }
-
-        // Okay, we first query the original directory.
-        _queryDirectoryFileLock.Unlock();
-        return true;
     }
 
     // TODO: fix
@@ -448,7 +401,7 @@ public unsafe partial class FileAccessServer
         _ntOpenFileHook.Enable();
         _closeHandleHook.Enable();
         _ntDeleteFileHook.Enable();
-        //_ntQueryDirectoryFileHook.Enable();
+        _ntQueryDirectoryFileHook.Enable();
         //_ntQueryDirectoryFileExHook.Enable();
     }
 
@@ -458,7 +411,7 @@ public unsafe partial class FileAccessServer
         _ntOpenFileHook.Disable();
         _closeHandleHook.Disable();
         _ntDeleteFileHook.Disable();
-        //_ntQueryDirectoryFileHook.Disable();
+        _ntQueryDirectoryFileHook.Disable();
         //_ntQueryDirectoryFileExHook.Disable();
     }
 
@@ -532,7 +485,7 @@ public unsafe partial class FileAccessServer
         /// <summary>
         /// This dictionary holds the set of items already injected into the search results.
         /// </summary>
-        public Dictionary<nint, bool>? AlreadyInjected;
+        public SpanOfCharDict<bool>? AlreadyInjected;
 
         /// <summary>
         /// Index of the current item to return.

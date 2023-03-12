@@ -21,13 +21,16 @@ public partial class Native
         public int GetNextEntryOffset() => (int)NextEntryOffset;
         
         /// <inheritdoc />
+        public void SetNextEntryOffset(int offset) => NextEntryOffset = (uint)offset;
+
+        /// <inheritdoc />
         public FileAttributes GetFileAttributes() => FileAttributes.Normal;
 
         /// <inheritdoc />
-        public string GetFileName(void* thisPtr)
+        public ReadOnlySpan<char> GetFileName(void* thisPtr)
         {
             var casted = (FILE_NAMES_INFORMATION*)thisPtr;
-            return Marshal.PtrToStringUni((nint)(casted + 1), (int)FileNameLength / 2);
+            return new ReadOnlySpan<char>((casted + 1), (int)FileNameLength / 2);
         }
         
         /// <inheritdoc />
