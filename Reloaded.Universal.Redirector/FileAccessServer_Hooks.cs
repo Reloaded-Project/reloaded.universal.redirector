@@ -110,14 +110,14 @@ public unsafe partial class FileAccessServer
         var ntCreateFilePointer = GetProcAddress(ntdllHandle, "NtCreateFile");
         var ntOpenFilePointer = GetProcAddress(ntdllHandle, "NtOpenFile");
         var ntDeleteFilePointer = GetProcAddress(ntdllHandle, "NtDeleteFile");
-        //var ntQueryDirectoryFilePointer = GetProcAddress(ntdllHandle, "NtQueryDirectoryFile");
+        var ntQueryDirectoryFilePointer = GetProcAddress(ntdllHandle, "NtQueryDirectoryFile");
         //var ntQueryDirectoryFileExPointer = Native.GetProcAddress(ntdllHandle, "NtQueryDirectoryFileEx");
 
         // Kick off the server
         HookMethod(ref _ntCreateFileHook, nameof(NtCreateFileHookFn), "NtCreateFile", hooks, log, ntCreateFilePointer);
         HookMethod(ref _ntOpenFileHook, nameof(NtOpenFileHookFn), "NtOpenFile", hooks, log, ntOpenFilePointer);
         HookMethod(ref _ntDeleteFileHook, nameof(NtDeleteFileHookFn), "NtDeleteFile", hooks, log, ntDeleteFilePointer);
-        //HookMethod(ref _ntQueryDirectoryFileHook, nameof(NtQueryDirectoryFileHookFn), "NtQueryDirectoryFile", hooks, log, ntQueryDirectoryFilePointer);
+        HookMethod(ref _ntQueryDirectoryFileHook, nameof(NtQueryDirectoryFileHookFn), "NtQueryDirectoryFile", hooks, log, ntQueryDirectoryFilePointer);
         //HookMethod(ref _ntQueryDirectoryFileExHook, nameof(NtQueryDirectoryFileExHookFn), "NtQueryDirectoryFileEx", hooks, log, ntQueryDirectoryFileExPointer);
 
         // We need to cook some assembly for NtClose, because Native->Managed
@@ -186,6 +186,7 @@ public unsafe partial class FileAccessServer
     private int NtCreateFileHookImpl(IntPtr* fileHandle, FileAccess access, OBJECT_ATTRIBUTES* objectAttributes, IO_STATUS_BLOCK* ioStatus, long* allocSize, uint fileattributes, FileShare share, uint createDisposition, uint createOptions, IntPtr eaBuffer, uint eaLength)
     {
         DequeueHandles();
+        ReadOnlySpan<char> path = default;
 
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
@@ -198,10 +199,9 @@ public unsafe partial class FileAccessServer
             goto fastReturn;
 
         _createFileLock.Lock(threadId);
-
+        
         {
-            var path = ExtractPathFromObjectAttributes(attributes);
-            _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
+            path = ExtractPathFromObjectAttributes(attributes);
             if (!TryResolvePath(path, out string newFilePath))
             {
                 _createFileLock.Unlock();
@@ -219,6 +219,9 @@ public unsafe partial class FileAccessServer
                 var returnValue = _ntCreateFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus,
                     allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
 
+                if (returnValue == 0)
+                    _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
+                
                 // Reset original string.
                 attributes->ObjectName = originalObjectName;
                 attributes->RootDirectory = originalDirectory;
@@ -228,8 +231,13 @@ public unsafe partial class FileAccessServer
         }
 
         fastReturn:
-        return _ntCreateFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus,
+        var result = _ntCreateFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus,
             allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
+        
+        if (path != default && result == 0)
+            _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
+
+        return result;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -237,6 +245,7 @@ public unsafe partial class FileAccessServer
         IO_STATUS_BLOCK* ioStatus, FileShare share, uint openOptions)
     {
         DequeueHandles();
+        ReadOnlySpan<char> path = default;
         
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
@@ -251,8 +260,7 @@ public unsafe partial class FileAccessServer
         _openFileLock.Lock(threadId);
 
         {
-            var path = ExtractPathFromObjectAttributes(attributes);
-            _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
+            path = ExtractPathFromObjectAttributes(attributes);
             if (!TryResolvePath(path, out string newFilePath))
             {
                 _openFileLock.Unlock();
@@ -268,7 +276,10 @@ public unsafe partial class FileAccessServer
                 // Call function with new file path.
                 _ = new UNICODE_STRING(address, newFilePath.Length, attributes);
                 var returnValue = _ntOpenFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, share, openOptions);
-
+                
+                if (returnValue == 0)
+                    _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
+                
                 // Reset original string.
                 attributes->ObjectName = originalObjectName;
                 attributes->RootDirectory = originalDirectory;
@@ -278,7 +289,12 @@ public unsafe partial class FileAccessServer
         }
         
         fastReturn:
-        return _ntOpenFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, share, openOptions);
+        var result = _ntOpenFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, share, openOptions);
+        
+        if (path != default && result == 0)
+            _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
+
+        return result;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -49,8 +49,9 @@ public partial class Native
         {
             var thisItem = (FILE_ID_EXTD_DIR_INFORMATION*)thisPtr;
             var result = NtQueryInformationFileHelper(handle);
+            var fileName = FILE_NAME_INFORMATION.GetNameTrimmed(&result->NameInformation);
 
-            if (!SufficientSize<FILE_ID_EXTD_DIR_INFORMATION>(length, result->NameInformation.FileNameLength))
+            if (!SufficientSize<FILE_ID_EXTD_DIR_INFORMATION>(length, fileName.Length))
                 return false;
 
             thisItem->CreationTime = result->BasicInformation.CreationTime;
@@ -60,17 +61,17 @@ public partial class Native
             thisItem->EndOfFile = result->StandardInformation.EndOfFile;
             thisItem->AllocationSize = result->StandardInformation.AllocationSize;
             thisItem->FileAttributes = result->BasicInformation.FileAttributes;
-            thisItem->FileNameLength = result->NameInformation.FileNameLength;
+            thisItem->FileNameLength = (uint)fileName.Length * sizeof(char);
             thisItem->EaSize = result->EaInformation.EaSize;
             thisItem->FileId = result->InternalInformation.FileId;
-            thisItem->NextEntryOffset = (uint)(sizeof(FILE_ID_EXTD_DIR_INFORMATION) + thisItem->FileNameLength * sizeof(char));
+            thisItem->NextEntryOffset = (uint)(sizeof(FILE_ID_EXTD_DIR_INFORMATION) + thisItem->FileNameLength);
 
             // TODO: Reparse point tags are not supported [for performance reasons]
             // Unknowns
             thisItem->FileIndex = 0;
             thisItem->ReparsePointTag = 0;
             
-            CopyString((char*)(result + 1), thisItem, thisItem->FileNameLength);
+            CopyString(fileName, thisItem, thisItem->FileNameLength);
             return true;
         }
     }

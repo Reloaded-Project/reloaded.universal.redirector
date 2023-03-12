@@ -47,8 +47,9 @@ public partial class Native
         {
             var thisItem = (FILE_DIRECTORY_INFORMATION*)thisPtr;
             var result = NtQueryInformationFileHelper(handle);
+            var fileName = FILE_NAME_INFORMATION.GetNameTrimmed(&result->NameInformation);
 
-            if (!SufficientSize<FILE_DIRECTORY_INFORMATION>(length, result->NameInformation.FileNameLength))
+            if (!SufficientSize<FILE_DIRECTORY_INFORMATION>(length, fileName.Length))
                 return false;
 
             thisItem->CreationTime = result->BasicInformation.CreationTime;
@@ -59,10 +60,10 @@ public partial class Native
             thisItem->EndOfFile = result->StandardInformation.EndOfFile;
             thisItem->AllocationSize = result->StandardInformation.AllocationSize;
             thisItem->FileAttributes = result->BasicInformation.FileAttributes;
-            thisItem->FileNameLength = result->NameInformation.FileNameLength;
-            thisItem->NextEntryOffset = (uint)(sizeof(FILE_DIRECTORY_INFORMATION) + thisItem->FileNameLength * sizeof(char));
+            thisItem->FileNameLength = (uint)fileName.Length * sizeof(char);
+            thisItem->NextEntryOffset = (uint)(sizeof(FILE_DIRECTORY_INFORMATION) + thisItem->FileNameLength);
 
-            CopyString((char*)(result + 1), thisItem, thisItem->FileNameLength);
+            CopyString(fileName, thisItem, thisItem->FileNameLength);
             return true;
         }
 #pragma warning restore CS8500

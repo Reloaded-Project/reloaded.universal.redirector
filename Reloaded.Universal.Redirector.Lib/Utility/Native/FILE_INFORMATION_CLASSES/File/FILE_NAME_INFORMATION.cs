@@ -17,4 +17,12 @@ public struct FILE_NAME_INFORMATION
     {
         return new string((char*)(thisPtr + 1), 0, (int)thisPtr->FileNameLength / sizeof(char));
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe ReadOnlySpan<char> GetNameTrimmed(FILE_NAME_INFORMATION* thisPtr)
+    {
+        var nameSpan = new ReadOnlySpan<char>((char*)(thisPtr + 1), (int)thisPtr->FileNameLength / sizeof(char));
+        nameSpan = Path.GetFileName(nameSpan);
+        return nameSpan;
+    }
 }

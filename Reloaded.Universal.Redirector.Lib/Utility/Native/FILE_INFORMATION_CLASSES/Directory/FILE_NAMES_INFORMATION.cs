@@ -48,12 +48,14 @@ public partial class Native
 
             // Verify available size.
             var result = (FILE_NAME_INFORMATION*)buf;
-            if (!SufficientSize<FILE_NAMES_INFORMATION>(length, result->FileNameLength))
+            var fileName = FILE_NAME_INFORMATION.GetNameTrimmed(result);
+            
+            if (!SufficientSize<FILE_NAMES_INFORMATION>(length, fileName.Length))
                 return false;
-
-            thisItem->NextEntryOffset = (uint)(sizeof(FILE_NAMES_INFORMATION) + result->FileNameLength * sizeof(char));
-            thisItem->FileNameLength  = result->FileNameLength;
-            CopyString((char*)(result + 1), thisItem, thisItem->FileNameLength);
+            
+            thisItem->FileNameLength  = (uint)fileName.Length * sizeof(char);
+            thisItem->NextEntryOffset = (uint)(sizeof(FILE_NAMES_INFORMATION) + thisItem->FileNameLength);
+            CopyString(fileName, thisItem, thisItem->FileNameLength);
             return true;
         }
     }

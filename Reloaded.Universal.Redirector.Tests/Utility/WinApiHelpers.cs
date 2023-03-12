@@ -78,7 +78,7 @@ public static class WinApiHelpers
                 goto nextfile;
 
             var fileName = info->GetFileName(info);
-            if (fileName == "." || fileName == "..")
+            if (fileName.SequenceEqual(".".AsSpan()) || fileName.SequenceEqual("..".AsSpan()))
                 goto nextfile;
 
             var isDirectory = (info->GetFileAttributes() & FileAttributes.Directory) > 0;
