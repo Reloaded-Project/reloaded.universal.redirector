@@ -118,4 +118,20 @@ public class NativeHookDefinitions
             int  // Return Value
         > Value;    
     }
+    
+    /// <summary>
+    /// Retrieves basic attributes for the specified file object.
+    /// </summary>
+    [Hooks.Definitions.X64.Function(Hooks.Definitions.X64.CallingConventions.Microsoft)]
+    [Hooks.Definitions.X86.Function(Hooks.Definitions.X86.CallingConventions.Stdcall)]
+    public struct NtQueryAttributesFile
+    {
+        /// <summary/>
+        public FuncPtr
+        <
+            BlittablePointer<Native.OBJECT_ATTRIBUTES>, // objectAttributes
+            IntPtr, // fileInformation
+            int                                     // Return Value
+        > Value;    
+    }
 }

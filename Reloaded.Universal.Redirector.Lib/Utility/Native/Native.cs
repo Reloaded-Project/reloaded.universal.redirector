@@ -44,4 +44,18 @@ public partial class Native
     public static unsafe partial int NtQueryDirectoryFile(IntPtr fileHandle, IntPtr @event, IntPtr apcRoutine, IntPtr apcContext,
         IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
         int returnSingleEntry, UNICODE_STRING* fileName, int restartScan);
+    
+    [LibraryImport("ntdll.dll", SetLastError = true)]
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static unsafe partial int NtQueryDirectoryFileEx(IntPtr fileHandle, IntPtr @event, IntPtr apcRoutine, IntPtr apcContext,
+        IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
+        int queryFlags, UNICODE_STRING* fileName);
+    
+    [LibraryImport("ntdll.dll", SetLastError = true)]
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static unsafe partial int NtQueryAttributesFile(OBJECT_ATTRIBUTES* ObjectAttributes, FILE_BASIC_INFORMATION* FileInformation);
+    
+    [LibraryImport("ntdll.dll", SetLastError = true)]
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static unsafe partial int NtQueryFullAttributesFile(OBJECT_ATTRIBUTES* ObjectAttributes, FILE_NETWORK_OPEN_INFORMATION* FileInformation);
 }
