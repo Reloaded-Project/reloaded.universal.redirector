@@ -24,7 +24,10 @@ public partial class Native
         public uint FileNameLength;
         public uint EaSize;
         public long FileId;
-
+        
+        // First letter of file name
+        public char FileName;
+        
         /// <inheritdoc />
         public int GetNextEntryOffset() => (int)NextEntryOffset;
         
@@ -38,7 +41,7 @@ public partial class Native
         public ReadOnlySpan<char> GetFileName(void* thisPtr)
         {
             var casted = (FILE_ID_FULL_DIR_INFORMATION*)thisPtr;
-            return new ReadOnlySpan<char>((casted + 1), (int)FileNameLength / 2);
+            return new ReadOnlySpan<char>(&casted->FileName, (int)FileNameLength / 2);
         }
         
         /// <inheritdoc />
@@ -69,7 +72,7 @@ public partial class Native
             // Unknowns
             thisItem->FileIndex = 0;
             
-            CopyString(fileName, thisItem, thisItem->FileNameLength);
+            CopyString(fileName, &thisItem->FileName, thisItem->FileNameLength);
             return true;
         }
     }

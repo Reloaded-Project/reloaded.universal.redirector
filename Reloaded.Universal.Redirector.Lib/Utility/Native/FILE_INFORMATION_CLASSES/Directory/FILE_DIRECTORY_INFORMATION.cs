@@ -23,6 +23,9 @@ public partial class Native
         public long AllocationSize;
         public FileAttributes FileAttributes;
         public uint FileNameLength;
+        
+        // First letter of file name
+        public char FileName;
 
         /// <inheritdoc />
         public int GetNextEntryOffset() => (int)NextEntryOffset;
@@ -37,7 +40,7 @@ public partial class Native
         public ReadOnlySpan<char> GetFileName(void* thisPtr)
         {
             var casted = (FILE_DIRECTORY_INFORMATION*)thisPtr;
-            return new ReadOnlySpan<char>((casted + 1), (int)FileNameLength / 2);
+            return new ReadOnlySpan<char>(&casted->FileName, (int)FileNameLength / 2);
         }
         
         /// <inheritdoc />
@@ -63,7 +66,7 @@ public partial class Native
             thisItem->FileNameLength = (uint)fileName.Length * sizeof(char);
             thisItem->NextEntryOffset = (uint)(sizeof(FILE_DIRECTORY_INFORMATION) + thisItem->FileNameLength);
 
-            CopyString(fileName, thisItem, thisItem->FileNameLength);
+            CopyString(fileName, &thisItem->FileName, thisItem->FileNameLength);
             return true;
         }
 #pragma warning restore CS8500

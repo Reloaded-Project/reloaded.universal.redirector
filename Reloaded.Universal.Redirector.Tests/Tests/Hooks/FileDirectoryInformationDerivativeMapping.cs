@@ -135,7 +135,8 @@ public class FileDirectoryInformationDerivativeMapping : BaseHookTest
             Assert.Equal(fsInfo->StandardInformation.AllocationSize, infoPtr->AllocationSize);
             Assert.Equal(fsInfo->BasicInformation.FileAttributes, infoPtr->FileAttributes);
             Assert.Equal(fsInfo->EaInformation.EaSize, infoPtr->EaSize);
-            Assert.Equal(fsInfo->InternalInformation.FileId, infoPtr->FileId);
+            Assert.Equal(0, infoPtr->FileId1);
+            Assert.Equal(0, infoPtr->FileId2);
             Assert.Equal(0, infoPtr->ShortNameLength);
             Assert.Equal((uint)0, infoPtr->ReparsePointTag);
             return true;
@@ -161,7 +162,8 @@ public class FileDirectoryInformationDerivativeMapping : BaseHookTest
             Assert.Equal(fsInfo->StandardInformation.AllocationSize, infoPtr->AllocationSize);
             Assert.Equal(fsInfo->BasicInformation.FileAttributes, infoPtr->FileAttributes);
             Assert.Equal(fsInfo->EaInformation.EaSize, infoPtr->EaSize);
-            Assert.Equal(fsInfo->InternalInformation.FileId, infoPtr->FileId);
+            Assert.Equal(0, infoPtr->FileId1);
+            Assert.Equal(0, infoPtr->FileId2);
             Assert.Equal((uint)0, infoPtr->ReparsePointTag);
             return true;
         }

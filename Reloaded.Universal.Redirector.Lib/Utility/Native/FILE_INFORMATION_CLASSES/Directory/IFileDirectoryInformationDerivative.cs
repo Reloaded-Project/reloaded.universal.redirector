@@ -62,11 +62,11 @@ public static class FileDirectoryInformationDerivativeExtensions
     /// Checks whether there is sufficient size available to create an instance of <see cref="T"/> with a string of the given length.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe void CopyString<T>(ReadOnlySpan<char> source, T* destination, uint numBytes) where T : unmanaged, IFileDirectoryInformationDerivative
+    public static unsafe void CopyString(ReadOnlySpan<char> source, char* destination, uint numBytes)
     {
         fixed (char* sourcePtr = source)
         {
-            Unsafe.CopyBlock(destination + 1, sourcePtr, numBytes);
+            Unsafe.CopyBlock(destination, sourcePtr, numBytes);
         }
     }
     

@@ -23,7 +23,10 @@ public partial class Native
         public FileAttributes FileAttributes;
         public uint FileNameLength;
         public uint EaSize;
-
+        
+        // First letter of file name
+        public char FileName;
+        
         /// <inheritdoc />
         public int GetNextEntryOffset() => (int)NextEntryOffset;
         
@@ -37,7 +40,7 @@ public partial class Native
         public ReadOnlySpan<char> GetFileName(void* thisPtr)
         {
             var casted = (FILE_FULL_DIR_INFORMATION*)thisPtr;
-            return new ReadOnlySpan<char>((casted + 1), (int)FileNameLength / 2);
+            return new ReadOnlySpan<char>(&casted->FileName, (int)FileNameLength / 2);
         }
         
         /// <inheritdoc />
@@ -53,6 +56,7 @@ public partial class Native
                 return false;
 
             thisItem->CreationTime = result->BasicInformation.CreationTime;
+            thisItem->FileIndex = 0;
             thisItem->LastAccessTime = result->BasicInformation.LastAccessTime;
             thisItem->LastWriteTime = result->BasicInformation.LastWriteTime;
             thisItem->ChangeTime = result->BasicInformation.ChangeTime;
@@ -61,12 +65,12 @@ public partial class Native
             thisItem->FileAttributes = result->BasicInformation.FileAttributes;
             thisItem->FileNameLength = (uint)fileName.Length * sizeof(char);
             thisItem->EaSize = result->EaInformation.EaSize;
-            thisItem->NextEntryOffset = (uint)(sizeof(FILE_FULL_DIR_INFORMATION) + thisItem->FileNameLength);
+            thisItem->NextEntryOffset = (uint)(sizeof(FILE_DIRECTORY_INFORMATION) + thisItem->FileNameLength);
 
             // Unknowns
             thisItem->FileIndex = 0;
             
-            CopyString(fileName, thisItem, thisItem->FileNameLength);
+            CopyString(fileName, &thisItem->FileName, thisItem->FileNameLength);
             return true;
         }
     }

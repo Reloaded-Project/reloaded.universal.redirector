@@ -25,7 +25,10 @@ public partial class Native
         public long FileId;
         public Guid LockingTransactionId;
         public int TxInfoFlags;
-
+        
+        // First letter of file name
+        public char FileName;
+        
         /// <inheritdoc />
         public int GetNextEntryOffset() => (int)NextEntryOffset;
         
@@ -39,7 +42,7 @@ public partial class Native
         public ReadOnlySpan<char> GetFileName(void* thisPtr)
         {
             var casted = (FILE_ID_GLOBAL_TX_DIR_INFORMATION*)thisPtr;
-            return new ReadOnlySpan<char>((casted + 1), (int)FileNameLength / 2);
+            return new ReadOnlySpan<char>(&casted->FileName, (int)FileNameLength / 2);
         }
         
         /// <inheritdoc />
@@ -71,7 +74,7 @@ public partial class Native
             thisItem->LockingTransactionId = default;
             thisItem->TxInfoFlags = default;
             
-            CopyString(fileName, thisItem, thisItem->FileNameLength);
+            CopyString(fileName, &thisItem->FileName, thisItem->FileNameLength);
             return true;
         }
     }

@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.IO.Enumeration;
 using System.Runtime.CompilerServices;
 using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
 using Reloaded.Universal.Redirector.Lib.Structures;
@@ -26,10 +27,14 @@ public unsafe partial class FileAccessServer
         
         if (!InitHandleNtQueryDirectoryFileHook(fileHandle, fileName, restartScan, out var handleItem)) 
             return false;
-
+        
+        // Reset state if restart is requested.
+        if (restartScan != 0)
+            handleItem!.Restart();
+        
         // Okay here our items.
         _queryDirectoryFileLock.Lock(threadId);
-        var items = handleItem.Items;
+        var items = handleItem!.Items;
         bool moreFiles = true;
         int remainingBytes = (int)length;
         var lastFileInformation = fileInformation;
@@ -37,20 +42,21 @@ public unsafe partial class FileAccessServer
         while (moreFiles)
         {
             var currentBufferPtr = (TDirectoryInformation*)fileInformation;
-            if (handleItem.CurrentItem < items.Length)
+            if (handleItem.CurrentItem < items!.Length)
             {
-                // Bug: If there is no file from original _ntQueryDirectoryFileHook, last item invalid
-                
                 // Populate with custom files.
-                QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes, ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!);
-                if (returnSingleEntry != 0)
+                QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes, ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!, handleItem.QueryFileName);
+                if (returnSingleEntry != 0 || !moreFiles)
+                {
+                    ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
                     break;
+                }
             }
             else
             {
                 // We finished with custom files, now get the originals that haven't been replaced.
                 returnValue = _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
-                    fileInformation, (uint)remainingBytes, fileInformationClass, returnSingleEntry, fileName, restartScan);
+                    fileInformation, (uint)remainingBytes, fileInformationClass, returnSingleEntry, fileName, handleItem.GetForceRestartScan());
 
                 if (returnValue == NO_MORE_FILES)
                 {
@@ -149,15 +155,11 @@ public unsafe partial class FileAccessServer
             handleItem.AlreadyInjected = new SpanOfCharDict<bool>(handleItem.Items.Length);
         }
 
-        // Reset state if restart is requested.
-        if (restartScan != 0)
-            handleItem.Reset();
-
         // TODO: Handle This
         if (fileName != null)
         {
             handleItem.QueryFileName = fileName->ToSpan().ToString();
-            return false;
+            return true;
         }
 
         return true;
@@ -165,10 +167,11 @@ public unsafe partial class FileAccessServer
 
     /// <summary/>
     /// <exception cref="Win32Exception">Failed to query file. [file will be skipped]</exception>
-    private void QueryCustomFile<TDirectoryInformation>(ref nint lastFileInformation, ref nint fileInformation, ref int remainingBytes,
+    private void QueryCustomFile<TDirectoryInformation>(ref nint lastFileInformation, ref nint fileInformation,
+        ref int remainingBytes,
         ref int currentItem,
         SpanOfCharDict<RedirectionTreeTarget>.ItemEntry[] items, TDirectoryInformation* currentBufferPtr,
-        ref bool moreFiles, SpanOfCharDict<bool> alreadyInjected)
+        ref bool moreFiles, SpanOfCharDict<bool> alreadyInjected, string queryFileName)
         where TDirectoryInformation : unmanaged, IFileDirectoryInformationDerivative
     {
         var item = items.DangerousGetReferenceAt(currentItem);
@@ -180,6 +183,14 @@ public unsafe partial class FileAccessServer
             handle = NtOpenFileOpen(filePath);
             if (TDirectoryInformation.TryPopulate(currentBufferPtr, remainingBytes, handle))
             {
+                // Filter out bad result.
+                if (!FileSystemName.MatchesWin32Expression(queryFileName, currentBufferPtr->GetFileName(currentBufferPtr)))
+                {
+                    NtClose(handle);
+                    currentItem++;
+                    return;
+                }
+                
                 var nextOfs = currentBufferPtr->GetNextEntryOffset();
                 lastFileInformation = fileInformation;
                 fileInformation += nextOfs;

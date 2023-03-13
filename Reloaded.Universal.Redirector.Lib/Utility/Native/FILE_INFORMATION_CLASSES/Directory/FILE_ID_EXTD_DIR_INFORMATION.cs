@@ -24,8 +24,12 @@ public partial class Native
         public uint FileNameLength;
         public uint EaSize;
         public uint ReparsePointTag;
-        public long FileId;
-
+        public long FileId1;
+        public long FileId2;
+        
+        // First letter of file name
+        public char FileName;
+        
         /// <inheritdoc />
         public int GetNextEntryOffset() => (int)NextEntryOffset;
         
@@ -39,7 +43,7 @@ public partial class Native
         public ReadOnlySpan<char> GetFileName(void* thisPtr)
         {
             var casted = (FILE_ID_EXTD_DIR_INFORMATION*)thisPtr;
-            return new ReadOnlySpan<char>((casted + 1), (int)FileNameLength / 2);
+            return new ReadOnlySpan<char>(&casted->FileName, (int)FileNameLength / 2);
         }
         
         /// <inheritdoc />
@@ -63,7 +67,8 @@ public partial class Native
             thisItem->FileAttributes = result->BasicInformation.FileAttributes;
             thisItem->FileNameLength = (uint)fileName.Length * sizeof(char);
             thisItem->EaSize = result->EaInformation.EaSize;
-            thisItem->FileId = result->InternalInformation.FileId;
+            thisItem->FileId1 = 0;
+            thisItem->FileId2 = 0;
             thisItem->NextEntryOffset = (uint)(sizeof(FILE_ID_EXTD_DIR_INFORMATION) + thisItem->FileNameLength);
 
             // TODO: Reparse point tags are not supported [for performance reasons]
@@ -71,7 +76,7 @@ public partial class Native
             thisItem->FileIndex = 0;
             thisItem->ReparsePointTag = 0;
             
-            CopyString(fileName, thisItem, thisItem->FileNameLength);
+            CopyString(fileName, &thisItem->FileName, thisItem->FileNameLength);
             return true;
         }
     }

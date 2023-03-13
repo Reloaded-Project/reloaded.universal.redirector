@@ -71,6 +71,7 @@ public unsafe partial class FileAccessServer
     private bool _hooksApplied;
     private RedirectorApi _redirectorApi = null!;
     
+    private SemaphoreRecursionLock _queryDirectoryFileExLock = new();
     private SemaphoreRecursionLock _queryDirectoryFileLock = new();
     private SemaphoreRecursionLock _deleteFileLock = new();
     private SemaphoreRecursionLock _createFileLock = new();
@@ -111,14 +112,14 @@ public unsafe partial class FileAccessServer
         var ntOpenFilePointer = GetProcAddress(ntdllHandle, "NtOpenFile");
         var ntDeleteFilePointer = GetProcAddress(ntdllHandle, "NtDeleteFile");
         var ntQueryDirectoryFilePointer = GetProcAddress(ntdllHandle, "NtQueryDirectoryFile");
-        //var ntQueryDirectoryFileExPointer = Native.GetProcAddress(ntdllHandle, "NtQueryDirectoryFileEx");
+        var ntQueryDirectoryFileExPointer = Native.GetProcAddress(ntdllHandle, "NtQueryDirectoryFileEx");
 
         // Kick off the server
         HookMethod(ref _ntCreateFileHook, nameof(NtCreateFileHookFn), "NtCreateFile", hooks, log, ntCreateFilePointer);
         HookMethod(ref _ntOpenFileHook, nameof(NtOpenFileHookFn), "NtOpenFile", hooks, log, ntOpenFilePointer);
         HookMethod(ref _ntDeleteFileHook, nameof(NtDeleteFileHookFn), "NtDeleteFile", hooks, log, ntDeleteFilePointer);
         HookMethod(ref _ntQueryDirectoryFileHook, nameof(NtQueryDirectoryFileHookFn), "NtQueryDirectoryFile", hooks, log, ntQueryDirectoryFilePointer);
-        //HookMethod(ref _ntQueryDirectoryFileExHook, nameof(NtQueryDirectoryFileExHookFn), "NtQueryDirectoryFileEx", hooks, log, ntQueryDirectoryFileExPointer);
+        HookMethod(ref _ntQueryDirectoryFileExHook, nameof(NtQueryDirectoryFileExHookFn), "NtQueryDirectoryFileEx", hooks, log, ntQueryDirectoryFileExPointer);
 
         // We need to cook some assembly for NtClose, because Native->Managed
         // transition can invoke thread setup code which will call CloseHandle again
@@ -418,7 +419,7 @@ public unsafe partial class FileAccessServer
         _closeHandleHook.Enable();
         _ntDeleteFileHook.Enable();
         _ntQueryDirectoryFileHook.Enable();
-        //_ntQueryDirectoryFileExHook.Enable();
+        _ntQueryDirectoryFileExHook.Enable();
     }
 
     public void DisableImpl()
@@ -428,7 +429,7 @@ public unsafe partial class FileAccessServer
         _closeHandleHook.Disable();
         _ntDeleteFileHook.Disable();
         _ntQueryDirectoryFileHook.Disable();
-        //_ntQueryDirectoryFileExHook.Disable();
+        _ntQueryDirectoryFileExHook.Disable();
     }
 
     #region Static API
@@ -487,11 +488,11 @@ public unsafe partial class FileAccessServer
         /// Path to redirected/handled file or folder.
         /// </summary>
         public string FilePath { get; set; }
-        
+
         /// <summary>
         /// File name set by call to <see cref="NtQueryDirectoryFile"/>.
         /// </summary>
-        public string? QueryFileName { get; set; }
+        public string QueryFileName { get; set; } = "*";
         
         /// <summary>
         /// Items to be injected into the result.
@@ -508,16 +509,36 @@ public unsafe partial class FileAccessServer
         /// </summary>
         public int CurrentItem;
 
+        /// <summary>
+        /// Forces a scan restart on next API call to original function.
+        /// </summary>
+        public int ForceRestartScan;
+
         public OpenHandleState(string filePath)
         {
             FilePath = filePath;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reset()
+        public void Restart()
         {
             CurrentItem = 0;
             AlreadyInjected?.Clear();
+            ForceRestartScan = 1;
+        }
+
+        /// <summary>
+        /// Gets the <see cref="ForceRestartScan"/> value, resetting it as needed.
+        /// </summary>
+        public int GetForceRestartScan()
+        {
+            if (ForceRestartScan > 0)
+            {
+                ForceRestartScan = 0;
+                return 1;
+            }
+
+            return 0;
         }
     }
 }
