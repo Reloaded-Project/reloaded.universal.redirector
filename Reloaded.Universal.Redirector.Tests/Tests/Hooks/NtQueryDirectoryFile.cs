@@ -60,6 +60,22 @@ public class NtQueryDirectoryFile : BaseHookTest
     [InlineData(FileIdGlobalTxDirectoryInformation)]
     [InlineData(FileIdExtdDirectoryInformation)]
     [InlineData(FileIdExtdBothDirectoryInformation)]
+    public void MapFolder_Directories(Native.FILE_INFORMATION_CLASS method)
+    {
+        Api.Enable();
+        MapFolder_Baseline_Impl(method, 4096, true);
+    }
+    
+    [Theory]
+    [InlineData(FileDirectoryInformation)]
+    [InlineData(FileFullDirectoryInformation)]
+    [InlineData(FileBothDirectoryInformation)]
+    [InlineData(FileNamesInformation)]
+    [InlineData(FileIdBothDirectoryInformation)]
+    [InlineData(FileIdFullDirectoryInformation)]
+    [InlineData(FileIdGlobalTxDirectoryInformation)]
+    [InlineData(FileIdExtdDirectoryInformation)]
+    [InlineData(FileIdExtdBothDirectoryInformation)]
     public void MapFolder_ReturnSingleEntry(Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
@@ -72,8 +88,6 @@ public class NtQueryDirectoryFile : BaseHookTest
         Assert.Equal(count * 2, files.Count);
         AssertReturnedFileNames(items, files, newItems);
     }
-
-
 
     [Theory]
     [InlineData(FileDirectoryInformation)]
@@ -190,13 +204,13 @@ public class NtQueryDirectoryFile : BaseHookTest
         MapFolder_Baseline_Impl(method, 1);
     }
 
-    private void MapFolder_Baseline_Impl(Native.FILE_INFORMATION_CLASS method, int count)
+    private void MapFolder_Baseline_Impl(Native.FILE_INFORMATION_CLASS method, int count, bool includeDirectories = false)
     {
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method);
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, false, null, "*", includeDirectories);
         Assert.Equal(count * 2, files.Count);
 
         for (int x = 0; x < files.Count; x++)

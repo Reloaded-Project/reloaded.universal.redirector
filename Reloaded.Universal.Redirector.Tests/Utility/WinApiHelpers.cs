@@ -15,7 +15,7 @@ namespace Reloaded.Universal.Redirector.Tests.Utility;
 /// </summary>
 public static class WinApiHelpers
 {
-    public static unsafe List<string> NtQueryDirectoryFileGetAllItems(string folderPath, FILE_INFORMATION_CLASS method, bool oneByOne = false, int? restartAfter = null, string fileNameFilter = "*")
+    public static unsafe List<string> NtQueryDirectoryFileGetAllItems(string folderPath, FILE_INFORMATION_CLASS method, bool oneByOne = false, int? restartAfter = null, string fileNameFilter = "*", bool includeDirectories = false)
     {
         var handleUnsafe = NtCreateFileDirectoryOpen(folderPath);
         using var handle = new SafeFileHandle(handleUnsafe, true);
@@ -56,7 +56,7 @@ public static class WinApiHelpers
                 }
                 else
                 {
-                    GetFiles(method, currentBufferPtr, files, restartAfterValue);
+                    GetFiles(method, currentBufferPtr, files, restartAfterValue, includeDirectories);
                 }
             }
 
@@ -64,7 +64,9 @@ public static class WinApiHelpers
         }
     }
 
-    public static unsafe List<string> NtQueryDirectoryFileExGetAllItems(string folderPath, FILE_INFORMATION_CLASS method, bool oneByOne = false, int? restartAfter = null, string fileNameFilter = "*")
+    public static unsafe List<string> NtQueryDirectoryFileExGetAllItems(string folderPath,
+        FILE_INFORMATION_CLASS method, bool oneByOne = false, int? restartAfter = null, string fileNameFilter = "*",
+        bool includeDirectories = false)
     {
         var handleUnsafe = NtCreateFileDirectoryOpen(folderPath);
         using var handle = new SafeFileHandle(handleUnsafe, true);
@@ -113,7 +115,7 @@ public static class WinApiHelpers
                 }
                 else
                 {
-                    GetFiles(method, currentBufferPtr, files, restartAfterValue);
+                    GetFiles(method, currentBufferPtr, files, restartAfterValue, includeDirectories);
                 }
             }
 
@@ -121,29 +123,31 @@ public static class WinApiHelpers
         }
     }
     
-    private static void GetFiles(FILE_INFORMATION_CLASS method, nint currentBufferPtr, List<string> files, int restartAfterValue)
+    private static void GetFiles(FILE_INFORMATION_CLASS method, nint currentBufferPtr, List<string> files,
+        int restartAfterValue, bool includeDirectories)
     {
         if (method == FILE_INFORMATION_CLASS.FileDirectoryInformation)
-            GetFiles<FILE_DIRECTORY_INFORMATION>(currentBufferPtr, files, restartAfterValue);
+            GetFiles<FILE_DIRECTORY_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
         else if (method == FILE_INFORMATION_CLASS.FileFullDirectoryInformation)
-            GetFiles<FILE_FULL_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue);
+            GetFiles<FILE_FULL_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
         else if (method == FILE_INFORMATION_CLASS.FileBothDirectoryInformation)
-            GetFiles<FILE_BOTH_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue);
+            GetFiles<FILE_BOTH_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
         else if (method == FILE_INFORMATION_CLASS.FileNamesInformation)
-            GetFiles<FILE_NAMES_INFORMATION>(currentBufferPtr, files, restartAfterValue);
+            GetFiles<FILE_NAMES_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
         else if (method == FILE_INFORMATION_CLASS.FileIdBothDirectoryInformation)
-            GetFiles<FILE_ID_BOTH_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue);
+            GetFiles<FILE_ID_BOTH_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
         else if (method == FILE_INFORMATION_CLASS.FileIdFullDirectoryInformation)
-            GetFiles<FILE_ID_FULL_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue);
+            GetFiles<FILE_ID_FULL_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
         else if (method == FILE_INFORMATION_CLASS.FileIdGlobalTxDirectoryInformation)
-            GetFiles<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue);
+            GetFiles<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
         else if (method == FILE_INFORMATION_CLASS.FileIdExtdDirectoryInformation)
-            GetFiles<FILE_ID_EXTD_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue);
+            GetFiles<FILE_ID_EXTD_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
         else if (method == FILE_INFORMATION_CLASS.FileIdExtdBothDirectoryInformation)
-            GetFiles<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue);
+            GetFiles<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
     }
 
-    private static unsafe void GetFiles<T>(nint currentBufferPtr, List<string> files, int returnAfterItem = int.MaxValue) where T : unmanaged, IFileDirectoryInformationDerivative
+    private static unsafe void GetFiles<T>(nint currentBufferPtr, List<string> files,
+        int returnAfterItem = int.MaxValue, bool includeDirectories = false) where T : unmanaged, IFileDirectoryInformationDerivative
     {
         T* info = default;
         do
@@ -159,8 +163,9 @@ public static class WinApiHelpers
             if (fileName.SequenceEqual(".".AsSpan()) || fileName.SequenceEqual("..".AsSpan()))
                 goto nextfile;
 
-            var isDirectory = (info->GetFileAttributes() & FileAttributes.Directory) > 0;
-            if (!isDirectory)
+            if (!includeDirectories && ((info->GetFileAttributes() & FileAttributes.Directory) <= 0))
+                files.Add(fileName.ToString());
+            else
                 files.Add(fileName.ToString());
 
             if (files.Count > returnAfterItem)

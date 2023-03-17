@@ -5,6 +5,8 @@ using FileEmulationFramework.Lib.IO;
 using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 using Reloaded.Universal.Redirector.Lib.Utility;
+using DirectoryFilesGroup = Reloaded.Universal.Redirector.Lib.Utility.DirectoryFilesGroup;
+using WindowsDirectorySearcher = Reloaded.Universal.Redirector.Lib.Utility.WindowsDirectorySearcher;
 
 namespace Reloaded.Universal.Redirector.Lib.Structures.RedirectionTreeManager;
 
@@ -82,9 +84,9 @@ public class FolderRedirection : IEquatable<FolderRedirection>
 
         TextInfo.ChangeCase<TextInfo.ToUpperConversion>(nextFolder, dirPathUpper);
         var directory = StringPool.Shared.GetOrAdd(dirPathUpper);
-        var targets   = new List<RedirectionTreeTarget>(group.Files.Length);
+        var targets   = new List<RedirectionTreeTarget>(group.Items.Length);
         
-        foreach (var file in group.Files)
+        foreach (var file in group.Items)
         {
             var fileUpper = TextInfo.ChangeCase<TextInfo.ToUpperConversion>(file);
             targets.Add(new RedirectionTreeTarget(directory, fileUpper));

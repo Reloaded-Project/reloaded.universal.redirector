@@ -1,3 +1,4 @@
+using System.Net;
 using Reloaded.Universal.Redirector.Lib.Utility;
 using Reloaded.Universal.Redirector.Lib.Utility.Native;
 using Reloaded.Universal.Redirector.Tests.Tests.Hooks.Base;
@@ -60,6 +61,22 @@ public class NtQueryDirectoryFileEx : BaseHookTest
     [InlineData(FileIdGlobalTxDirectoryInformation)]
     [InlineData(FileIdExtdDirectoryInformation)]
     [InlineData(FileIdExtdBothDirectoryInformation)]
+    public void MapFolder_Directories(Native.FILE_INFORMATION_CLASS method)
+    {
+        Api.Enable();
+        MapFolder_Baseline_Impl(method, 4096, true);
+    }
+    
+    [Theory]
+    [InlineData(FileDirectoryInformation)]
+    [InlineData(FileFullDirectoryInformation)]
+    [InlineData(FileBothDirectoryInformation)]
+    [InlineData(FileNamesInformation)]
+    [InlineData(FileIdBothDirectoryInformation)]
+    [InlineData(FileIdFullDirectoryInformation)]
+    [InlineData(FileIdGlobalTxDirectoryInformation)]
+    [InlineData(FileIdExtdDirectoryInformation)]
+    [InlineData(FileIdExtdBothDirectoryInformation)]
     public void MapFolder_ReturnSingleEntry(Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
@@ -72,9 +89,7 @@ public class NtQueryDirectoryFileEx : BaseHookTest
         Assert.Equal(count * 2, files.Count);
         AssertReturnedFileNames(items, files, newItems);
     }
-
-
-
+    
     [Theory]
     [InlineData(FileDirectoryInformation)]
     [InlineData(FileFullDirectoryInformation)]
@@ -190,13 +205,13 @@ public class NtQueryDirectoryFileEx : BaseHookTest
         MapFolder_Baseline_Impl(method, 1);
     }
 
-    private void MapFolder_Baseline_Impl(Native.FILE_INFORMATION_CLASS method, int count)
+    private void MapFolder_Baseline_Impl(Native.FILE_INFORMATION_CLASS method, int count, bool directories = false)
     {
         using var items = new TemporaryJunkFolder(count);
-        using var newItems = new TemporaryJunkFolder(count);
+        using var newItems = new TemporaryJunkFolder(count, null, directories);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileExGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method);
+        var files = NtQueryDirectoryFileExGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, false, null, "*", directories);
         Assert.Equal(count * 2, files.Count);
 
         for (int x = 0; x < files.Count; x++)
