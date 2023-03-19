@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Drawing;
+using System.Runtime.CompilerServices;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Interfaces;
@@ -24,6 +25,7 @@ public class Monitor
         _modLoader = modLoader;
         _logger = logger;
         _configuration = configuration;
+        ((ILogger)_modLoader.GetLogger()).WriteLine($"{nameof(Monitor)} This mod is deprecated, you can now enable redirection printing in main 'Reloaded File Redirector' mod", Color.Aqua);
         _modLoader.ModLoaded += ModLoaded;
         _modLoader.ModUnloading += ModUnloading;
         Enable();

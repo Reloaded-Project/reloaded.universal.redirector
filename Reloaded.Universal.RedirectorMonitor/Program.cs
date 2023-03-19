@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 #if DEBUG
 using System.Diagnostics;
 #endif
@@ -26,6 +27,7 @@ public class Program : IMod
         _modLoader = (IModLoader)loader;
 
         // Auto-subscribe on loaded redirector.
+        ((ILogger)_modLoader.GetLogger()).WriteLine($"{nameof(RedirectorMonitor)} This mod is deprecated, you can now enable redirection printing in main 'Reloaded File Redirector' mod", Color.Aqua);
         _modLoader.ModLoaded += ModLoaded;
         _modLoader.ModUnloading += ModUnloading;
         SetupEventFromRedirector();

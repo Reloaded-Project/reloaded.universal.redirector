@@ -65,7 +65,7 @@ public partial class FileAccessServer
     private void PrintFileRedirectIfNeeded(ReadOnlySpan<char> path, string newFilePath)
     {
         if (_redirectorApi.GetRedirectorSetting(RedirectorSettings.PrintRedirect) && _logger != null)
-            _logger?.Info("[R2.Redirector] File Redirect {0}\n-> {1}", path.ToString(), newFilePath);
+            _logger.Info("[R2.Redirector] File Redirect {0}\n-> {1}", path.ToString(), newFilePath);
     }
     
     /// <summary>
