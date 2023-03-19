@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using Reloaded.Universal.Redirector.Lib.Backports.System.Text.Unicode;
+#pragma warning disable CS1591
 
 namespace Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
 

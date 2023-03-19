@@ -11,59 +11,63 @@ public class Monitor
     private const string RedirectorId = "reloaded.universal.redirector";
     
     private WeakReference<IRedirectorController>? _redirectorController;
-    private bool _isEnabled = true;
     private Config _configuration;
     
     private readonly IModLoader _modLoader;
     private readonly ILogger _logger;
 
+    private bool _oldPrintOpen;
+    private bool _oldPrintNonFiles;
+    
     public Monitor(IModLoader modLoader, ILogger logger, Config configuration)
     {
         _modLoader = modLoader;
         _logger = logger;
         _configuration = configuration;
+        _modLoader.ModLoaded += ModLoaded;
+        _modLoader.ModUnloading += ModUnloading;
         Enable();
         SetupEventFromRedirector();
     }
 
     /// <summary>
-    /// Unloads the mod.
-    /// </summary>
-    public void Unload()
-    {
-        if (_redirectorController != null && _redirectorController.TryGetTarget(out var target))
-            target.Loading -= PrintOnFileLoad;
-    }
-    
-    /// <summary>
     /// Updates the used configuration.
     /// </summary>
     /// <param name="configuration">The configuration.</param>
-    public void UpdateConfiguration(Config configuration) => _configuration = configuration;
-
-    /// <summary>
-    /// Disables the mod.
-    /// </summary>
-    public void Disable()
+    public void UpdateConfiguration(Config configuration)
     {
-        _isEnabled = false;
-        _modLoader.ModLoaded -= ModLoaded;
+        _configuration = configuration;
+        Enable();
     }
-
+    
     /// <summary>
-    /// Re-enables the mod.
+    /// Enables the monitor.
     /// </summary>
     public void Enable()
     {
-        _isEnabled = true;
-        _modLoader.ModLoaded += ModLoaded;
+        if (_redirectorController == null || !_redirectorController.TryGetTarget(out var target)) 
+            return;
+        
+        _oldPrintOpen = target.SetRedirectorSetting(true, RedirectorSettings.PrintOpen);
+        _oldPrintNonFiles = target.SetRedirectorSetting(_configuration.FilterNonFiles, RedirectorSettings.DontPrintNonFiles);
+    }
+    
+    /// <summary>
+    /// Disables the monitor.
+    /// </summary>
+    public void Disable()
+    {
+        if (_redirectorController == null || !_redirectorController.TryGetTarget(out var target)) 
+            return;
+        
+        target.SetRedirectorSetting(_oldPrintOpen, RedirectorSettings.PrintOpen);
+        target.SetRedirectorSetting(_oldPrintNonFiles, RedirectorSettings.DontPrintNonFiles);
     }
     
     private void SetupEventFromRedirector()
     {
         _redirectorController = _modLoader.GetController<IRedirectorController>();
-        if (_redirectorController != null && _redirectorController.TryGetTarget(out var target))
-            target.Loading += PrintOnFileLoad;
+        Enable();
     }
 
     private void ModLoaded(IModV1 mod, IModConfigV1 modConfig)
@@ -71,26 +75,10 @@ public class Monitor
         if (modConfig.ModId == RedirectorId)
             SetupEventFromRedirector();
     }
-
-    private void PrintOnFileLoad(string path)
+    
+    private void ModUnloading(IModV1 mod, IModConfigV1 modConfig)
     {
-        if (!_isEnabled)
-            return;
-
-        if (_configuration.FilterNonFiles)
-        {
-            if (path.Contains("usb#vid") || path.Contains("hid#vid"))
-                return;
-        }
-        
-        PrintMessage($"RII File Monitor: {path}");
-    }
-
-    private void PrintMessage(string text)
-    {
-        if (_configuration.PrintAsync)
-            _logger.WriteLineAsync(text, _logger.TextColor);
-        else
-            _logger.PrintMessage(text, _logger.TextColor);
+        if (modConfig.ModId == RedirectorId)
+            Disable();
     }
 }

@@ -12,10 +12,10 @@ public class Program : IMod
 {
     private const string RedirectorId = "reloaded.universal.redirector";
 
-    private ILogger _logger;
     private IModLoader _modLoader;
     private WeakReference<IRedirectorController> _redirectorController;
-    private bool _printRedirecting = true;
+
+    private bool _oldPrintRedirect;
 
     public static void Main() { }
     public void Start(IModLoaderV1 loader)
@@ -24,7 +24,6 @@ public class Program : IMod
         Debugger.Launch();
 #endif
         _modLoader = (IModLoader)loader;
-        _logger = (ILogger)_modLoader.GetLogger();
 
         // Auto-subscribe on loaded redirector.
         _modLoader.ModLoaded += ModLoaded;
@@ -35,8 +34,7 @@ public class Program : IMod
     private void SetupEventFromRedirector()
     {
         _redirectorController = _modLoader.GetController<IRedirectorController>();
-        if (_redirectorController != null && _redirectorController.TryGetTarget(out var target))
-            target.Redirecting += Redirecting;
+        Enable();
     }
 
     private void ModLoaded(IModV1 mod, IModConfigV1 modConfig)
@@ -47,33 +45,28 @@ public class Program : IMod
     
     private void ModUnloading(IModV1 mod, IModConfigV1 modConfig)
     {
-        if (modConfig.ModId != RedirectorId) 
-            return;
-        
-        if (_redirectorController != null && _redirectorController.TryGetTarget(out var target))
-            target.Redirecting -= Redirecting;
-    }
-
-    private void Redirecting(string oldPath, string newPath)
-    {
-        if (!_printRedirecting) 
-            return;
-        
-        _logger.PrintMessage($"RII Redirector Old Path: {oldPath}", _logger.ColorLightBlue);
-        _logger.PrintMessage($"RII Redirector New Path: {newPath}", _logger.ColorBlue);
+        if (modConfig.ModId == RedirectorId)
+            Disable();
     }
 
     /* Mod loader actions. */
-    public void Suspend()   => _printRedirecting = false;
-    public void Resume()    => _printRedirecting = true;
+    public void Suspend() => Disable();
+    public void Resume() => Enable();
+    public void Unload() => Disable();
+    public bool CanUnload() => true;
+    public bool CanSuspend() => true;
+    
+    public Action Disposing { get; }
 
-    public void Unload()
+    private void Enable()
     {
         if (_redirectorController != null && _redirectorController.TryGetTarget(out var target))
-            target.Redirecting -= Redirecting;
+            _oldPrintRedirect = target.SetRedirectorSetting(true, RedirectorSettings.PrintRedirect);
     }
-
-    public bool CanUnload()     => true;
-    public bool CanSuspend()    => true;
-    public Action Disposing { get; }
+    
+    private void Disable()
+    {
+        if (_redirectorController != null && _redirectorController.TryGetTarget(out var target))
+            target.SetRedirectorSetting(_oldPrintRedirect, RedirectorSettings.PrintRedirect);
+    }
 }

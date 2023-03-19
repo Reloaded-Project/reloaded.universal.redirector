@@ -59,7 +59,7 @@ public static class FileDirectoryInformationDerivativeExtensions
     }
 
     /// <summary>
-    /// Checks whether there is sufficient size available to create an instance of <see cref="T"/> with a string of the given length.
+    /// Copies a string from source to destination.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe void CopyString(ReadOnlySpan<char> source, char* destination, uint numBytes)

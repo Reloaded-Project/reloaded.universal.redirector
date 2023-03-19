@@ -25,11 +25,6 @@ public class Config : Configurable<Config>
         The `DefaultValue` attribute is used as part of the `Reset` button in Reloaded-Launcher.
     */
 
-    [DisplayName("Print Async")]
-    [Description("Improves performance, but messages might not print realtime.")]
-    [DefaultValue(false)]
-    public bool PrintAsync { get; set; } = false;
-    
     [DisplayName("Filter Non-Files")]
     [Description("Tries to filter out non-files from the output.")]
     [DefaultValue(true)]

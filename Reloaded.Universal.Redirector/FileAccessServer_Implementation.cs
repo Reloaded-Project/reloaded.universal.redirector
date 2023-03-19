@@ -1,3 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using Reloaded.Hooks.Definitions.Helpers;
+using Reloaded.Universal.Redirector.Interfaces;
 using Reloaded.Universal.Redirector.Lib.Utility;
 using Reloaded.Universal.Redirector.Lib.Utility.Native;
 
@@ -41,5 +46,43 @@ public partial class FileAccessServer
 
         var joined = Path.Join(result.AsSpan(), objectAttributes->ObjectName->ToSpan());
         return joined.AsSpan().TrimWindowsPrefixes().ToString().NormalizePath();
+    }
+    
+    private void PrintFileLoadIfNeeded(ReadOnlySpan<char> path)
+    {
+        if (!_redirectorApi.GetRedirectorSetting(RedirectorSettings.PrintOpen) || _logger == null) 
+            return;
+        
+        if (_redirectorApi.GetRedirectorSetting(RedirectorSettings.DontPrintNonFiles))
+        {
+            if (path.Contains("usb#vid", StringComparison.Ordinal) || path.Contains("hid#vid", StringComparison.Ordinal))
+                return;
+        }
+
+        _logger.Info("[R2.Redirector] File Open {0}", path.ToString());
+    }
+
+    private void PrintFileRedirectIfNeeded(ReadOnlySpan<char> path, string newFilePath)
+    {
+        if (_redirectorApi.GetRedirectorSetting(RedirectorSettings.PrintRedirect) && _logger != null)
+            _logger?.Info("[R2.Redirector] File Redirect {0}\n-> {1}", path.ToString(), newFilePath);
+    }
+    
+    /// <summary>
+    /// Forces the JIT to compile a given function.
+    /// </summary>
+    /// <param name="type">Type inside which the function is contained.</param>
+    /// <param name="name">Name of the function.</param>
+    /// <returns>Pointer to the function.</returns>
+    private unsafe void* JitFunction(
+#if NET5_0_OR_GREATER
+        [DynamicallyAccessedMembers(Trimming.Methods)]
+#endif
+        Type type, string name)
+    {
+        _logger?.Debug("Jitting Function: {0}", name);
+        var method = type.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)!.MethodHandle;
+        RuntimeHelpers.PrepareMethod(method);
+        return (void*) method.GetFunctionPointer();
     }
 }

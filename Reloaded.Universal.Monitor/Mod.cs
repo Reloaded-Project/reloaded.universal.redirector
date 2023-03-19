@@ -63,11 +63,7 @@ public class Mod : ModBase // <= Do not Remove.
         _monitor.UpdateConfiguration(_configuration);
     }
     
-    public override void Unload()
-    {
-        _monitor.Disable();
-        _monitor.Unload();
-    }
+    public override void Unload() => _monitor.Disable();
 
     public override void Suspend() => _monitor.Disable();
     public override void Resume() => _monitor.Enable();

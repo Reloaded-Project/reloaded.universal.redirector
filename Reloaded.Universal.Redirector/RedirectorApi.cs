@@ -26,6 +26,7 @@ public class RedirectorApi : IRedirectorController
     
     [Obsolete]
     public Loading? Loading { get; set; }
+    
     public void AddRedirect(string oldFilePath, string newFilePath) => Redirector.AddCustomRedirect(oldFilePath, newFilePath);
     public void RemoveRedirect(string oldFilePath)                  => Redirector.RemoveCustomRedirect(oldFilePath);
     public void AddRedirectFolder(string folderPath)                => Redirector.Add(folderPath);
@@ -34,4 +35,7 @@ public class RedirectorApi : IRedirectorController
     public void RemoveRedirectFolder(string folderPath, string sourceFolder) => Redirector.Remove(folderPath, sourceFolder);
     public void Disable() => OnDisable?.Invoke();
     public void Enable() => OnEnable?.Invoke();
+
+    public bool GetRedirectorSetting(RedirectorSettings setting) => Redirector.GetRedirectorSetting(setting);
+    public bool SetRedirectorSetting(bool enable, RedirectorSettings setting) => Redirector.SetRedirectorSetting(enable, setting);
 }

@@ -36,7 +36,6 @@ internal class WindowsDirectorySearcher
     /// </summary>
     /// <param name="path">The path to search inside. Should not end with a backslash.</param>
     /// <param name="groups">Groupings of files+directories to their corresponding directories.</param>
-    /// <param name="multithreaded">True to use multithreading, else false.</param>
     /// <returns>True if the operation succeeded, else false.</returns>
     [SkipLocalsInit]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

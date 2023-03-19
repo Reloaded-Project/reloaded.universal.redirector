@@ -1,4 +1,5 @@
-﻿using FileEmulationFramework.Lib.Utilities;
+﻿using System.Diagnostics;
+using FileEmulationFramework.Lib.Utilities;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Interfaces;
@@ -27,7 +28,7 @@ public class Mod : ModBase, IExports // <= Do not Remove.
     
     public Mod(ModContext context)
     {
-        // TODO: Logging uwu.
+        Debugger.Launch();
         _modLoader = context.ModLoader;
         var hooks = context.Hooks;
         var logger = context.Logger;

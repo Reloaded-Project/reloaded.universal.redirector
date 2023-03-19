@@ -14,4 +14,8 @@
       <PackageReference Include="Reloaded.Hooks.Definitions" Version="1.15.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Reloaded.Universal.Redirector.Interfaces\Reloaded.Universal.Redirector.Interfaces.csproj" />
+    </ItemGroup>
+
 </Project>

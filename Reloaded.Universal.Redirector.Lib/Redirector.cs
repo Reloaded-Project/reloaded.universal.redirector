@@ -1,4 +1,6 @@
-﻿using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTreeManager;
+﻿using System.Runtime.CompilerServices;
+using Reloaded.Universal.Redirector.Interfaces;
+using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTreeManager;
 using Reloaded.Universal.Redirector.Lib.Utility;
 
 #pragma warning disable CS1591
@@ -21,6 +23,8 @@ public struct Redirector : IDisposable
     /// </summary>
     public FolderUpdateListener<RedirectionTreeManager> Listener { get; private set; }
 
+    private RedirectorSettings _settings;
+    
     /// <summary>
     /// Creates a new instance of the redirector.
     /// </summary>
@@ -38,6 +42,10 @@ public struct Redirector : IDisposable
     }
     
     /* Business Logic */
+    
+    public bool GetRedirectorSetting(RedirectorSettings setting) => IsSettingSet(_settings, setting);
+
+    public bool SetRedirectorSetting(bool enable, RedirectorSettings setting) => ToggleSetting(enable, setting);
 
     #region Legacy API
     // Flawed API.
@@ -106,4 +114,18 @@ public struct Redirector : IDisposable
         }
     }
     #endregion
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool ToggleSetting(bool enable, RedirectorSettings flag)
+    {
+        bool previous = IsSettingSet(_settings, flag);
+        if (enable)
+            _settings |= flag;
+        else
+            _settings &= ~flag;
+
+        return previous;
+    }
+    
+    private bool IsSettingSet(RedirectorSettings self, RedirectorSettings flag) => (self & flag) == flag;
 }

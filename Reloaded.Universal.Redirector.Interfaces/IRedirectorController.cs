@@ -2,6 +2,48 @@
 
 namespace Reloaded.Universal.Redirector.Interfaces;
 
+public interface IRedirectorControllerV5
+{
+    /// <summary>
+    /// Retrieves the value of the given redirector setting flag.
+    /// </summary>
+    /// <returns>Current value of the flag.</returns>
+    bool GetRedirectorSetting(RedirectorSettings setting);
+
+    /// <summary>
+    /// Sets or unsets the given redirector setting flag.
+    /// </summary>
+    /// <returns>Previous setting.</returns>
+    bool SetRedirectorSetting(bool enable, RedirectorSettings setting);
+}
+
+/// <summary>
+/// Describes various settings that can be enabled for the redirector.
+/// </summary>
+[Flags]
+public enum RedirectorSettings
+{
+    /// <summary>
+    /// Default value.
+    /// </summary>
+    None = 0,
+ 
+    /// <summary>
+    /// Prints when a file redirect is performed.
+    /// </summary>
+    PrintRedirect = 1 << 0,
+    
+    /// <summary>
+    /// Prints file open operations.
+    /// </summary>
+    PrintOpen = 1 << 1,
+
+    /// <summary>
+    /// Skips printing non-files to the console.
+    /// </summary>
+    DontPrintNonFiles = 1 << 2,
+}
+
 public interface IRedirectorControllerV4
 {
     /// <summary>
@@ -51,8 +93,10 @@ public interface IRedirectorControllerV2
     void RemoveRedirectFolder(string folderPath);
 }
 
-public interface IRedirectorController : IRedirectorControllerV2, IRedirectorControllerV3, IRedirectorControllerV4
+public interface IRedirectorController : IRedirectorControllerV2, IRedirectorControllerV3, IRedirectorControllerV4, IRedirectorControllerV5
 {
+    // The below APIs are removed because one day this will be rewritten in native code due to GC Transition shenanigans.
+    // At that point, these APIs will not be fully supported.
     [Obsolete("This API was removed in Virtual FileSystem Rewrite. If you need this, please let me know.")]
     Redirecting? Redirecting { get; set; }
     
