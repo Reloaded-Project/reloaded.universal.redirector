@@ -1,7 +1,4 @@
-﻿#if DEBUG
-using System.Diagnostics;
-#endif
-using FileEmulationFramework.Lib.Utilities;
+﻿using FileEmulationFramework.Lib.Utilities;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Interfaces;
@@ -31,9 +28,6 @@ public class Mod : ModBase, IExports // <= Do not Remove.
     
     public Mod(ModContext context)
     {
-        #if DEBUG
-        Debugger.Launch();
-        #endif
         _modLoader = context.ModLoader;
         var hooks = context.Hooks;
         var logger = context.Logger;

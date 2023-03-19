@@ -71,7 +71,11 @@ public unsafe partial class FileAccessServer
     private bool _hooksApplied;
     private RedirectorApi _redirectorApi = null!;
     
+    /// <summary>
+    /// Shared between standard and Ex version in case one calls into the other; in which case this prevents recursion.
+    /// </summary>
     private SemaphoreRecursionLock _queryDirectoryFileLock = new();
+    
     private SemaphoreRecursionLock _deleteFileLock = new();
     private SemaphoreRecursionLock _createFileLock = new();
     private SemaphoreRecursionLock _openFileLock = new();
@@ -458,66 +462,6 @@ public unsafe partial class FileAccessServer
         fastReturn:
         return _ntQueryFullAttributesFileHook.Original.Value.Invoke(attributes, fileInformation);
     }
-    
-    private int NtQueryDirectoryFileHookImpl(nint fileHandle, nint @event, nint apcRoutine, nint apcContext, 
-        IO_STATUS_BLOCK* ioStatusBlock, nint fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
-        int returnSingleEntry, UNICODE_STRING* fileName, int restartScan)
-    {
-        // Prevent recursion.
-        var threadId = Thread.CurrentThread.ManagedThreadId;
-        if (_queryDirectoryFileLock.IsThisThread(threadId))
-            goto fastReturn;
-
-        // Handle any of the possible intercepted types.
-        if (fileInformationClass == FileDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_DIRECTORY_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
-                goto fastReturn;
-            else return result;
-        
-        if (fileInformationClass == FileFullDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_FULL_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
-                goto fastReturn;
-            else return result;
-        
-        if (fileInformationClass == FileBothDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
-                goto fastReturn;
-            else return result;
-        
-        if (fileInformationClass == FileNamesInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_NAMES_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
-                goto fastReturn;
-            else return result;
-        
-        if (fileInformationClass == FileIdBothDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
-                goto fastReturn;
-            else return result;
-        
-        if (fileInformationClass == FileIdFullDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_FULL_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
-                goto fastReturn;
-            else return result;
-        
-        if (fileInformationClass == FileIdGlobalTxDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
-                goto fastReturn;
-            else return result;
-        
-        if (fileInformationClass == FileIdExtdDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
-                goto fastReturn;
-            else return result;
-        
-        if (fileInformationClass == FileIdExtdBothDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
-                goto fastReturn;
-            else return result;
-        
-        fastReturn:
-        return _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
-            fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan);
-    }
 
     /* Mod loader interface. */
     public void EnableImpl()
@@ -588,9 +532,9 @@ public unsafe partial class FileAccessServer
         int queryFlags, UNICODE_STRING* fileName)
     {
         // This redirects to other hook; it works because we have recursion lock
-        return _instance.NtQueryDirectoryFileHookImpl(fileHandle, @event, apcRoutine, apcContext,
-            ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags & 2,
-            fileName, queryFlags & 1);
+        return _instance.NtQueryDirectoryFileExHookImpl(fileHandle, @event, apcRoutine, apcContext,
+            ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags,
+            fileName);
     }
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]

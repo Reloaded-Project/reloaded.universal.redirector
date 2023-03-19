@@ -7,80 +7,82 @@ namespace Reloaded.Universal.Redirector;
 // Contains the parts of FileAccessServer responsible for handling NtQueryDirectoryFile callbacks
 public unsafe partial class FileAccessServer
 {
-    // ReSharper disable once InconsistentNaming
-    private const int NO_MORE_FILES = unchecked((int)0x80000006);
-    
-    private int NtQueryDirectoryFileHookImpl(nint fileHandle, nint @event, nint apcRoutine, nint apcContext, 
-        IO_STATUS_BLOCK* ioStatusBlock, nint fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
-        int returnSingleEntry, UNICODE_STRING* fileName, int restartScan)
+    private const int RestartScanFlag = 1;
+    private const int ReturnSingleFileFlag = 2;
+
+    private int NtQueryDirectoryFileExHookImpl(IntPtr fileHandle, IntPtr @event, IntPtr apcRoutine, IntPtr apcContext,
+        IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
+        int queryFlags, UNICODE_STRING* fileName)
     {
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
         if (_queryDirectoryFileLock.IsThisThread(threadId))
         {
-            LogDebugOnly("Exiting due to recursion lock on {0}", nameof(NtQueryDirectoryFileHookImpl));
+            LogDebugOnly("Exiting due to recursion lock on {0}", nameof(NtQueryDirectoryFileExHookImpl));
             goto fastReturn;
         }
 
         // Handle any of the possible intercepted types.
         if (fileInformationClass == FileDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_DIRECTORY_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
+            if (!HandleNtQueryDirectoryFileExHook<FILE_DIRECTORY_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags, fileName, threadId, out var result))
                 goto fastReturn;
             else return result;
         
         if (fileInformationClass == FileFullDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_FULL_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
+            if (!HandleNtQueryDirectoryFileExHook<FILE_FULL_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags, fileName, threadId, out var result))
                 goto fastReturn;
             else return result;
         
         if (fileInformationClass == FileBothDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
+            if (!HandleNtQueryDirectoryFileExHook<FILE_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags, fileName, threadId, out var result))
                 goto fastReturn;
             else return result;
         
         if (fileInformationClass == FileNamesInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_NAMES_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
+            if (!HandleNtQueryDirectoryFileExHook<FILE_NAMES_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags, fileName, threadId, out var result))
                 goto fastReturn;
             else return result;
         
         if (fileInformationClass == FileIdBothDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
+            if (!HandleNtQueryDirectoryFileExHook<FILE_ID_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags, fileName, threadId, out var result))
                 goto fastReturn;
             else return result;
         
         if (fileInformationClass == FileIdFullDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_FULL_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
+            if (!HandleNtQueryDirectoryFileExHook<FILE_ID_FULL_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags, fileName, threadId, out var result))
                 goto fastReturn;
             else return result;
         
         if (fileInformationClass == FileIdGlobalTxDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
+            if (!HandleNtQueryDirectoryFileExHook<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags, fileName, threadId, out var result))
                 goto fastReturn;
             else return result;
         
         if (fileInformationClass == FileIdExtdDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
+            if (!HandleNtQueryDirectoryFileExHook<FILE_ID_EXTD_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags, fileName, threadId, out var result))
                 goto fastReturn;
             else return result;
         
         if (fileInformationClass == FileIdExtdBothDirectoryInformation)
-            if (!HandleNtQueryDirectoryFileHook<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan, threadId, out var result))
+            if (!HandleNtQueryDirectoryFileExHook<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags, fileName, threadId, out var result))
                 goto fastReturn;
             else return result;
         
         fastReturn:
-        return _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
-            fileInformation, length, fileInformationClass, returnSingleEntry, fileName, restartScan);
+        return _ntQueryDirectoryFileExHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
+            fileInformation, length, fileInformationClass, queryFlags, fileName);
     }
     
     /// <returns>True if handled, false if to delegate to original function [unsupported feature].</returns>
-    private bool HandleNtQueryDirectoryFileHook<TDirectoryInformation>(nint fileHandle, nint @event, nint apcRoutine, nint apcContext, 
-        IO_STATUS_BLOCK* ioStatusBlock, nint fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
-        int returnSingleEntry, UNICODE_STRING* fileName, int restartScan, int threadId, out int returnValue) 
+    private bool HandleNtQueryDirectoryFileExHook<TDirectoryInformation>(IntPtr fileHandle, IntPtr @event, IntPtr apcRoutine, IntPtr apcContext,
+        IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
+        int queryFlags, UNICODE_STRING* fileName, int threadId, out int returnValue) 
         where TDirectoryInformation : unmanaged, IFileDirectoryInformationDerivative
     {
         returnValue = default;
-        
+
+        int restartScan = Convert.ToInt32((queryFlags & RestartScanFlag) == RestartScanFlag);
+        int returnSingleEntry = Convert.ToInt32((queryFlags & ReturnSingleFileFlag) == ReturnSingleFileFlag);
         if (!InitHandleNtQueryDirectoryFileHook(fileHandle, fileName, out var handleItem)) 
             return false;
         
@@ -101,24 +103,25 @@ public unsafe partial class FileAccessServer
             if (handleItem.CurrentItem < items!.Length)
             {
                 // Populate with custom files.
-                LogDebugOnly("Injecting File Index {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileHook));
+                LogDebugOnly("Injecting File Index {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileExHook));
                 var success = QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes, ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!, handleItem.QueryFileName);
                 if (!success)
-                    LogDebugOnly("Filtered Out {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileHook));
-                
+                    LogDebugOnly("Filtered Out {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileExHook));
+
                 if ((returnSingleEntry != 0 && success) || !moreFiles)
                 {
                     ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
                     break;
                 }
-                
-                
             }
             else
             {
                 // We finished with custom files, now get the originals that haven't been replaced.
-                returnValue = _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
-                    fileInformation, (uint)remainingBytes, fileInformationClass, returnSingleEntry, fileName, handleItem.GetForceRestartScan());
+                if (handleItem.GetForceRestartScan() >= 1)
+                    queryFlags |= RestartScanFlag;
+                
+                returnValue = _ntQueryDirectoryFileExHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
+                    fileInformation, (uint)remainingBytes, fileInformationClass, queryFlags, fileName);
 
                 if (returnValue == NO_MORE_FILES)
                 {

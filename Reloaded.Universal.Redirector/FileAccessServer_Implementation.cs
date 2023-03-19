@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -85,4 +86,16 @@ public partial class FileAccessServer
         RuntimeHelpers.PrepareMethod(method);
         return (void*) method.GetFunctionPointer();
     }
+    
+    [Conditional("DEBUG")]  
+    private void LogDebugOnly<T>(string message) => _logger?.Debug(message);
+
+    [Conditional("DEBUG")]  
+    private void LogDebugOnly<T>(string format, T itemOne) => _logger?.Debug(format, itemOne);
+    
+    [Conditional("DEBUG")]  
+    private void LogDebugOnly<T, T2>(string format, T itemOne, T2 itemTwo) => _logger?.Debug(format, itemOne, itemTwo);
+    
+    [Conditional("DEBUG")]  
+    private void LogDebugOnly<T, T2, T3>(string format, T itemOne, T2 itemTwo, T3 itemThree) => _logger?.Debug(format, itemOne, itemTwo, itemThree);
 }

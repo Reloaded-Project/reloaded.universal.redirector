@@ -84,4 +84,10 @@ public static class FileDirectoryInformationDerivativeExtensions
         item = (T*)((byte*)item + ofs);
         return true;
     }
+
+    /// <summary>
+    /// Checks if the next item exists.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe bool HasNext<T>(T* item) where T : unmanaged, IFileDirectoryInformationDerivative => item->GetNextEntryOffset() != 0;
 }
