@@ -47,4 +47,22 @@ public class RedirectorTests
         redirector.RemoveCustomRedirect(sourcePath);
         Assert.False(redirector.Manager.TryGetFile(sourcePath, out _));
     }
+    
+    [Fact]
+    public void Add_CanGetFolderWithBackslash_ViaTryGetFile()
+    {
+        //using var testFolder = new TemporaryFolderAllocation();
+        using var baseFolder = new TemporaryClonedFolder(Paths.BaseWithSubfolders);
+        using var overlayFolder = new TemporaryClonedFolder(Paths.OverrideWithSubfolders);
+        using var redirector = new Lib.Redirector(overlayFolder.FolderPath);
+        
+        redirector.Add(overlayFolder.FolderPath, baseFolder.FolderPath);
+        
+        // Baseline
+        var path = Path.Combine(baseFolder.FolderPath, "Poem 1");
+        Assert.True(redirector.Manager.TryGetFile(path, out _));
+        
+        // Actual Test
+        Assert.True(redirector.Manager.TryGetFile(path + Path.DirectorySeparatorChar, out _));
+    }
 }

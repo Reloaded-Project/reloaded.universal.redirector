@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using CommunityToolkit.HighPerformance;
 using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
+using Reloaded.Universal.Redirector.Lib.Extensions;
 using Reloaded.Universal.Redirector.Lib.Interfaces;
 using Reloaded.Universal.Redirector.Lib.Structures;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
@@ -186,15 +188,28 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe bool TryGetFile(ReadOnlySpan<char> filePath, out RedirectionTreeTarget value)
     {
-        var separatorIndex = filePath.LastIndexOf(Path.DirectorySeparatorChar);
-        if (TryGetFolder(filePath[..separatorIndex], out var result))
+        // Non-zero is hot path, so we nest code inside.
+        if (filePath.Length > 0)
         {
-            var fileName = filePath[(separatorIndex + 1)..];
-            Span<char> fileNameUpper = stackalloc char[fileName.Length];
+            // It's possible the user or Windows API might want to open a folder here,
+            // for example for the purposes of getting attribute, and name ends with a backslash.
+            // We strip it here; as the underlying lookup trees might not handle it.
+            if (filePath.DangerousGetReferenceAt(^1) == Path.DirectorySeparatorChar)
+                filePath = filePath.SliceFast(..^1);
+        
+            var separatorIndex = filePath.LastIndexOf(Path.DirectorySeparatorChar);
+            if (TryGetFolder(filePath.SliceFast(..separatorIndex), out var result))
+            {
+                var fileName = filePath[(separatorIndex + 1)..];
+                Span<char> fileNameUpper = stackalloc char[fileName.Length];
             
-            TextInfo.ChangeCase<TextInfo.ToUpperConversion>(fileName, fileNameUpper);
-            if (result.TryGetValue(fileNameUpper, out value))
-                return true;
+                TextInfo.ChangeCase<TextInfo.ToUpperConversion>(fileName, fileNameUpper);
+                if (result.TryGetValue(fileNameUpper, out value))
+                    return true;
+            }
+
+            value = default;
+            return false;
         }
 
         value = default;

@@ -6,7 +6,7 @@
 public class TemporaryClonedFolder : TemporaryFolderAllocation
 {
     /// <summary/>
-    public TemporaryClonedFolder(string sourceFolder)
+    public TemporaryClonedFolder(string sourceFolder, string? path = null) : base(path)
     {
         IO.CopyFilesRecursively(sourceFolder, FolderPath);
     }

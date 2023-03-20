@@ -71,4 +71,14 @@ public static class Paths
     /// An overlay folder that overrides a file stored in the base folder.
     /// </summary>
     public static string GetOverride2(string baseFolder) => Path.Combine(baseFolder, "Override2");
+    
+    /// <summary>
+    /// An overlay folder that overrides a file stored in the base folder with subfolders.
+    /// </summary>
+    public static string OverrideWithSubfolders => GetBaseWithSubfolders(AssetsFolder);
+    
+    /// <summary>
+    /// An overlay folder that overrides a file stored in the base folder with subfolders.
+    /// </summary>
+    public static string GetOverrideWithSubfolders(string baseFolder) => Path.Combine(baseFolder, "Override with Subfolder");
 }

@@ -1,4 +1,6 @@
 ﻿using Reloaded.Universal.Redirector.Lib;
+using Reloaded.Universal.Redirector.Lib.Structures;
+using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTreeManager;
 using Reloaded.Universal.Redirector.Tests.Utility;
 
@@ -22,14 +24,24 @@ public class RedirectionTreeManagerTests
 
     private static void Can_Add_Folder_Common(RedirectionTreeManager manager)
     {
+        void AssertLookupResult(SpanOfCharDict<RedirectionTreeTarget> spanOfCharDict)
+        {
+            Assert.Single(manager.FolderRedirections);
+            Assert.Equal(2, spanOfCharDict.Count);
+
+            // File pull test
+            Assert.True(manager.TryGetFile(Path.Combine(Paths.Base, "usvfs-poem.txt"), out _));
+        }
+
         manager.AddFolderRedirection(new FolderRedirection(Paths.Base, Paths.Base));
 
+        // Without backslash
         Assert.True(manager.TryGetFolder(Paths.Base, out var result));
-        Assert.Single(manager.FolderRedirections);
-        Assert.Equal(2, result.Count);
-        
-        // File pull test
-        Assert.True(manager.TryGetFile(Path.Combine(Paths.Base, "usvfs-poem.txt"), out _));
+        AssertLookupResult(result);
+
+        // With backslash
+        Assert.True(manager.TryGetFolder(Paths.Base + Path.DirectorySeparatorChar, out result));
+        AssertLookupResult(result);
     }
 
     [Fact]

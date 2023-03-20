@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
 using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
+using Reloaded.Universal.Redirector.Lib.Extensions;
 using Reloaded.Universal.Redirector.Lib.Utility;
 
 namespace Reloaded.Universal.Redirector.Lib.Structures;
@@ -85,7 +86,7 @@ public struct LookupTree<TTarget>
             // in correct answer.
             var hasSubfolder = Prefix.Length != folderPath.Length;
             var hasSubfolderByte = Unsafe.As<bool, byte>(ref hasSubfolder);
-            var nextFolder = folderPath.Slice(Prefix.Length + hasSubfolderByte);
+            var nextFolder = folderPath.SliceFast(Prefix.Length + hasSubfolderByte);
             
             return SubfolderToFiles.TryGetValue(nextFolder, out value!);
         }
