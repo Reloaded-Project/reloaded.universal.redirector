@@ -15,6 +15,12 @@ namespace Reloaded.Universal.Redirector;
 // Contains the parts of FileAccessServer responsible for handling NtQueryDirectoryFile callbacks
 public unsafe partial class FileAccessServer
 {
+    // ReSharper disable InconsistentNaming
+    private const int STATUS_BUFFER_TOO_SMALL = unchecked((int)0xC0000023);
+    private const int STATUS_BUFFER_OVERFLOW = unchecked((int)0x80000005);
+    private const int NO_MORE_FILES = unchecked((int)0x80000006);
+    // ReSharper restore InconsistentNaming
+    
     private void FilterNtQueryDirectoryFileResults<TDirectoryInformation>(TDirectoryInformation* lastBufferPtr,
         TDirectoryInformation* currentBufferPtr,
         SpanOfCharDict<bool> alreadyInjected)
@@ -123,7 +129,10 @@ public unsafe partial class FileAccessServer
     /// <summary/>
     /// <exception cref="Win32Exception">Failed to query file. [file will be skipped]</exception>
     /// <returns>True on success, else false if failed or filtered out.</returns>
-    /// <remarks>Item is advanced regardless of success.</remarks>
+    /// <remarks>
+    ///     If the item is not advanced, buffer is insufficient; else item was filtered out or an error occurred.
+    ///     Item is advanced regardless of success.
+    /// </remarks>
     private bool QueryCustomFile<TDirectoryInformation>(ref nint lastFileInformation, ref nint fileInformation,
         ref int remainingBytes,
         ref int currentItem,

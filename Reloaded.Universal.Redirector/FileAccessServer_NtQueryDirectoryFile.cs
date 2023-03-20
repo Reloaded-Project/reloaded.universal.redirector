@@ -7,9 +7,6 @@ namespace Reloaded.Universal.Redirector;
 // Contains the parts of FileAccessServer responsible for handling NtQueryDirectoryFile callbacks
 public unsafe partial class FileAccessServer
 {
-    // ReSharper disable once InconsistentNaming
-    private const int NO_MORE_FILES = unchecked((int)0x80000006);
-    
     private int NtQueryDirectoryFileHookImpl(nint fileHandle, nint @event, nint apcRoutine, nint apcContext, 
         IO_STATUS_BLOCK* ioStatusBlock, nint fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
         int returnSingleEntry, UNICODE_STRING* fileName, int restartScan)
@@ -102,17 +99,25 @@ public unsafe partial class FileAccessServer
             {
                 // Populate with custom files.
                 LogDebugOnly("Injecting File Index {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileHook));
+                var lastItem = handleItem.CurrentItem;
                 var success = QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes, ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!, handleItem.QueryFileName);
                 if (!success)
+                {
+                    // Not enough space.
+                    if (lastItem == handleItem.CurrentItem)
+                    {
+                        returnValue = STATUS_BUFFER_OVERFLOW;
+                        break;
+                    }
+                    
                     LogDebugOnly("Filtered Out {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileHook));
+                }
                 
                 if ((returnSingleEntry != 0 && success) || !moreFiles)
                 {
                     ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
                     break;
                 }
-                
-                
             }
             else
             {

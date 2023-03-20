@@ -104,9 +104,19 @@ public unsafe partial class FileAccessServer
             {
                 // Populate with custom files.
                 LogDebugOnly("Injecting File Index {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileExHook));
+                var lastItem = handleItem.CurrentItem;
                 var success = QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes, ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!, handleItem.QueryFileName);
                 if (!success)
+                {
+                    // Not enough space.
+                    if (lastItem == handleItem.CurrentItem)
+                    {
+                        returnValue = STATUS_BUFFER_OVERFLOW;
+                        break;
+                    }
+                    
                     LogDebugOnly("Filtered Out {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileExHook));
+                }
 
                 if ((returnSingleEntry != 0 && success) || !moreFiles)
                 {
