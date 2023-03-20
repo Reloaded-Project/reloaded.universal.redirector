@@ -11,7 +11,7 @@ public class TemporaryJunkFolder : TemporaryFolderAllocation
     public string[] FileNames { get; set; }
 
     /// <summary/>
-    public TemporaryJunkFolder(int numFiles, Func<string>? createFileName = null, bool createDirectory = false)
+    public TemporaryJunkFolder(int numFiles, Func<string>? createFileName = null, bool createDirectory = false, string? folderPath = null) : base(folderPath)
     {
         FileNames = new string[numFiles];
         createFileName ??= () => Path.GetRandomFileName() + Path.GetRandomFileName() + Path.GetRandomFileName();

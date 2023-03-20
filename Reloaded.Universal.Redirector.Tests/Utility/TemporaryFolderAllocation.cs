@@ -11,9 +11,10 @@ public class TemporaryFolderAllocation : IDisposable
     public string FolderPath { get; set; }
 
     /// <summary/>
-    public TemporaryFolderAllocation()
+    public TemporaryFolderAllocation(string? path = null)
     {
-        FolderPath = MakeUniqueFolder(Path.GetTempPath());
+        path ??= MakeUniqueFolder(Path.GetTempPath());
+        FolderPath = path;
     }
 
     /// <inheritdoc />
