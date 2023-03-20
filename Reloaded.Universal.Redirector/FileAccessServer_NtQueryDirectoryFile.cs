@@ -106,7 +106,7 @@ public unsafe partial class FileAccessServer
                     // Not enough space.
                     if (lastItem == handleItem.CurrentItem)
                     {
-                        returnValue = STATUS_BUFFER_OVERFLOW;
+                        returnValue = STATUS_BUFFER_TOO_SMALL;
                         break;
                     }
                     
