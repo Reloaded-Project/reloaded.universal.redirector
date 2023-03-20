@@ -56,13 +56,27 @@ public partial class FileAccessServer
         
         if (_redirectorApi.GetRedirectorSetting(RedirectorSettings.DontPrintNonFiles))
         {
-            if (path.Contains("usb#vid", StringComparison.Ordinal) || path.Contains("hid#vid", StringComparison.Ordinal))
+            if (path.Contains("usb#vid", StringComparison.OrdinalIgnoreCase) || path.Contains("hid#vid", StringComparison.OrdinalIgnoreCase))
                 return;
         }
 
         _logger.Info("[R2.Redirector] File Open {0}", path.ToString());
     }
+    
+    private void PrintGetAttributeIfNeeded(ReadOnlySpan<char> path)
+    {
+        if (!_redirectorApi.GetRedirectorSetting(RedirectorSettings.PrintGetAttributes) || _logger == null) 
+            return;
+        
+        _logger.Info("[R2.Redirector] File Get Attributes {0}", path.ToString());
+    }
 
+    private void PrintAttributeRedirectIfNeeded(ReadOnlySpan<char> path, string newFilePath)
+    {
+        if (_redirectorApi.GetRedirectorSetting(RedirectorSettings.PrintGetAttributes) && _logger != null)
+            _logger.Info("[R2.Redirector] Attribute Redirect {0}\n-> {1}", path.ToString(), newFilePath);
+    }
+    
     private void PrintFileRedirectIfNeeded(ReadOnlySpan<char> path, string newFilePath)
     {
         if (_redirectorApi.GetRedirectorSetting(RedirectorSettings.PrintRedirect) && _logger != null)

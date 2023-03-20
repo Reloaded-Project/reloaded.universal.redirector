@@ -42,6 +42,11 @@ public enum RedirectorSettings
     /// Skips printing non-files to the console.
     /// </summary>
     DontPrintNonFiles = 1 << 2,
+    
+    /// <summary>
+    /// Prints file open operations.
+    /// </summary>
+    PrintGetAttributes = 1 << 1,
 }
 
 public interface IRedirectorControllerV4

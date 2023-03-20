@@ -57,6 +57,7 @@ public class Mod : ModBase, IExports // <= Do not Remove.
         _redirectorApi.SetRedirectorSetting(configuration.PrintRedirections, RedirectorSettings.PrintRedirect);
         _redirectorApi.SetRedirectorSetting(configuration.PrintOpenFiles, RedirectorSettings.PrintOpen);
         _redirectorApi.SetRedirectorSetting(configuration.FilterNonFiles, RedirectorSettings.DontPrintNonFiles);
+        _redirectorApi.SetRedirectorSetting(configuration.PrintGetAttributes, RedirectorSettings.PrintGetAttributes);
         if (_logger == null!) 
             return;
         

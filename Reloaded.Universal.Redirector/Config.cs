@@ -25,6 +25,11 @@ public class Config : Configurable<Config>
     [Description("Logs when files are redirected to the console.")]
     [DefaultValue(false)]
     public bool PrintRedirections { get; set; } = false;
+    
+    [DisplayName("Log Attribute Fetches")]
+    [Description("Logs when files' attroibutes are .")]
+    [DefaultValue(false)]
+    public bool PrintGetAttributes { get; set; } = false;
 }
 
 /// <summary>

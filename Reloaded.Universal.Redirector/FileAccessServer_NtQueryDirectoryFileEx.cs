@@ -103,7 +103,7 @@ public unsafe partial class FileAccessServer
             if (handleItem.CurrentItem < items!.Length)
             {
                 // Populate with custom files.
-                LogDebugOnly("Injecting File Index {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileExHook));
+                LogDebugOnly("Injecting File Index {0} in {1}, Struct: [{2}]", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileExHook), typeof(TDirectoryInformation).Name);
                 var lastItem = handleItem.CurrentItem;
                 var success = QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes, ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!, handleItem.QueryFileName);
                 if (!success)

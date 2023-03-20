@@ -379,6 +379,8 @@ public unsafe partial class FileAccessServer
     
     private int NtQueryAttributesFileImpl(OBJECT_ATTRIBUTES* attributes, nint fileInformation)
     {
+        ReadOnlySpan<char> path = default;
+        
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
         if (_queryAttributesFileLock.IsThisThread(threadId))
@@ -392,12 +394,15 @@ public unsafe partial class FileAccessServer
 
         {
             DequeueHandles();
-            if (!TryResolvePath(attributes, out string newFilePath))
+            path = ExtractPathFromObjectAttributes(attributes);
+            if (!TryResolvePath(path, out string newFilePath))
             {
+                PrintGetAttributeIfNeeded(path);
                 _queryAttributesFileLock.Unlock();
                 goto fastReturn; 
             }
 
+            PrintAttributeRedirectIfNeeded(path, newFilePath);
             fixed (char* address = newFilePath)
             {
                 // Backup original string.
@@ -422,6 +427,8 @@ public unsafe partial class FileAccessServer
 
     private int NtQueryFullAttributesFileImpl(OBJECT_ATTRIBUTES* attributes, nint fileInformation)
     {
+        ReadOnlySpan<char> path = default;
+        
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
         if (_queryFullAttributesFileLock.IsThisThread(threadId))
@@ -435,12 +442,15 @@ public unsafe partial class FileAccessServer
 
         {
             DequeueHandles();
-            if (!TryResolvePath(attributes, out string newFilePath))
+            path = ExtractPathFromObjectAttributes(attributes);
+            if (!TryResolvePath(path, out string newFilePath))
             {
+                PrintGetAttributeIfNeeded(path);
                 _queryFullAttributesFileLock.Unlock();
                 goto fastReturn; 
             }
 
+            PrintAttributeRedirectIfNeeded(path, newFilePath);
             fixed (char* address = newFilePath)
             {
                 // Backup original string.
