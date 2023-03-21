@@ -89,6 +89,7 @@ public partial class FileAccessServer
     /// <param name="type">Type inside which the function is contained.</param>
     /// <param name="name">Name of the function.</param>
     /// <returns>Pointer to the function.</returns>
+    // ReSharper disable once UnusedMethodReturnValue.Local
     private unsafe void* JitFunction(
 #if NET5_0_OR_GREATER
         [DynamicallyAccessedMembers(Trimming.Methods)]
@@ -101,8 +102,9 @@ public partial class FileAccessServer
         return (void*) method.GetFunctionPointer();
     }
     
+    // ReSharper disable UnusedMember.Local
     [Conditional("DEBUG")]  
-    private void LogDebugOnly<T>(string message) => _logger?.Debug(message);
+    private void LogDebugOnly(string message) => _logger?.Debug(message);
 
     [Conditional("DEBUG")]  
     private void LogDebugOnly<T>(string format, T itemOne) => _logger?.Debug(format, itemOne);
@@ -112,4 +114,13 @@ public partial class FileAccessServer
     
     [Conditional("DEBUG")]  
     private void LogDebugOnly<T, T2, T3>(string format, T itemOne, T2 itemTwo, T3 itemThree) => _logger?.Debug(format, itemOne, itemTwo, itemThree);
+    
+    [Conditional("DEBUG")]
+    private void LogFatalError(string methodName, Exception ex)
+    {
+        _logger?.Fatal($"Exception thrown in {methodName}\n" +
+                       $"Message: {ex.Message}\n" +
+                       $"Stack: {ex.StackTrace}");
+    }
+    // ReSharper restore UnusedMember.Local
 }

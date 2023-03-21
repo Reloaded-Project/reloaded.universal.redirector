@@ -10,7 +10,6 @@ using Reloaded.Universal.Redirector.Lib.Utility;
 using Reloaded.Universal.Redirector.Lib.Utility.Native;
 using Reloaded.Universal.Redirector.Structures;
 using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native;
-using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native.FILE_INFORMATION_CLASS;
 using static Reloaded.Universal.Redirector.Structures.NativeIntList;
 
 namespace Reloaded.Universal.Redirector;
@@ -379,8 +378,6 @@ public unsafe partial class FileAccessServer
     
     private int NtQueryAttributesFileImpl(OBJECT_ATTRIBUTES* attributes, nint fileInformation)
     {
-        ReadOnlySpan<char> path = default;
-        
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
         if (_queryAttributesFileLock.IsThisThread(threadId))
@@ -394,7 +391,7 @@ public unsafe partial class FileAccessServer
 
         {
             DequeueHandles();
-            path = ExtractPathFromObjectAttributes(attributes);
+            var path = ExtractPathFromObjectAttributes(attributes);
             if (!TryResolvePath(path, out string newFilePath))
             {
                 PrintGetAttributeIfNeeded(path);
@@ -427,8 +424,6 @@ public unsafe partial class FileAccessServer
 
     private int NtQueryFullAttributesFileImpl(OBJECT_ATTRIBUTES* attributes, nint fileInformation)
     {
-        ReadOnlySpan<char> path = default;
-        
         // Prevent recursion.
         var threadId = Thread.CurrentThread.ManagedThreadId;
         if (_queryFullAttributesFileLock.IsThisThread(threadId))
@@ -442,7 +437,7 @@ public unsafe partial class FileAccessServer
 
         {
             DequeueHandles();
-            path = ExtractPathFromObjectAttributes(attributes);
+            var path = ExtractPathFromObjectAttributes(attributes);
             if (!TryResolvePath(path, out string newFilePath))
             {
                 PrintGetAttributeIfNeeded(path);
@@ -508,8 +503,20 @@ public unsafe partial class FileAccessServer
         uint fileAttributes, FileShare share, uint createDisposition, uint createOptions, IntPtr eaBuffer,
         uint eaLength)
     {
-        return _instance.NtCreateFileHookImpl(fileHandle, access, objectAttributes, ioStatus, allocSize, 
-            fileAttributes, share, createDisposition, createOptions, eaBuffer, eaLength);
+#if DEBUG
+        try
+        {
+#endif
+            return _instance.NtCreateFileHookImpl(fileHandle, access, objectAttributes, ioStatus, allocSize, 
+                fileAttributes, share, createDisposition, createOptions, eaBuffer, eaLength);
+#if DEBUG
+        }
+        catch (Exception e)
+        {
+            _instance.LogFatalError(nameof(NtCreateFileHookFn), e);
+            throw;
+        }
+#endif
     }
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
@@ -517,13 +524,37 @@ public unsafe partial class FileAccessServer
         OBJECT_ATTRIBUTES* objectAttributes,
         IO_STATUS_BLOCK* ioStatus, FileShare share, uint openOptions)
     {
+#if DEBUG
+        try
+        {
+#endif
         return _instance.NtOpenFileHookImpl(fileHandle, access, objectAttributes, ioStatus, share, openOptions);
+#if DEBUG
+        }
+        catch (Exception e)
+        {
+            _instance.LogFatalError(nameof(NtOpenFileHookFn), e);
+            throw;
+        }
+#endif
     }
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtDeleteFileHookFn(OBJECT_ATTRIBUTES* objectAttributes)
     {
+#if DEBUG
+        try
+        {
+#endif
         return _instance.NtDeleteFileHookImpl(objectAttributes);
+#if DEBUG
+        }
+        catch (Exception e)
+        {
+            _instance.LogFatalError(nameof(NtDeleteFileHookFn), e);
+            throw;
+        }
+#endif
     }
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
@@ -531,9 +562,21 @@ public unsafe partial class FileAccessServer
         IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
         int returnSingleEntry, UNICODE_STRING* fileName, int restartScan)
     {
+#if DEBUG
+        try
+        {
+#endif
         return _instance.NtQueryDirectoryFileHookImpl(fileHandle, @event, apcRoutine, apcContext,
             ioStatusBlock, fileInformation, length, fileInformationClass, returnSingleEntry,
             fileName, restartScan);
+#if DEBUG
+        }
+        catch (Exception e)
+        {
+            _instance.LogFatalError(nameof(NtQueryDirectoryFileHookFn), e);
+            throw;
+        }
+#endif
     }
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
@@ -541,25 +584,60 @@ public unsafe partial class FileAccessServer
         IO_STATUS_BLOCK* ioStatusBlock, IntPtr fileInformation, uint length, FILE_INFORMATION_CLASS fileInformationClass, 
         int queryFlags, UNICODE_STRING* fileName)
     {
-        // This redirects to other hook; it works because we have recursion lock
+#if DEBUG
+        try
+        {
+#endif
         return _instance.NtQueryDirectoryFileExHookImpl(fileHandle, @event, apcRoutine, apcContext,
             ioStatusBlock, fileInformation, length, fileInformationClass, queryFlags,
             fileName);
+#if DEBUG
+        }
+        catch (Exception e)
+        {
+            _instance.LogFatalError(nameof(NtQueryDirectoryFileExHookFn), e);
+            throw;
+        }
+#endif
     }
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtQueryAttributesFile(OBJECT_ATTRIBUTES* files, IntPtr fileInformation)
     {
+#if DEBUG
+        try
+        {
+#endif
         return _instance.NtQueryAttributesFileImpl(files, fileInformation);
+#if DEBUG
+        }
+        catch (Exception e)
+        {
+            _instance.LogFatalError(nameof(NtQueryAttributesFile), e);
+            throw;
+        }
+#endif
     }
     
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtQueryFullAttributesFile(OBJECT_ATTRIBUTES* files, IntPtr fileInformation)
     {
+#if DEBUG
+        try
+        {
+#endif
         return _instance.NtQueryFullAttributesFileImpl(files, fileInformation);
+#if DEBUG
+        }
+        catch (Exception e)
+        {
+            _instance.LogFatalError(nameof(NtQueryFullAttributesFile), e);
+            throw;
+        }
+#endif
     }
     #endregion
-    
+
     private class OpenHandleState
     {
         /// <summary>
