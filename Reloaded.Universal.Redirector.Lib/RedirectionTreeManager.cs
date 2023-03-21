@@ -189,6 +189,7 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
     public unsafe bool TryGetFile(ReadOnlySpan<char> filePath, out RedirectionTreeTarget value)
     {
         // Non-zero is hot path, so we nest code inside.
+        value = default;
         if (filePath.Length > 0)
         {
             // It's possible the user or Windows API might want to open a folder here,
@@ -198,6 +199,9 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
                 filePath = filePath.SliceFast(..^1);
         
             var separatorIndex = filePath.LastIndexOf(Path.DirectorySeparatorChar);
+            if (separatorIndex == -1)
+                return false;
+            
             if (TryGetFolder(filePath.SliceFast(..separatorIndex), out var result))
             {
                 var fileName = filePath[(separatorIndex + 1)..];
@@ -208,7 +212,6 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
                     return true;
             }
 
-            value = default;
             return false;
         }
 
