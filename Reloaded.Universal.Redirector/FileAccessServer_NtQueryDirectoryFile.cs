@@ -125,7 +125,7 @@ public unsafe partial class FileAccessServer
                 returnValue = _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
                     fileInformation, (uint)remainingBytes, fileInformationClass, returnSingleEntry, fileName, handleItem.GetForceRestartScan());
 
-                if (returnValue == NO_MORE_FILES)
+                if (returnValue != 0)
                 {
                     ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
                     break;

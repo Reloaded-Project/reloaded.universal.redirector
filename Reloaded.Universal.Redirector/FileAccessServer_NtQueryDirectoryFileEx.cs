@@ -133,12 +133,12 @@ public unsafe partial class FileAccessServer
                 returnValue = _ntQueryDirectoryFileExHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
                     fileInformation, (uint)remainingBytes, fileInformationClass, queryFlags, fileName);
 
-                if (returnValue == NO_MORE_FILES)
+                if (returnValue != 0)
                 {
                     ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
                     break;
                 }
-                
+
                 if (returnSingleEntry != 0)
                     break;
 

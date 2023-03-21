@@ -166,8 +166,13 @@ public static class RedirectionTreeExtensions
         // Path ended without \, as expected.
         if (lastFolder.Length > 0)
         {
-            var newNode = new RedirectionTreeNode<RedirectionTreeTarget>(0, files.Length);
-            currentNode.Children.AddOrReplace(lastFolder.ToString(), newNode);
+            var lastFolderStr = lastFolder.ToString();
+            if (!currentNode.Children.TryGetValue(lastFolderStr, out var newNode))
+            {
+                newNode = new RedirectionTreeNode<RedirectionTreeTarget>(0, files.Length);
+                currentNode.Children.AddOrReplace(lastFolder.ToString(), newNode);
+            }
+            
             currentNode = newNode;
         }
         
