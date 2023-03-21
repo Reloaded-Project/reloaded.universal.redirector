@@ -33,7 +33,9 @@ public static class ModLoaderRedirectorExtensions
     /// <param name="modLoader">Instance of the mod loader API.</param>
     public static void Add(this Redirector redirector, string modId, IModLoader modLoader)
     {
-        redirector.Add(GetRedirectFolder(modLoader, modId));
+        var target = GetRedirectFolder(modLoader, modId);
+        if (Directory.Exists(target))
+            redirector.Add(target);
     }
     
     /// <summary>
