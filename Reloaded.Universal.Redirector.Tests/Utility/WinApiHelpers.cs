@@ -15,7 +15,32 @@ namespace Reloaded.Universal.Redirector.Tests.Utility;
 /// </summary>
 public static class WinApiHelpers
 {
-    public static unsafe List<string> NtQueryDirectoryFileGetAllItems(string folderPath, FILE_INFORMATION_CLASS method, bool oneByOne = false, int? restartAfter = null, string fileNameFilter = "*", bool includeDirectories = false)
+    public struct NtQueryDirectoryFileSettings
+    {
+        /// <summary>
+        /// If true, returns results one by one.
+        /// </summary>
+        public bool OneByOne = false;
+        
+        /// <summary>
+        /// Restarts search after item with specified index.
+        /// </summary>
+        public int? RestartAfter = null;
+        
+        /// <summary>
+        /// Filter for the file name.
+        /// </summary>
+        public string FileNameFilter = "*";
+        
+        /// <summary>
+        /// Includes directories in the search.
+        /// </summary>
+        public bool IncludeDirectories { get; set; }
+
+        public NtQueryDirectoryFileSettings() { }
+    }
+    
+    public static unsafe List<string> NtQueryDirectoryFileGetAllItems(string folderPath, FILE_INFORMATION_CLASS method, NtQueryDirectoryFileSettings settings)
     {
         var handleUnsafe = NtCreateFileDirectoryOpen(folderPath);
         using var handle = new SafeFileHandle(handleUnsafe, true);
@@ -27,20 +52,20 @@ public static class WinApiHelpers
         
         // Read remaining files while possible.
         bool moreFiles = true;
-        int returnSingleEntry = oneByOne ? 1 : 0;
-        fixed (char* fileNamePtr = fileNameFilter)
+        int returnSingleEntry = settings.OneByOne ? 1 : 0;
+        fixed (char* fileNamePtr = settings.FileNameFilter)
         {
-            var fileNameString = new UNICODE_STRING(fileNamePtr, fileNameFilter.Length);
+            var fileNameString = new UNICODE_STRING(fileNamePtr, settings.FileNameFilter.Length);
 
             while (moreFiles)
             {
                 int restartScan = 0;
-                int restartAfterValue = restartAfter.GetValueOrDefault(int.MaxValue);
+                int restartAfterValue = settings.RestartAfter.GetValueOrDefault(int.MaxValue);
                 if (files.Count >= restartAfterValue)
                 {
                     restartScan = 1;
                     restartAfterValue = int.MaxValue;
-                    restartAfter = null;
+                    settings.RestartAfter = null;
                 }
 
                 var statusBlock = new IO_STATUS_BLOCK();
@@ -56,7 +81,7 @@ public static class WinApiHelpers
                 }
                 else
                 {
-                    GetFiles(method, currentBufferPtr, files, restartAfterValue, includeDirectories);
+                    GetFiles(method, currentBufferPtr, files, restartAfterValue, settings.IncludeDirectories);
                 }
             }
 
@@ -65,8 +90,7 @@ public static class WinApiHelpers
     }
 
     public static unsafe List<string> NtQueryDirectoryFileExGetAllItems(string folderPath,
-        FILE_INFORMATION_CLASS method, bool oneByOne = false, int? restartAfter = null, string fileNameFilter = "*",
-        bool includeDirectories = false)
+        FILE_INFORMATION_CLASS method, NtQueryDirectoryFileSettings settings)
     {
         var handleUnsafe = NtCreateFileDirectoryOpen(folderPath);
         using var handle = new SafeFileHandle(handleUnsafe, true);
@@ -78,20 +102,20 @@ public static class WinApiHelpers
         
         // Read remaining files while possible.
         bool moreFiles = true;
-        int returnSingleEntry = oneByOne ? 1 : 0;
-        fixed (char* fileNamePtr = fileNameFilter)
+        int returnSingleEntry = settings.OneByOne ? 1 : 0;
+        fixed (char* fileNamePtr = settings.FileNameFilter)
         {
-            var fileNameString = new UNICODE_STRING(fileNamePtr, fileNameFilter.Length);
+            var fileNameString = new UNICODE_STRING(fileNamePtr, settings.FileNameFilter.Length);
 
             while (moreFiles)
             {
                 int restartScan = 0;
-                int restartAfterValue = restartAfter.GetValueOrDefault(int.MaxValue);
+                int restartAfterValue = settings.RestartAfter.GetValueOrDefault(int.MaxValue);
                 if (files.Count >= restartAfterValue)
                 {
                     restartScan = 1;
                     restartAfterValue = int.MaxValue;
-                    restartAfter = null;
+                    settings.RestartAfter = null;
                 }
 
                 var statusBlock = new IO_STATUS_BLOCK();
@@ -115,7 +139,7 @@ public static class WinApiHelpers
                 }
                 else
                 {
-                    GetFiles(method, currentBufferPtr, files, restartAfterValue, includeDirectories);
+                    GetFiles(method, currentBufferPtr, files, restartAfterValue, settings.IncludeDirectories);
                 }
             }
 

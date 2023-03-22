@@ -107,6 +107,7 @@ public unsafe partial class FileAccessServer
                     // Not enough space for next element.
                     if (lastItem > initialItem)
                     {
+                        ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
                         returnValue = STATUS_SUCCESS;
                         break;
                     }

@@ -27,7 +27,7 @@ public class NtQueryDirectoryFile : BaseHookTest
         
         const int count = 512;
         using var items = new TemporaryJunkFolder(count);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method);
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings());
         Assert.Equal(count, files.Count);
 
         for (int x = 0; x < files.Count; x++)
@@ -84,7 +84,14 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, true);
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
+            new NtQueryDirectoryFileSettings()
+        {
+            OneByOne = true,
+            RestartAfter = null,
+            FileNameFilter = "*"
+        });
+        
         Assert.Equal(count * 2, files.Count);
         AssertReturnedFileNames(items, files, newItems);
     }
@@ -108,7 +115,13 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, true, restartAfter);
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
+            new NtQueryDirectoryFileSettings()
+        {
+            OneByOne = true,
+            RestartAfter = restartAfter,
+            FileNameFilter = "*"
+        });
         Assert.Equal((count * 2) + restartAfter, files.Count);
         AssertReturnedFileNames(items, files, newItems);
     }
@@ -132,7 +145,14 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, true, restartAfter);
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
+            new NtQueryDirectoryFileSettings()
+            {
+                OneByOne = true,
+                RestartAfter = restartAfter,
+                FileNameFilter = "*"
+            });
+        
         Assert.Equal((count * 2) + restartAfter, files.Count);
         AssertReturnedFileNames(items, files, newItems);
     }
@@ -158,7 +178,13 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count, MakeFileName);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, false, null, "10*");
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()
+        {
+            OneByOne = false,
+            RestartAfter = null,
+            FileNameFilter = "10*"
+        });
+        
         foreach (var file in files)
             file.StartsWith("10");
     }
@@ -181,7 +207,7 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method);
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings());
         Assert.Equal(count, files.Count);
         
         for (int x = 0; x < files.Count; x++)
@@ -210,7 +236,13 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, false, null, "*", includeDirectories);
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()
+        {
+            OneByOne = false,
+            RestartAfter = null,
+            FileNameFilter = "*",
+            IncludeDirectories = includeDirectories
+        });
         Assert.Equal(count * 2, files.Count);
 
         for (int x = 0; x < files.Count; x++)
