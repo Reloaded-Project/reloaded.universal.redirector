@@ -153,18 +153,11 @@ internal class WindowsDirectorySearcher
                             {
                                 FullPath = $@"{originalDirPath}\{fileName}"
                             });
-                            
-                            onAddFile(new FileInformation
-                            {
-                                DirectoryPath = originalDirPath,
-                                FileName = fileName
-                            });
                         }
                         else if (!isDirectory)
                         {
                             onAddFile(new FileInformation
                             {
-                                DirectoryPath = originalDirPath,
                                 FileName = fileName
                             });
                         }
@@ -190,11 +183,6 @@ internal class WindowsDirectorySearcher
 /// </summary>
 public struct FileInformation
 {
-    /// <summary>
-    /// Path to the directory containing this file.
-    /// </summary>
-    public string DirectoryPath;
-
     /// <summary>
     /// Name of the file relative to directory.
     /// </summary>
