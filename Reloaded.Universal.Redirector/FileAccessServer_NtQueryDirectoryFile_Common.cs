@@ -64,7 +64,7 @@ public unsafe partial class FileAccessServer
                         continue;
                     
                     // Set to next item.
-                    currentEntry->SetNextEntryOffset((int)((byte*)nextItem - (byte*)currentEntry));
+                    lastEntry->SetNextEntryOffset((int)((byte*)nextItem - (byte*)lastEntry));
                     break;
                 }
             }
