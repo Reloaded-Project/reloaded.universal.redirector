@@ -112,8 +112,9 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var items = new TemporaryJunkFolder(count, MakeFileName, true);
         using var newItems = new TemporaryJunkFolder(count, MakeFileName, true);
 
+        // Note: FileNamesInformation can't discern files and directories, so we return both
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var dirs = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).Directories;
+        var dirs = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).GetItems(true);
         
         Assert.Equal(count * 2, dirs.Count);
     }

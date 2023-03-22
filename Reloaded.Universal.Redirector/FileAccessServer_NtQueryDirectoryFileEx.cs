@@ -103,55 +103,26 @@ public unsafe partial class FileAccessServer
             var currentBufferPtr = (TDirectoryInformation*)fileInformation;
             if (handleItem.CurrentItem < items!.Length)
             {
-                // Populate with custom files.
-                LogDebugOnly("Injecting File Index {0} in {1}, Struct: [{2}]", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileExHook), typeof(TDirectoryInformation).Name);
-                var lastItem = handleItem.CurrentItem;
-                var success = QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes, ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!, handleItem.QueryFileName);
-                if (!success)
-                {
-                    // Not enough space for next element.
-                    if (lastItem > initialItem)
-                    {
-                        ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
-                        returnValue = STATUS_SUCCESS;
-                        break;
-                    }
-
-                    // Not enough space for any element
-                    if (lastItem == handleItem.CurrentItem)
-                    {
-                        returnValue = STATUS_BUFFER_TOO_SMALL;
-                        break;
-                    }
-                    
-                    LogDebugOnly("Filtered Out {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileExHook));
-                }
-
-                if ((returnSingleEntry != 0 && success) || !moreFiles)
+                if (InjectCustomFile(ref fileInformation, returnSingleEntry, ref returnValue, handleItem, items, currentBufferPtr, initialItem, ref lastFileInformation, ref remainingBytes, ref moreFiles)) 
+                    break;
+            }
+            else
+            {
+                // If not enough bytes to fit in single item; just return [faster]
+                if (remainingBytes < sizeof(TDirectoryInformation))
                 {
                     ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
                     break;
                 }
-            }
-            else
-            {
+                
                 // We finished with custom files, now get the originals that haven't been replaced.
                 if (handleItem.GetForceRestartScan() >= 1)
                     queryFlags |= RestartScanFlag;
                 
                 returnValue = _ntQueryDirectoryFileExHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
                     fileInformation, (uint)remainingBytes, fileInformationClass, queryFlags, fileName);
-
-                if (returnValue != 0)
-                {
-                    ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
-                    break;
-                }
-
-                if (returnSingleEntry != 0)
-                    break;
-
-                FilterNtQueryDirectoryFileResults((TDirectoryInformation*)lastFileInformation, currentBufferPtr, handleItem.AlreadyInjected!);
+                
+                HandleNtQueryDirectoryFileResult(returnSingleEntry, ref returnValue, handleItem, initialItem, lastFileInformation, currentBufferPtr);
                 break;
             }
         }
