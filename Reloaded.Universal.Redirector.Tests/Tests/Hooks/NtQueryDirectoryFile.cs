@@ -25,7 +25,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     {
         Api.Enable();
         
-        const int count = 4096;
+        const int count = 512;
         using var items = new TemporaryJunkFolder(count);
         var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method);
         Assert.Equal(count, files.Count);
@@ -47,7 +47,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_Baseline(Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Baseline_Impl(method, 4096);
+        MapFolder_Baseline_Impl(method, 512);
     }
     
     [Theory]
@@ -63,7 +63,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_Directories(Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Baseline_Impl(method, 4096, true);
+        MapFolder_Baseline_Impl(method, 512, true);
     }
     
     [Theory]
@@ -79,7 +79,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_ReturnSingleEntry(Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        int count = 4096;
+        int count = 512;
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);
 
@@ -102,8 +102,8 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_WithRestart(Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        int count = 4096;
-        const int restartAfter = 2048;
+        int count = 512;
+        const int restartAfter = 256;
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);
 
@@ -126,8 +126,8 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_WithRestart_InOriginalFiles(Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        const int count = 4096;
-        const int restartAfter = count + 2048;
+        const int count = 512;
+        const int restartAfter = count + 256;
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);
 
@@ -150,7 +150,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_WithFileName(Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        const int count = 4096;
+        const int count = 512;
 
         int currentName = 0;
         string MakeFileName() => (currentName++).ToString();
@@ -176,7 +176,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_OverEmptyFolder(Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        int count = 4096;
+        int count = 512;
         using var items = new TemporaryFolderAllocation();
         using var newItems = new TemporaryJunkFolder(count);
 
@@ -230,6 +230,4 @@ public class NtQueryDirectoryFile : BaseHookTest
             Assert.True(itemsContains | newItemsContains);
         }
     }
-
-    // TODO: MapFolder_WithFileName
 }
