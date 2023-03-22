@@ -33,22 +33,44 @@ public static class WinApiHelpers
         public string FileNameFilter = "*";
         
         /// <summary>
-        /// Includes directories in the search.
+        /// Buffer size used to hold results of search.
         /// </summary>
-        public bool IncludeDirectories { get; set; }
+        public int BufferSize = 8192;
 
         public NtQueryDirectoryFileSettings() { }
     }
     
-    public static unsafe List<string> NtQueryDirectoryFileGetAllItems(string folderPath, FILE_INFORMATION_CLASS method, NtQueryDirectoryFileSettings settings)
+    public struct NtQueryDirectoryFileResult
+    {
+        /// <summary>
+        /// List of returned files.
+        /// </summary>
+        public List<string> Files { get; set; }
+        
+        /// <summary>
+        /// List of returned directories.
+        /// </summary>
+        public List<string> Directories { get; set; }
+
+        public List<string> GetItems(bool includeDirectories)
+        {
+            var files = new List<string>(Files);
+            if (includeDirectories)
+                files.AddRange(Directories);
+            
+            return files;
+        }
+    }
+    
+    public static unsafe NtQueryDirectoryFileResult NtQueryDirectoryFileGetAllItems(string folderPath, FILE_INFORMATION_CLASS method, NtQueryDirectoryFileSettings settings)
     {
         var handleUnsafe = NtCreateFileDirectoryOpen(folderPath);
         using var handle = new SafeFileHandle(handleUnsafe, true);
         
         // Note: Thanks to SkipLocalsInit, this memory is not zero'd so the allocation is virtually free.
-        const int bufferSize = 8192;
         var files = new List<string>();
-        byte* bufferPtr = stackalloc byte[bufferSize];
+        var directories = new List<string>();
+        byte* bufferPtr = stackalloc byte[settings.BufferSize];
         
         // Read remaining files while possible.
         bool moreFiles = true;
@@ -71,7 +93,7 @@ public static class WinApiHelpers
                 var statusBlock = new IO_STATUS_BLOCK();
                 var ntstatus = NtQueryDirectoryFile(handle.DangerousGetHandle(), // Our directory handle.
                     IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, &statusBlock, // Pointers we don't care about 
-                    (IntPtr)bufferPtr, bufferSize, method, // Buffer info.
+                    (IntPtr)bufferPtr, (uint)settings.BufferSize, method, // Buffer info.
                     returnSingleEntry, &fileNameString, restartScan);
 
                 var currentBufferPtr = (IntPtr)bufferPtr;
@@ -81,24 +103,28 @@ public static class WinApiHelpers
                 }
                 else
                 {
-                    GetFiles(method, currentBufferPtr, files, restartAfterValue, settings.IncludeDirectories);
+                    GetFiles(method, currentBufferPtr, files, directories, restartAfterValue);
                 }
             }
 
-            return files;
+            return new NtQueryDirectoryFileResult()
+            {
+                Files = files,
+                Directories = directories
+            };
         }
     }
 
-    public static unsafe List<string> NtQueryDirectoryFileExGetAllItems(string folderPath,
+    public static unsafe NtQueryDirectoryFileResult NtQueryDirectoryFileExGetAllItems(string folderPath,
         FILE_INFORMATION_CLASS method, NtQueryDirectoryFileSettings settings)
     {
         var handleUnsafe = NtCreateFileDirectoryOpen(folderPath);
         using var handle = new SafeFileHandle(handleUnsafe, true);
         
         // Note: Thanks to SkipLocalsInit, this memory is not zero'd so the allocation is virtually free.
-        const int bufferSize = 8192;
         var files = new List<string>();
-        byte* bufferPtr = stackalloc byte[bufferSize];
+        var directories = new List<string>();
+        byte* bufferPtr = stackalloc byte[settings.BufferSize];
         
         // Read remaining files while possible.
         bool moreFiles = true;
@@ -129,7 +155,7 @@ public static class WinApiHelpers
                 
                 var ntstatus = NtQueryDirectoryFileEx(handle.DangerousGetHandle(), // Our directory handle.
                     IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, &statusBlock, // Pointers we don't care about 
-                    (IntPtr)bufferPtr, bufferSize, method, // Buffer info.
+                    (IntPtr)bufferPtr, (uint)settings.BufferSize, method, // Buffer info.
                     queryFlags, &fileNameString);
 
                 var currentBufferPtr = (IntPtr)bufferPtr;
@@ -139,39 +165,43 @@ public static class WinApiHelpers
                 }
                 else
                 {
-                    GetFiles(method, currentBufferPtr, files, restartAfterValue, settings.IncludeDirectories);
+                    GetFiles(method, currentBufferPtr, files, directories, restartAfterValue);
                 }
             }
 
-            return files;
+            return new NtQueryDirectoryFileResult()
+            {
+                Files = files,
+                Directories = directories
+            };
         }
     }
     
-    private static void GetFiles(FILE_INFORMATION_CLASS method, nint currentBufferPtr, List<string> files,
-        int restartAfterValue, bool includeDirectories)
+    private static void GetFiles(FILE_INFORMATION_CLASS method, nint currentBufferPtr, List<string> files, List<string> directories,
+        int restartAfterValue)
     {
         if (method == FILE_INFORMATION_CLASS.FileDirectoryInformation)
-            GetFiles<FILE_DIRECTORY_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
+            GetFiles<FILE_DIRECTORY_INFORMATION>(currentBufferPtr, files, directories, restartAfterValue);
         else if (method == FILE_INFORMATION_CLASS.FileFullDirectoryInformation)
-            GetFiles<FILE_FULL_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
+            GetFiles<FILE_FULL_DIR_INFORMATION>(currentBufferPtr, files, directories, restartAfterValue);
         else if (method == FILE_INFORMATION_CLASS.FileBothDirectoryInformation)
-            GetFiles<FILE_BOTH_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
+            GetFiles<FILE_BOTH_DIR_INFORMATION>(currentBufferPtr, files, directories, restartAfterValue);
         else if (method == FILE_INFORMATION_CLASS.FileNamesInformation)
-            GetFiles<FILE_NAMES_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
+            GetFiles<FILE_NAMES_INFORMATION>(currentBufferPtr, files, directories, restartAfterValue);
         else if (method == FILE_INFORMATION_CLASS.FileIdBothDirectoryInformation)
-            GetFiles<FILE_ID_BOTH_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
+            GetFiles<FILE_ID_BOTH_DIR_INFORMATION>(currentBufferPtr, files, directories, restartAfterValue);
         else if (method == FILE_INFORMATION_CLASS.FileIdFullDirectoryInformation)
-            GetFiles<FILE_ID_FULL_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
+            GetFiles<FILE_ID_FULL_DIR_INFORMATION>(currentBufferPtr, files, directories, restartAfterValue);
         else if (method == FILE_INFORMATION_CLASS.FileIdGlobalTxDirectoryInformation)
-            GetFiles<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
+            GetFiles<FILE_ID_GLOBAL_TX_DIR_INFORMATION>(currentBufferPtr, files, directories, restartAfterValue);
         else if (method == FILE_INFORMATION_CLASS.FileIdExtdDirectoryInformation)
-            GetFiles<FILE_ID_EXTD_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
+            GetFiles<FILE_ID_EXTD_DIR_INFORMATION>(currentBufferPtr, files, directories, restartAfterValue);
         else if (method == FILE_INFORMATION_CLASS.FileIdExtdBothDirectoryInformation)
-            GetFiles<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(currentBufferPtr, files, restartAfterValue, includeDirectories);
+            GetFiles<FILE_ID_EXTD_BOTH_DIR_INFORMATION>(currentBufferPtr, files, directories, restartAfterValue);
     }
 
-    private static unsafe void GetFiles<T>(nint currentBufferPtr, List<string> files,
-        int returnAfterItem = int.MaxValue, bool includeDirectories = false) where T : unmanaged, IFileDirectoryInformationDerivative
+    private static unsafe void GetFiles<T>(nint currentBufferPtr, List<string> files, List<string> directories,
+        int returnAfterItem = int.MaxValue) where T : unmanaged, IFileDirectoryInformationDerivative
     {
         T* info = default;
         do
@@ -187,8 +217,8 @@ public static class WinApiHelpers
             if (fileName.SequenceEqual(".".AsSpan()) || fileName.SequenceEqual("..".AsSpan()))
                 goto nextfile;
 
-            if (!includeDirectories && ((info->GetFileAttributes() & FileAttributes.Directory) <= 0))
-                files.Add(fileName.ToString());
+            if ((info->GetFileAttributes() & FileAttributes.Directory) == FileAttributes.Directory)
+                directories.Add(fileName.ToString());
             else
                 files.Add(fileName.ToString());
 

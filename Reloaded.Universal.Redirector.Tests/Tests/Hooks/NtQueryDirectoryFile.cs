@@ -27,7 +27,7 @@ public class NtQueryDirectoryFile : BaseHookTest
         
         const int count = 512;
         using var items = new TemporaryJunkFolder(count);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings());
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).Files;
         Assert.Equal(count, files.Count);
 
         for (int x = 0; x < files.Count; x++)
@@ -90,7 +90,7 @@ public class NtQueryDirectoryFile : BaseHookTest
             OneByOne = true,
             RestartAfter = null,
             FileNameFilter = "*"
-        });
+        }).Files;
         
         Assert.Equal(count * 2, files.Count);
         AssertReturnedFileNames(items, files, newItems);
@@ -121,7 +121,8 @@ public class NtQueryDirectoryFile : BaseHookTest
             OneByOne = true,
             RestartAfter = restartAfter,
             FileNameFilter = "*"
-        });
+        }).Files;
+        
         Assert.Equal((count * 2) + restartAfter, files.Count);
         AssertReturnedFileNames(items, files, newItems);
     }
@@ -151,7 +152,7 @@ public class NtQueryDirectoryFile : BaseHookTest
                 OneByOne = true,
                 RestartAfter = restartAfter,
                 FileNameFilter = "*"
-            });
+            }).Files;
         
         Assert.Equal((count * 2) + restartAfter, files.Count);
         AssertReturnedFileNames(items, files, newItems);
@@ -183,7 +184,7 @@ public class NtQueryDirectoryFile : BaseHookTest
             OneByOne = false,
             RestartAfter = null,
             FileNameFilter = "10*"
-        });
+        }).Files;
         
         foreach (var file in files)
             file.StartsWith("10");
@@ -207,7 +208,7 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings());
+        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).Files;
         Assert.Equal(count, files.Count);
         
         for (int x = 0; x < files.Count; x++)
@@ -240,9 +241,9 @@ public class NtQueryDirectoryFile : BaseHookTest
         {
             OneByOne = false,
             RestartAfter = null,
-            FileNameFilter = "*",
-            IncludeDirectories = includeDirectories
-        });
+            FileNameFilter = "*"
+        }).GetItems(includeDirectories);
+        
         Assert.Equal(count * 2, files.Count);
 
         for (int x = 0; x < files.Count; x++)
