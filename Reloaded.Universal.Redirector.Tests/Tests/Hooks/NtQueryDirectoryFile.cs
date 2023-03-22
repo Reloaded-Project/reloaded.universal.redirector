@@ -10,10 +10,9 @@ namespace Reloaded.Universal.Redirector.Tests.Tests.Hooks;
 public class NtQueryDirectoryFile : BaseHookTest
 {
     // The tests in here could be better; we still manually verify strings; for now is good enough though.
-    
     [Theory]
     [MemberData(nameof(GetTestCases))]
-    public void GetFiles_Baseline(bool ex, Native.FILE_INFORMATION_CLASS method)
+    public void Baseline_CanGetFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
 
@@ -28,38 +27,27 @@ public class NtQueryDirectoryFile : BaseHookTest
 
     [Theory]
     [MemberData(nameof(GetTestCases))]
-    public void MapFolder_Baseline(bool ex, Native.FILE_INFORMATION_CLASS method)
+    public void CanMapFolder_WithOnlyFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Baseline_Impl(ex, method, 512);
+        MapFolder_Common(ex, method, 512);
     }
     
     [Theory]
     [MemberData(nameof(GetTestCases))]
-    public void MapFolder_Directories(bool ex, Native.FILE_INFORMATION_CLASS method)
+    public void CanMapFolder_WithFilesAndDirectories(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Baseline_Impl(ex, method, 512, true);
+        MapFolder_Common(ex, method, 512, true);
     }
     
     [Theory]
     [MemberData(nameof(GetTestCases))]
-    public void MapFolder_ReturnSingleEntry(bool ex, Native.FILE_INFORMATION_CLASS method)
+    public void CanMapFolder_WhileReturningSingleEntry(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        int count = 512;
-        using var items = new TemporaryJunkFolder(count);
-        using var newItems = new TemporaryJunkFolder(count);
-
-        Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
-            new NtQueryDirectoryFileSettings()
-        {
-            OneByOne = true,
-            RestartAfter = null,
-            FileNameFilter = "*"
-        }).Files;
-        
+        const int count = 512;
+        var items = GetFiles_ReturningSingleEntry(ex, method, count, int.MaxValue, out var newItems, out var files);
         Assert.Equal(count * 2, files.Count);
         AssertReturnedFileNames(items, files, newItems);
     }
@@ -69,50 +57,28 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_WithRestart(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        int count = 512;
-        int restartAfter = count / 2;
-        using var items = new TemporaryJunkFolder(count);
-        using var newItems = new TemporaryJunkFolder(count);
-
-        Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
-            new NtQueryDirectoryFileSettings()
-        {
-            OneByOne = true,
-            RestartAfter = restartAfter,
-            FileNameFilter = "*"
-        }).Files;
-        
+        const int count = 512;
+        const int restartAfter = count / 2;
+        var items = GetFiles_ReturningSingleEntry(ex, method, count, restartAfter, out var newItems, out var files);
         Assert.Equal((count * 2) + restartAfter, files.Count);
         AssertReturnedFileNames(items, files, newItems);
     }
     
     [Theory]
     [MemberData(nameof(GetTestCases))]
-    public void MapFolder_WithRestart_InOriginalFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
+    public void CanMapFolder_WithRestart_InOriginalFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         const int count = 512;
         const int restartAfter = count + (count / 2);
-        using var items = new TemporaryJunkFolder(count);
-        using var newItems = new TemporaryJunkFolder(count);
-
-        Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
-            new NtQueryDirectoryFileSettings()
-            {
-                OneByOne = true,
-                RestartAfter = restartAfter,
-                FileNameFilter = "*"
-            }).Files;
-        
+        var items = GetFiles_ReturningSingleEntry(ex, method, count, restartAfter, out var newItems, out var files);
         Assert.Equal((count * 2) + restartAfter, files.Count);
         AssertReturnedFileNames(items, files, newItems);
     }
-    
+
     [Theory]
     [MemberData(nameof(GetTestCases))]
-    public void MapFolder_WithFileName(bool ex, Native.FILE_INFORMATION_CLASS method)
+    public void CanMapFolder_WithWin32Filter(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         const int count = 512;
@@ -156,10 +122,29 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_Baseline_Single(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Baseline_Impl(ex, method, 1);
+        MapFolder_Common(ex, method, 1);
+    }
+    
+    private TemporaryJunkFolder GetFiles_ReturningSingleEntry(bool ex, Native.FILE_INFORMATION_CLASS method, int count,
+        int restartAfter, out TemporaryJunkFolder newItems, out List<string> files)
+    {
+        using var items = new TemporaryJunkFolder(count);
+        newItems = new TemporaryJunkFolder(count);
+
+        Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
+        files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method,
+            new NtQueryDirectoryFileSettings()
+            {
+                OneByOne = true,
+                RestartAfter = restartAfter,
+                FileNameFilter = "*"
+            }).Files;
+        
+        newItems.Dispose();
+        return items;
     }
 
-    private void MapFolder_Baseline_Impl(bool ex, Native.FILE_INFORMATION_CLASS method, int count, bool includeDirectories = false)
+    private void MapFolder_Common(bool ex, Native.FILE_INFORMATION_CLASS method, int count, bool includeDirectories = false)
     {
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);
@@ -173,13 +158,7 @@ public class NtQueryDirectoryFile : BaseHookTest
         }).GetItems(includeDirectories);
         
         Assert.Equal(count * 2, files.Count);
-
-        for (int x = 0; x < files.Count; x++)
-        {
-            var itemsContains = items.FileNames.Contains(files[x]);
-            var newItemsContains = newItems.FileNames.Contains(files[x]);
-            Assert.True(itemsContains | newItemsContains);
-        }
+        AssertReturnedFileNames(items, files, newItems);
     }
     
     private static void AssertReturnedFileNames(TemporaryJunkFolder items, List<string> files, TemporaryJunkFolder newItems)
