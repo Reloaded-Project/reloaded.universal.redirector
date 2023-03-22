@@ -61,7 +61,13 @@ public static class WinApiHelpers
             return files;
         }
     }
-    
+
+    public static unsafe NtQueryDirectoryFileResult NtQueryDirectoryFileGetAllItems(bool ex, string folderPath, FILE_INFORMATION_CLASS method, NtQueryDirectoryFileSettings settings)
+    {
+        return ex ? NtQueryDirectoryFileExGetAllItems(folderPath, method, settings) : 
+            NtQueryDirectoryFileGetAllItems(folderPath, method, settings);
+    }
+
     public static unsafe NtQueryDirectoryFileResult NtQueryDirectoryFileGetAllItems(string folderPath, FILE_INFORMATION_CLASS method, NtQueryDirectoryFileSettings settings)
     {
         var handleUnsafe = NtCreateFileDirectoryOpen(folderPath);

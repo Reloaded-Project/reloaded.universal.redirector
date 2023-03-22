@@ -12,71 +12,39 @@ public class NtQueryDirectoryFile : BaseHookTest
     // The tests in here could be better; we still manually verify strings; for now is good enough though.
     
     [Theory]
-    [InlineData(FileDirectoryInformation)]
-    [InlineData(FileFullDirectoryInformation)]
-    [InlineData(FileBothDirectoryInformation)]
-    [InlineData(FileNamesInformation)]
-    [InlineData(FileIdBothDirectoryInformation)]
-    [InlineData(FileIdFullDirectoryInformation)]
-    [InlineData(FileIdGlobalTxDirectoryInformation)]
-    [InlineData(FileIdExtdDirectoryInformation)]
-    [InlineData(FileIdExtdBothDirectoryInformation)]
-    public void GetFiles_Baseline(Native.FILE_INFORMATION_CLASS method)
+    [MemberData(nameof(GetTestCases))]
+    public void GetFiles_Baseline(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        
+
         const int count = 512;
         using var items = new TemporaryJunkFolder(count);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).Files;
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).Files;
         Assert.Equal(count, files.Count);
 
         for (int x = 0; x < files.Count; x++)
             Assert.Contains(files[x], items.FileNames);
     }
-    
+
     [Theory]
-    [InlineData(FileDirectoryInformation)]
-    [InlineData(FileFullDirectoryInformation)]
-    [InlineData(FileBothDirectoryInformation)]
-    [InlineData(FileNamesInformation)]
-    [InlineData(FileIdBothDirectoryInformation)]
-    [InlineData(FileIdFullDirectoryInformation)]
-    [InlineData(FileIdGlobalTxDirectoryInformation)]
-    [InlineData(FileIdExtdDirectoryInformation)]
-    [InlineData(FileIdExtdBothDirectoryInformation)]
-    public void MapFolder_Baseline(Native.FILE_INFORMATION_CLASS method)
+    [MemberData(nameof(GetTestCases))]
+    public void MapFolder_Baseline(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Baseline_Impl(method, 512);
+        MapFolder_Baseline_Impl(ex, method, 512);
     }
     
     [Theory]
-    [InlineData(FileDirectoryInformation)]
-    [InlineData(FileFullDirectoryInformation)]
-    [InlineData(FileBothDirectoryInformation)]
-    [InlineData(FileNamesInformation)]
-    [InlineData(FileIdBothDirectoryInformation)]
-    [InlineData(FileIdFullDirectoryInformation)]
-    [InlineData(FileIdGlobalTxDirectoryInformation)]
-    [InlineData(FileIdExtdDirectoryInformation)]
-    [InlineData(FileIdExtdBothDirectoryInformation)]
-    public void MapFolder_Directories(Native.FILE_INFORMATION_CLASS method)
+    [MemberData(nameof(GetTestCases))]
+    public void MapFolder_Directories(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Baseline_Impl(method, 512, true);
+        MapFolder_Baseline_Impl(ex, method, 512, true);
     }
     
     [Theory]
-    [InlineData(FileDirectoryInformation)]
-    [InlineData(FileFullDirectoryInformation)]
-    [InlineData(FileBothDirectoryInformation)]
-    [InlineData(FileNamesInformation)]
-    [InlineData(FileIdBothDirectoryInformation)]
-    [InlineData(FileIdFullDirectoryInformation)]
-    [InlineData(FileIdGlobalTxDirectoryInformation)]
-    [InlineData(FileIdExtdDirectoryInformation)]
-    [InlineData(FileIdExtdBothDirectoryInformation)]
-    public void MapFolder_ReturnSingleEntry(Native.FILE_INFORMATION_CLASS method)
+    [MemberData(nameof(GetTestCases))]
+    public void MapFolder_ReturnSingleEntry(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         int count = 512;
@@ -84,7 +52,7 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
             new NtQueryDirectoryFileSettings()
         {
             OneByOne = true,
@@ -97,25 +65,17 @@ public class NtQueryDirectoryFile : BaseHookTest
     }
 
     [Theory]
-    [InlineData(FileDirectoryInformation)]
-    [InlineData(FileFullDirectoryInformation)]
-    [InlineData(FileBothDirectoryInformation)]
-    [InlineData(FileNamesInformation)]
-    [InlineData(FileIdBothDirectoryInformation)]
-    [InlineData(FileIdFullDirectoryInformation)]
-    [InlineData(FileIdGlobalTxDirectoryInformation)]
-    [InlineData(FileIdExtdDirectoryInformation)]
-    [InlineData(FileIdExtdBothDirectoryInformation)]
-    public void MapFolder_WithRestart(Native.FILE_INFORMATION_CLASS method)
+    [MemberData(nameof(GetTestCases))]
+    public void MapFolder_WithRestart(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         int count = 512;
-        const int restartAfter = 256;
+        int restartAfter = count / 2;
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
             new NtQueryDirectoryFileSettings()
         {
             OneByOne = true,
@@ -128,25 +88,17 @@ public class NtQueryDirectoryFile : BaseHookTest
     }
     
     [Theory]
-    [InlineData(FileDirectoryInformation)]
-    [InlineData(FileFullDirectoryInformation)]
-    [InlineData(FileBothDirectoryInformation)]
-    [InlineData(FileNamesInformation)]
-    [InlineData(FileIdBothDirectoryInformation)]
-    [InlineData(FileIdFullDirectoryInformation)]
-    [InlineData(FileIdGlobalTxDirectoryInformation)]
-    [InlineData(FileIdExtdDirectoryInformation)]
-    [InlineData(FileIdExtdBothDirectoryInformation)]
-    public void MapFolder_WithRestart_InOriginalFiles(Native.FILE_INFORMATION_CLASS method)
+    [MemberData(nameof(GetTestCases))]
+    public void MapFolder_WithRestart_InOriginalFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         const int count = 512;
-        const int restartAfter = count + 256;
+        const int restartAfter = count + (count / 2);
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, 
             new NtQueryDirectoryFileSettings()
             {
                 OneByOne = true,
@@ -159,16 +111,8 @@ public class NtQueryDirectoryFile : BaseHookTest
     }
     
     [Theory]
-    [InlineData(FileDirectoryInformation)]
-    [InlineData(FileFullDirectoryInformation)]
-    [InlineData(FileBothDirectoryInformation)]
-    [InlineData(FileNamesInformation)]
-    [InlineData(FileIdBothDirectoryInformation)]
-    [InlineData(FileIdFullDirectoryInformation)]
-    [InlineData(FileIdGlobalTxDirectoryInformation)]
-    [InlineData(FileIdExtdDirectoryInformation)]
-    [InlineData(FileIdExtdBothDirectoryInformation)]
-    public void MapFolder_WithFileName(Native.FILE_INFORMATION_CLASS method)
+    [MemberData(nameof(GetTestCases))]
+    public void MapFolder_WithFileName(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         const int count = 512;
@@ -179,7 +123,7 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count, MakeFileName);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()
         {
             OneByOne = false,
             RestartAfter = null,
@@ -191,16 +135,8 @@ public class NtQueryDirectoryFile : BaseHookTest
     }
     
     [Theory]
-    [InlineData(FileDirectoryInformation)]
-    [InlineData(FileFullDirectoryInformation)]
-    [InlineData(FileBothDirectoryInformation)]
-    [InlineData(FileNamesInformation)]
-    [InlineData(FileIdBothDirectoryInformation)]
-    [InlineData(FileIdFullDirectoryInformation)]
-    [InlineData(FileIdGlobalTxDirectoryInformation)]
-    [InlineData(FileIdExtdDirectoryInformation)]
-    [InlineData(FileIdExtdBothDirectoryInformation)]
-    public void MapFolder_OverEmptyFolder(Native.FILE_INFORMATION_CLASS method)
+    [MemberData(nameof(GetTestCases))]
+    public void MapFolder_OverEmptyFolder(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         int count = 512;
@@ -208,7 +144,7 @@ public class NtQueryDirectoryFile : BaseHookTest
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).Files;
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).Files;
         Assert.Equal(count, files.Count);
         
         for (int x = 0; x < files.Count; x++)
@@ -216,28 +152,20 @@ public class NtQueryDirectoryFile : BaseHookTest
     }
     
     [Theory]
-    [InlineData(FileDirectoryInformation)]
-    [InlineData(FileFullDirectoryInformation)]
-    [InlineData(FileBothDirectoryInformation)]
-    [InlineData(FileNamesInformation)]
-    [InlineData(FileIdBothDirectoryInformation)]
-    [InlineData(FileIdFullDirectoryInformation)]
-    [InlineData(FileIdGlobalTxDirectoryInformation)]
-    [InlineData(FileIdExtdDirectoryInformation)]
-    [InlineData(FileIdExtdBothDirectoryInformation)]
-    public void MapFolder_Baseline_Single(Native.FILE_INFORMATION_CLASS method)
+    [MemberData(nameof(GetTestCases))]
+    public void MapFolder_Baseline_Single(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Baseline_Impl(method, 1);
+        MapFolder_Baseline_Impl(ex, method, 1);
     }
 
-    private void MapFolder_Baseline_Impl(Native.FILE_INFORMATION_CLASS method, int count, bool includeDirectories = false)
+    private void MapFolder_Baseline_Impl(bool ex, Native.FILE_INFORMATION_CLASS method, int count, bool includeDirectories = false)
     {
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);
 
         Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
-        var files = NtQueryDirectoryFileGetAllItems(Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()
         {
             OneByOne = false,
             RestartAfter = null,
@@ -261,6 +189,24 @@ public class NtQueryDirectoryFile : BaseHookTest
             var itemsContains = items.FileNames.Contains(files[x]);
             var newItemsContains = newItems.FileNames.Contains(files[x]);
             Assert.True(itemsContains | newItemsContains);
+        }
+    }
+    
+    public static IEnumerable<object[]> GetTestCases()
+    {
+        for (int x = 0; x <= 1; x++)
+        {
+            bool useEx = Convert.ToBoolean(x);
+            
+            yield return new object[] { useEx, FileDirectoryInformation };
+            yield return new object[] { useEx, FileFullDirectoryInformation };
+            yield return new object[] { useEx, FileBothDirectoryInformation };
+            yield return new object[] { useEx, FileNamesInformation };
+            yield return new object[] { useEx, FileIdBothDirectoryInformation };
+            yield return new object[] { useEx, FileIdFullDirectoryInformation };
+            yield return new object[] { useEx, FileIdGlobalTxDirectoryInformation };
+            yield return new object[] { useEx, FileIdExtdDirectoryInformation };
+            yield return new object[] { useEx, FileIdExtdBothDirectoryInformation };
         }
     }
 }
