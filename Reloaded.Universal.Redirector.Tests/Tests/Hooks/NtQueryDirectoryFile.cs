@@ -54,7 +54,7 @@ public class NtQueryDirectoryFile : BaseHookTest
 
     [Theory]
     [MemberData(nameof(GetTestCases))]
-    public void MapFolder_WithRestart(bool ex, Native.FILE_INFORMATION_CLASS method)
+    public void CanMapFolder_WithRestart(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         const int count = 256;
@@ -102,7 +102,25 @@ public class NtQueryDirectoryFile : BaseHookTest
     
     [Theory]
     [MemberData(nameof(GetTestCases))]
-    public void MapFolder_OverEmptyFolder(bool ex, Native.FILE_INFORMATION_CLASS method)
+    public void CanMapFolder_TargetDiscoversNewFolders(bool ex, Native.FILE_INFORMATION_CLASS method)
+    {
+        Api.Enable();
+        const int count = 256;
+
+        int currentName = 0;
+        string MakeFileName() => (currentName++).ToString();
+        using var items = new TemporaryJunkFolder(count, MakeFileName, true);
+        using var newItems = new TemporaryJunkFolder(count, MakeFileName, true);
+
+        Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
+        var dirs = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).Directories;
+        
+        Assert.Equal(count * 2, dirs.Count);
+    }
+    
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
+    public void CanMapFolder_OverEmptyFolder(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         int count = 256;
@@ -119,7 +137,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     
     [Theory]
     [MemberData(nameof(GetTestCases))]
-    public void MapFolder_Baseline_Single(bool ex, Native.FILE_INFORMATION_CLASS method)
+    public void CanMapFolder_Baseline_Single(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
         MapFolder_Common(ex, method, 1);
