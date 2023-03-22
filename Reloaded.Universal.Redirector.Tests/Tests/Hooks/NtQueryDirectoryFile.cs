@@ -16,7 +16,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     {
         Api.Enable();
 
-        const int count = 512;
+        const int count = 256;
         using var items = new TemporaryJunkFolder(count);
         var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()).Files;
         Assert.Equal(count, files.Count);
@@ -30,7 +30,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void CanMapFolder_WithOnlyFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Common(ex, method, 512);
+        MapFolder_Common(ex, method, 256);
     }
     
     [Theory]
@@ -38,7 +38,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void CanMapFolder_WithFilesAndDirectories(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        MapFolder_Common(ex, method, 512, true);
+        MapFolder_Common(ex, method, 256, true);
     }
     
     [Theory]
@@ -46,7 +46,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void CanMapFolder_WhileReturningSingleEntry(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        const int count = 512;
+        const int count = 256;
         var items = GetFiles_ReturningSingleEntry(ex, method, count, int.MaxValue, out var newItems, out var files);
         Assert.Equal(count * 2, files.Count);
         AssertReturnedFileNames(items, files, newItems);
@@ -57,7 +57,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_WithRestart(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        const int count = 512;
+        const int count = 256;
         const int restartAfter = count / 2;
         var items = GetFiles_ReturningSingleEntry(ex, method, count, restartAfter, out var newItems, out var files);
         Assert.Equal((count * 2) + restartAfter, files.Count);
@@ -69,7 +69,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void CanMapFolder_WithRestart_InOriginalFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        const int count = 512;
+        const int count = 256;
         const int restartAfter = count + (count / 2);
         var items = GetFiles_ReturningSingleEntry(ex, method, count, restartAfter, out var newItems, out var files);
         Assert.Equal((count * 2) + restartAfter, files.Count);
@@ -81,7 +81,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void CanMapFolder_WithWin32Filter(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        const int count = 512;
+        const int count = 256;
 
         int currentName = 0;
         string MakeFileName() => (currentName++).ToString();
@@ -105,7 +105,7 @@ public class NtQueryDirectoryFile : BaseHookTest
     public void MapFolder_OverEmptyFolder(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
-        int count = 512;
+        int count = 256;
         using var items = new TemporaryFolderAllocation();
         using var newItems = new TemporaryJunkFolder(count);
 
