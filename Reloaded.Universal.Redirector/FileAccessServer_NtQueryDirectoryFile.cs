@@ -91,7 +91,8 @@ public unsafe partial class FileAccessServer
         bool moreFiles = true;
         int remainingBytes = (int)length;
         var lastFileInformation = fileInformation;
-        
+
+        var initialItem = handleItem.CurrentItem;
         while (moreFiles)
         {
             var currentBufferPtr = (TDirectoryInformation*)fileInformation;
@@ -103,13 +104,20 @@ public unsafe partial class FileAccessServer
                 var success = QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes, ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!, handleItem.QueryFileName);
                 if (!success)
                 {
-                    // Not enough space.
+                    // Not enough space for next element.
+                    if (lastItem > initialItem)
+                    {
+                        returnValue = STATUS_SUCCESS;
+                        break;
+                    }
+
+                    // Not enough space for any element
                     if (lastItem == handleItem.CurrentItem)
                     {
                         returnValue = STATUS_BUFFER_TOO_SMALL;
                         break;
                     }
-                    
+
                     LogDebugOnly("Filtered Out {0} in {1}", handleItem.CurrentItem, nameof(HandleNtQueryDirectoryFileHook));
                 }
                 

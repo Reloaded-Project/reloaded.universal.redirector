@@ -17,6 +17,7 @@ public unsafe partial class FileAccessServer
 {
     // ReSharper disable InconsistentNaming
     private const int STATUS_BUFFER_TOO_SMALL = unchecked((int)0xC0000023);
+    private const int STATUS_SUCCESS = (int)0x0;
     private const int STATUS_BUFFER_OVERFLOW = unchecked((int)0x80000005);
     private const int NO_MORE_FILES = unchecked((int)0x80000006);
     // ReSharper restore InconsistentNaming
