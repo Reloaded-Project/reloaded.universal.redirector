@@ -78,7 +78,7 @@ public class FolderUpdateListenerTests
         
         public void OnOtherUpdate(FolderRedirection sender) => throw new NotImplementedException();
 
-        public void OnFileAddition(FolderRedirection sender, ReadOnlySpan<char> relativePath)
+        public void OnItemAddition(FolderRedirection sender, ReadOnlySpan<char> relativePath, bool isDirectory)
         {
             CalledOnAddition = true;
         }

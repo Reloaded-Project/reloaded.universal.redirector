@@ -108,7 +108,7 @@ public class FolderUpdateListener<TReceiver> : IDisposable where TReceiver : IFo
         
         TextInfo.ChangeCase<TextInfo.ToUpperConversion>(filePath, filePathUpper);
         if (TryResolveFolderRedirectionUpper(filePathUpper, out var result))
-            Receiver.OnFileAddition(result, filePathUpper[result.TargetFolder.Length..]);
+            Receiver.OnItemAddition(result, filePathUpper[result.TargetFolder.Length..], Directory.Exists(filePath));
     }
 
     /// <summary>

@@ -20,19 +20,28 @@ public struct RedirectionTreeTarget
     /// </summary>
     public string FileName;
 
+    /// <summary>
+    /// True if this is a directory, else false.
+    /// </summary>
+    public bool IsDirectory;
+
     /// <summary/>
     /// <param name="directory">Directory path.</param>
     /// <param name="fileName">File name.</param>
-    public RedirectionTreeTarget(string directory, string fileName)
+    /// <param name="isDirectory">True if this is a directory else false.</param>
+    public RedirectionTreeTarget(string directory, string fileName, bool isDirectory)
     {
         Directory = directory;
         FileName = fileName;
+        IsDirectory = isDirectory;
     }
-    
+
     /// <summary/>
     /// <param name="fullPath">Full path, must be canonical, i.e. use correct separator char..</param>
-    public RedirectionTreeTarget(string fullPath)
+    /// <param name="isDirectory">True if this entry represents a directory, else false.</param>
+    public RedirectionTreeTarget(string fullPath, bool isDirectory)
     {
+        IsDirectory = isDirectory;
         var separatorIndex = fullPath.LastIndexOf(Path.DirectorySeparatorChar);
         Debug.Assert(separatorIndex != -1, "Must be a full path.");
         
@@ -56,6 +65,8 @@ public struct RedirectionTreeTarget
         return string.Concat(Strings.PrefixLocalDeviceStr, Directory, _directorySeparatorCharStr, FileName);
     }
     
+    // Test use only.
+    
     /// <summary/>
-    public static implicit operator RedirectionTreeTarget(string s) => new(s);
+    public static implicit operator RedirectionTreeTarget(string s) => new(s, true);
 }

@@ -1,6 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
-using FileEmulationFramework.Lib.IO;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
+using Reloaded.Universal.Redirector.Lib.Utility;
 
 namespace Reloaded.Universal.Redirector.Benchmarks.Benchmarks;
 
@@ -16,12 +16,12 @@ public class RedirectionTreeBuildBenchmark : IBenchmark
         var searchPath = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.SystemX86))!.FullName;
         
         // Note: Do not multithread, we need reproducible order between runs. 
-        WindowsDirectorySearcher.GetDirectoryContentsRecursiveGrouped(searchPath, out var groups, false);
+        WindowsDirectorySearcher.GetDirectoryContentsRecursiveGrouped(searchPath, out var groups);
 
         var allFiles = new List<string>();
         foreach (var group in groups)
-        foreach (var file in group.Files)
-            allFiles.Add(Path.Combine(group.Directory.FullPath, file));
+        foreach (var file in group.Items)
+            allFiles.Add(Path.Combine(group.Directory.FullPath, file.FileName));
 
         Groups = groups.ToArray();
         Files = allFiles.ToArray();
@@ -45,7 +45,7 @@ public class RedirectionTreeBuildBenchmark : IBenchmark
     {
         var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         foreach (var group in Groups)
-            tree.AddFolderPaths(group.Directory.FullPath, group.Files, group.Directory.FullPath);
+            tree.AddFolderPaths(group.Directory.FullPath, group.Items, group.Directory.FullPath);
 
         return tree;
     }
@@ -56,7 +56,7 @@ public class RedirectionTreeBuildBenchmark : IBenchmark
         var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         Array.Sort(Groups, (a, b) => b.Directory.FullPath.Length.CompareTo(a.Directory.FullPath.Length));
         foreach (var group in Groups)
-            tree.AddFolderPaths(group.Directory.FullPath, group.Files, group.Directory.FullPath);
+            tree.AddFolderPaths(group.Directory.FullPath, group.Items, group.Directory.FullPath);
 
         return tree;
     }

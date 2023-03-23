@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Reloaded.Universal.Redirector.Lib.Utility;
 
 namespace Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 
@@ -157,7 +158,7 @@ public static class RedirectionTreeExtensions
     /// <param name="directory">The directory to add. Not expected to end with slash, upper case.</param>
     /// <param name="files">The files to to add.</param>
     /// <param name="targetDirectory">The target directory where redirected files are pointed to.</param>
-    public static void AddFolderPaths(this RedirectionTree<RedirectionTreeTarget> tree, string directory, string[] files, string targetDirectory)
+    public static void AddFolderPaths(this RedirectionTree<RedirectionTreeTarget> tree, string directory, FileInformation[] files, string targetDirectory)
     {
         var pathSpan = directory.AsSpan();
         var currentNode = tree.RootNode;
@@ -178,6 +179,6 @@ public static class RedirectionTreeExtensions
         
         // Add all files.
         foreach (var file in files)
-            currentNode.Items.AddOrReplace(file, new RedirectionTreeTarget(targetDirectory, file));
+            currentNode.Items.AddOrReplace(file.FileName, new RedirectionTreeTarget(targetDirectory, file.FileName, file.IsDirectory));
     }
 }

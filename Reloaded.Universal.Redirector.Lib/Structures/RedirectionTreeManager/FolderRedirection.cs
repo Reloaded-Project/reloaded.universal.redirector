@@ -55,10 +55,13 @@ public class FolderRedirection : IEquatable<FolderRedirection>
     {
         SourceFolder = sourceFolder.NormalizePath();
         TargetFolder = targetFolder.NormalizePath();
-        Initialise();
+        Reinitialise();
     }
 
-    private void Initialise()
+    /// <summary>
+    /// Re-initialises this folder redirection.
+    /// </summary>
+    public void Reinitialise()
     {
         // Initialise.
         WindowsDirectorySearcher.GetDirectoryContentsRecursiveGrouped(TargetFolder, out var groups);
@@ -88,8 +91,8 @@ public class FolderRedirection : IEquatable<FolderRedirection>
         
         foreach (var file in group.Items)
         {
-            var fileUpper = TextInfo.ChangeCase<TextInfo.ToUpperConversion>(file);
-            targets.Add(new RedirectionTreeTarget(directory, fileUpper));
+            var fileUpper = TextInfo.ChangeCase<TextInfo.ToUpperConversion>(file.FileName);
+            targets.Add(new RedirectionTreeTarget(directory, fileUpper, file.IsDirectory));
         }
 
         subdirToFiles.AddOrReplace(directory, targets);

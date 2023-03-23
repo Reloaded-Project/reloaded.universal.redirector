@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
+using Reloaded.Universal.Redirector.Lib.Utility;
 
 namespace Reloaded.Universal.Redirector.Tests.Tests;
 
@@ -90,12 +91,14 @@ public class RedirectionTreeTests
     public void AddFolder()
     {
         var tree = RedirectionTree<RedirectionTreeTarget>.Create();
-        tree.AddFolderPaths(@"c:\kitten", new[]
+        var items = new[]
         {
             "cat",
             "kitty",
             "nya-nyan"
-        }, @"c:\kitten");
+        };
+        
+        tree.AddFolderPaths(@"c:\kitten", items.Select(x => new FileInformation(x, false)).ToArray(), @"c:\kitten");
 
         Assert.True(tree.RootNode.Children.ContainsKey("c:"));
         Assert.Equal(1, tree.RootNode.Children.Allocated);

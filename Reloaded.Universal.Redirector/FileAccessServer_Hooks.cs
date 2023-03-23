@@ -232,7 +232,7 @@ public unsafe partial class FileAccessServer
         
         {
             path = ExtractPathFromObjectAttributes(attributes);
-            if (!TryResolvePath(path, out string newFilePath))
+            if (!TryResolveFilePath(path, out string newFilePath))
             {
                 PrintFileLoadIfNeeded(path);
                 _createFileLock.Unlock();
@@ -293,7 +293,7 @@ public unsafe partial class FileAccessServer
 
         {
             path = ExtractPathFromObjectAttributes(attributes);
-            if (!TryResolvePath(path, out string newFilePath))
+            if (!TryResolveFilePath(path, out string newFilePath))
             {
                 PrintFileLoadIfNeeded(path);
                 _openFileLock.Unlock();
@@ -348,7 +348,7 @@ public unsafe partial class FileAccessServer
 
         {
             DequeueHandles();
-            if (!TryResolvePath(attributes, out string newFilePath))
+            if (!TryResolveFilePath(attributes, out string newFilePath))
             {
                 _deleteFileLock.Unlock();
                 goto fastReturn; 
@@ -392,7 +392,7 @@ public unsafe partial class FileAccessServer
         {
             DequeueHandles();
             var path = ExtractPathFromObjectAttributes(attributes);
-            if (!TryResolvePath(path, out string newFilePath))
+            if (!TryResolveFilePath(path, out string newFilePath))
             {
                 PrintGetAttributeIfNeeded(path);
                 _queryAttributesFileLock.Unlock();
@@ -438,7 +438,7 @@ public unsafe partial class FileAccessServer
         {
             DequeueHandles();
             var path = ExtractPathFromObjectAttributes(attributes);
-            if (!TryResolvePath(path, out string newFilePath))
+            if (!TryResolveFilePath(path, out string newFilePath))
             {
                 PrintGetAttributeIfNeeded(path);
                 _queryFullAttributesFileLock.Unlock();

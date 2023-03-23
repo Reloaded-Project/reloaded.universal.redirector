@@ -2,6 +2,9 @@ using BenchmarkDotNet.Attributes;
 using FileEmulationFramework.Lib.IO;
 using Reloaded.Universal.Redirector.Lib.Structures;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
+using Reloaded.Universal.Redirector.Lib.Utility;
+using FileInformation = Reloaded.Universal.Redirector.Lib.Utility.FileInformation;
+using WindowsDirectorySearcher = Reloaded.Universal.Redirector.Lib.Utility.WindowsDirectorySearcher;
 
 namespace Reloaded.Universal.Redirector.Benchmarks.Benchmarks;
 
@@ -25,27 +28,28 @@ public class FilePathLookupBenchmark : IBenchmark
         var searchPath = Directory.GetParent(Environment.GetFolderPath(Environment.SpecialFolder.SystemX86))!.FullName;
         
         // Note: Do not multithread, we need reproducible order between runs. 
-        WindowsDirectorySearcher.GetDirectoryContentsRecursiveGrouped(searchPath, out var groupsLst, false);
+        WindowsDirectorySearcher.GetDirectoryContentsRecursiveGrouped(searchPath, out var groupsLst);
         var groups = groupsLst.ToArray();
         
         var tree = RedirectionTree<RedirectionTreeTarget>.Create();
         foreach (var group in groups)
         {
             var directoryUpper = group.Directory.FullPath.ToUpperInvariant();
-            tree.AddFolderPaths(directoryUpper, group.Files.Select(x => x.ToUpperInvariant()).ToArray(), directoryUpper);
+            var items = group.Items.Select(x => new FileInformation(x.FileName.ToUpperInvariant(), x.IsDirectory));
+            tree.AddFolderPaths(directoryUpper, items.ToArray(), directoryUpper);
         }
 
         RedirectionTree = tree;
         Tree = new LookupTree<RedirectionTreeTarget>(tree);
-        var lookupDirShortest = groupsLst.Where(x => x.Files.Length > 0).MinBy(x => x.Directory.FullPath.Length);
+        var lookupDirShortest = groupsLst.Where(x => x.Items.Length > 0).MinBy(x => x.Directory.FullPath.Length);
         LookupDirectory = lookupDirShortest!.Directory.FullPath;
-        LookupFile = Path.Combine(LookupDirectory, lookupDirShortest.Files[0]);
+        LookupFile = Path.Combine(LookupDirectory, lookupDirShortest.Items[0].FileName);
         LookupDirectoryUpper = LookupDirectory.ToUpperInvariant();
         LookupFileUpper = LookupFile.ToUpperInvariant();
 
-        var lookupDirLongest = groupsLst.Where(x => x.Files.Length > 0).MaxBy(x => x.Directory.FullPath.Length);
+        var lookupDirLongest = groupsLst.Where(x => x.Items.Length > 0).MaxBy(x => x.Directory.FullPath.Length);
         LookupDirectoryLongest = lookupDirLongest!.Directory.FullPath;
-        LookupFileLongest = Path.Combine(LookupDirectoryLongest, lookupDirLongest.Files.MaxBy(x => x.Length)!);
+        LookupFileLongest = Path.Combine(LookupDirectoryLongest, lookupDirLongest.Items.MaxBy(x => x.FileName.Length).FileName!);
         LookupDirectoryLongestUpper = LookupDirectoryLongest.ToUpperInvariant();
         LookupFileLongestUpper = LookupFileLongest.ToUpperInvariant();
         Console.WriteLine($"Lookup Dir: {LookupDirectory}, Lookup File: {Path.GetFileName(LookupFile)}");

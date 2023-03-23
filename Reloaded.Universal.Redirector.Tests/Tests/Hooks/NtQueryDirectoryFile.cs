@@ -102,6 +102,41 @@ public class NtQueryDirectoryFile : BaseHookTest
     
     [Theory]
     [MemberData(nameof(GetTestCases))]
+    public void CanMapFolder_DoesNotRedirectSubFolderHandle(bool ex, Native.FILE_INFORMATION_CLASS method)
+    {
+        // Ensures the file path to a subfolder doesn't get redirected,
+        // which could lead to erroneous behaviour 
+        Api.Enable();
+        const int count = 8;
+
+        using var source = new TemporaryFolderAllocation();
+        using var target = new TemporaryFolderAllocation();
+        var srcSubfolder = Path.Combine(source.FolderPath, "Data"); 
+        var tgtSubfolder = Path.Combine(target.FolderPath, "Data");
+        Directory.CreateDirectory(srcSubfolder);
+        Directory.CreateDirectory(tgtSubfolder);
+
+        for (int x = 0; x < count; x++)
+            File.Create(Path.Combine(srcSubfolder, x.ToString())).Dispose();
+        
+        File.Create(Path.Combine(tgtSubfolder, 0.ToString())).Dispose();
+        
+        // We not have two Data Subfolders in src and target. 
+        // Now if all goes well, folder handle is not redirected, and we get correct file count.
+        Api.AddRedirectFolder(target.FolderPath, source.FolderPath);
+        
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + srcSubfolder, method, new NtQueryDirectoryFileSettings()
+        {
+            OneByOne = false,
+            RestartAfter = null,
+            FileNameFilter = "*"
+        }).Files;
+        
+        Assert.Equal(count, files.Count);
+    }
+    
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_TargetDiscoversNewFolders(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();

@@ -140,10 +140,14 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
     }
     
     /// <inheritdoc />
-    public void OnOtherUpdate(FolderRedirection sender) => Rebuild();
+    public void OnOtherUpdate(FolderRedirection sender)
+    {
+        sender.Reinitialise();
+        Rebuild();
+    }
 
     /// <inheritdoc />
-    public void OnFileAddition(FolderRedirection sender, ReadOnlySpan<char> relativePath)
+    public void OnItemAddition(FolderRedirection sender, ReadOnlySpan<char> relativePath, bool isDirectory)
     {
         // Check if file is previously mapped.
         // If it is not, we can add it to existing tree(s).
@@ -153,29 +157,36 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
         
         if (UsingLookupTree)
         {
+            // TODO: This needs re-implemented since directories are now also files.
+            /*
             if (!Lookup.TryGetFileUpper(src, out var folder, out _))
             {
                 var relativeDirName = Path.GetDirectoryName(relativePath[1..]).ToString();
                 var items = folder ?? new SpanOfCharDict<RedirectionTreeTarget>(0);
-                items.AddOrReplace(fileName.ToString(), new RedirectionTreeTarget(tgt));
+                items.AddOrReplace(fileName.ToString(), new RedirectionTreeTarget(tgt, isDirectory));
                 Lookup.SubfolderToFiles.AddOrReplace(relativeDirName, items);
                 return;
             }
-
+            */
+            
+            sender.Reinitialise();
             Rebuild();
         }
         else
         {
             if (!RedirectionTree.TryGetFolder(relativePath, out var node))
             {
-                RedirectionTree.AddPath(src, new RedirectionTreeTarget(tgt));
+                RedirectionTree.AddPath(src, new RedirectionTreeTarget(tgt, isDirectory));
                 return;
             }
             
             if (!node.Items.ContainsKey(fileName))
-                node.Items.AddOrReplace(fileName.ToString(), new RedirectionTreeTarget(tgt));
+                node.Items.AddOrReplace(fileName.ToString(), new RedirectionTreeTarget(tgt, isDirectory));
             else
+            {
+                sender.Reinitialise();
                 Rebuild();
+            }
         }
     }
 
@@ -279,10 +290,15 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
             var current = enumerator.Current;
             var currentSource = Path.Combine(folderRedirection.SourceFolder, current.Key!);
             var currentTarget = Path.Combine(folderRedirection.TargetFolder, current.Key!);
-            using var filesRental = new ArrayRental<string>(current.Value.Count);
+            
+            using var filesRental = new ArrayRental<FileInformation>(current.Value.Count);
             var files = filesRental.RawArray;
+            var currentSpan = CollectionsMarshal.AsSpan(current.Value);
             for (int x = 0; x < files.Length; x++)
-                files[x] = current.Value[x].FileName;
+            {
+                ref var value = ref currentSpan[x];
+                files[x] = new FileInformation(value.FileName, value.IsDirectory);
+            }
 
             tree.AddFolderPaths(currentSource, files, currentTarget);
         }

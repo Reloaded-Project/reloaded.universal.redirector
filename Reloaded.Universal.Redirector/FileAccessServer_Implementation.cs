@@ -17,11 +17,17 @@ public partial class FileAccessServer
     /// </summary>
     /// <param name="originalPath">The original path to resolve.</param>
     /// <param name="result">The resulting path, including prefix <see cref="Strings.PrefixLocalDeviceStr"/>.</param>
-    /// <returns>True if the path is resolved, else false.</returns>
-    public bool TryResolvePath(ReadOnlySpan<char> originalPath, out string result)
+    /// <returns>True if the path is resolved, else false if not found or is a directory.</returns>
+    public bool TryResolveFilePath(ReadOnlySpan<char> originalPath, out string result)
     {
         var man = GetManager();
         bool success = man.TryGetFile(originalPath, out var redir);
+        if (success && redir.IsDirectory)
+        {
+            result = string.Empty;
+            return false;
+        }
+        
         result = redir.GetFullPathWithDevicePrefix();
         return success;
     }
@@ -31,10 +37,10 @@ public partial class FileAccessServer
     /// </summary>
     /// <param name="objectAttributes">Attributes containing the original path to resolve.</param>
     /// <param name="result">The resulting path.</param>
-    /// <returns>True if the path is resolved, else false.</returns>
-    public unsafe bool TryResolvePath(Native.OBJECT_ATTRIBUTES* objectAttributes, out string result)
+    /// <returns>True if the path is resolved, else false if not found or is a directory.</returns>
+    public unsafe bool TryResolveFilePath(Native.OBJECT_ATTRIBUTES* objectAttributes, out string result)
     {
-        return TryResolvePath(ExtractPathFromObjectAttributes(objectAttributes), out result);
+        return TryResolveFilePath(ExtractPathFromObjectAttributes(objectAttributes), out result);
     }
 
     /// <summary>

@@ -14,7 +14,7 @@ public interface IFolderRedirectionUpdateReceiver
     public void OnOtherUpdate(FolderRedirection sender);
 
     /// <summary>
-    /// Called whenever a file is added to the folder redirection.
+    /// Called whenever a file/directory is added to the folder redirection.
     /// </summary>
     /// <param name="sender">The sender.</param>
     /// <param name="relativePath">
@@ -22,5 +22,6 @@ public interface IFolderRedirectionUpdateReceiver
     ///     This is assumed to be upper case and sanitised; and start with a slash
     ///     such that the string can be concatenated to <see cref="FolderRedirection.SourceFolder"/>.
     /// </param>
-    public void OnFileAddition(FolderRedirection sender, ReadOnlySpan<char> relativePath);
+    /// <param name="isDirectory">True if this item is a directory, else false.</param>
+    public void OnItemAddition(FolderRedirection sender, ReadOnlySpan<char> relativePath, bool isDirectory);
 }

@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using static System.IO.FileAttributes;
 using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native;
@@ -7,6 +6,7 @@ using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native.ACCESS_MASK
 using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native.CreateDisposition;
 using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native.CreateOptions;
 
+[assembly: InternalsVisibleTo("Reloaded.Universal.Redirector.Benchmarks")]
 namespace Reloaded.Universal.Redirector.Lib.Utility;
 
 /// <summary>
@@ -153,12 +153,19 @@ internal class WindowsDirectorySearcher
                             {
                                 FullPath = $@"{originalDirPath}\{fileName}"
                             });
+                            
+                            onAddFile(new FileInformation
+                            {
+                                FileName = fileName,
+                                IsDirectory = true,
+                            });
                         }
                         else if (!isDirectory)
                         {
                             onAddFile(new FileInformation
                             {
-                                FileName = fileName
+                                FileName = fileName,
+                                IsDirectory = false
                             });
                         }
 
@@ -187,6 +194,18 @@ public struct FileInformation
     /// Name of the file relative to directory.
     /// </summary>
     public string FileName;
+
+    /// <summary>
+    /// True if this is a directory, else false.
+    /// </summary>
+    public bool IsDirectory;
+
+    /// <summary/>
+    public FileInformation(string fileName, bool isDirectory)
+    {
+        FileName = fileName;
+        IsDirectory = isDirectory;
+    }
 
     /// <inheritdoc/>
     public override string ToString() => FileName;
@@ -225,15 +244,13 @@ public class DirectoryFilesGroup
     /// <summary>
     /// The relative file/directory paths tied to this directory.
     /// </summary>
-    public string[] Items;
+    public FileInformation[] Items;
 
     /// <summary/>
     public DirectoryFilesGroup(DirectoryInformation directory, List<FileInformation> files)
     {
         Directory = directory;
-        Items = GC.AllocateUninitializedArray<string>(files.Count);
-        for (int x = 0; x < files.Count; x++)
-            Items[x] = files[x].FileName;
+        Items = files.ToArray();
     }
 
     /// <inheritdoc/>
