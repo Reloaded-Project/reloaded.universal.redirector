@@ -236,6 +236,16 @@ public static class WinApiHelpers
         } while (info->GetNextEntryOffset() != 0);
     }
 
+    /// <summary/>
+    /// <param name="openFile">Use NtOpenFile instead of NtCreateFile</param>
+    public static string NtFileReadAllText(bool openFile, string filePath)
+    {
+        if (openFile)
+            return NtOpenFileReadAllText(filePath);
+
+        return NtCreateFileReadAllText(filePath);
+    }
+    
     public static string NtOpenFileReadAllText(string filePath)
     {
         using var fileStream = new FileStream(new SafeFileHandle(NtOpenFileOpen(filePath), true), FileAccess.Read);
@@ -252,24 +262,43 @@ public static class WinApiHelpers
     
     public static unsafe FILE_BASIC_INFORMATION NtQueryAttributesFileHelper(string filePath)
     {
-        fixed (char* fileName = filePath)
-        {
-            var ntOpenWrapper = new NtOpenWrapper(fileName, filePath.Length);
-            using var handle = new SafeFileHandle(NtCreateFileOpen(filePath), true);
-            var info = new FILE_BASIC_INFORMATION();
-            NtQueryAttributesFile(&ntOpenWrapper.AttributesWrapper.Attributes, &info);
-            return info;
-        }
+        return NtQueryAttributesFileHelper(filePath, out _);
     }
     
-    public static unsafe FILE_NETWORK_OPEN_INFORMATION NtQueryFullAttributesFileHelper(string filePath)
+    public static unsafe FILE_BASIC_INFORMATION NtQueryAttributesFileHelper(string filePath, out int result)
     {
         fixed (char* fileName = filePath)
         {
             var ntOpenWrapper = new NtOpenWrapper(fileName, filePath.Length);
-            using var handle = new SafeFileHandle(NtCreateFileOpen(filePath), true);
+            var info = new FILE_BASIC_INFORMATION();
+            result = NtQueryAttributesFile(&ntOpenWrapper.AttributesWrapper.Attributes, &info);
+            return info;
+        }
+    }
+    
+    public static void NtQueryAttributesFileHelper(bool useFull, string filePath, out int result)
+    {
+        if (useFull)
+        {
+            NtQueryFullAttributesFileHelper(filePath, out result);
+            return;
+        }
+            
+        NtQueryAttributesFileHelper(filePath, out result);
+    }
+    
+    public static unsafe FILE_NETWORK_OPEN_INFORMATION NtQueryFullAttributesFileHelper(string filePath)
+    {
+        return NtQueryFullAttributesFileHelper(filePath, out _);
+    }
+    
+    public static unsafe FILE_NETWORK_OPEN_INFORMATION NtQueryFullAttributesFileHelper(string filePath, out int result)
+    {
+        fixed (char* fileName = filePath)
+        {
+            var ntOpenWrapper = new NtOpenWrapper(fileName, filePath.Length);
             var info = new FILE_NETWORK_OPEN_INFORMATION();
-            NtQueryFullAttributesFile(&ntOpenWrapper.AttributesWrapper.Attributes, &info);
+            result = NtQueryFullAttributesFile(&ntOpenWrapper.AttributesWrapper.Attributes, &info);
             return info;
         }
     }
@@ -291,18 +320,51 @@ public static class WinApiHelpers
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static unsafe IntPtr NtCreateFileDirectoryOpen(string dirPath)
+    public static unsafe IntPtr NtFileDirectoryOpen(bool openFile, string dirPath, bool doThrow, out int result)
+    {
+        if (openFile)
+            return NtOpenFileDirectoryOpen(dirPath, doThrow, out result);
+
+        return NtCreateFileDirectoryOpen(dirPath, doThrow, out result);
+    }
+    
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static unsafe IntPtr NtCreateFileDirectoryOpen(string dirPath, bool doThrow = true)
+    {
+        return NtCreateFileDirectoryOpen(dirPath, doThrow, out _);
+    }
+    
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static unsafe IntPtr NtCreateFileDirectoryOpen(string dirPath, bool doThrow, out int result)
     {
         fixed (char* fileName = dirPath)
         {
             var ntOpenWrapper = new NtOpenWrapper(fileName, dirPath.Length);
-            var status = NtCreateFile(&ntOpenWrapper.Handle, ACCESS_MASK.FILE_GENERIC_READ | ACCESS_MASK.SYNCHRONIZE, 
+            result = NtCreateFile(&ntOpenWrapper.Handle, ACCESS_MASK.FILE_GENERIC_READ | ACCESS_MASK.SYNCHRONIZE, 
                 &ntOpenWrapper.AttributesWrapper.Attributes, 
                 &ntOpenWrapper.StatusBlock, &ntOpenWrapper.AllocSize, FileAttributes.Directory, FileShare.Read, 
                 CreateDisposition.Open, CreateOptions.SynchronousIoNonAlert | CreateOptions.DirectoryFile, 0, 0);
             
-            if (status != 0)
-                throw new Win32Exception(status);
+            if (doThrow && result != 0)
+                throw new Win32Exception(result);
+
+            return ntOpenWrapper.Handle;
+        }
+    }
+    
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static unsafe IntPtr NtOpenFileDirectoryOpen(string dirPath, bool doThrow, out int result)
+    {
+        fixed (char* fileName = dirPath)
+        {
+            var ntOpenWrapper = new NtOpenWrapper(fileName, dirPath.Length);
+            result = NtOpenFile(&ntOpenWrapper.Handle, ACCESS_MASK.FILE_GENERIC_READ | ACCESS_MASK.SYNCHRONIZE, 
+                &ntOpenWrapper.AttributesWrapper.Attributes, 
+                &ntOpenWrapper.StatusBlock, FileShare.Read, 
+                CreateOptions.SynchronousIoNonAlert | CreateOptions.DirectoryFile);
+            
+            if (doThrow && result != 0)
+                throw new Win32Exception(result);
 
             return ntOpenWrapper.Handle;
         }

@@ -17,17 +17,20 @@ public partial class FileAccessServer
     /// </summary>
     /// <param name="originalPath">The original path to resolve.</param>
     /// <param name="result">The resulting path, including prefix <see cref="Strings.PrefixLocalDeviceStr"/>.</param>
+    /// <param name="isDirectory">True if resulting item is a directory, else false.</param>
     /// <returns>True if the path is resolved, else false if not found or is a directory.</returns>
-    public bool TryResolveFilePath(ReadOnlySpan<char> originalPath, out string result)
+    public bool TryResolveFilePath(ReadOnlySpan<char> originalPath, out string result, out bool isDirectory)
     {
         var man = GetManager();
         bool success = man.TryGetFile(originalPath, out var redir);
-        if (success && redir.IsDirectory)
+        if (!success)
         {
+            isDirectory = default;
             result = string.Empty;
             return false;
         }
         
+        isDirectory = redir.IsDirectory;
         result = redir.GetFullPathWithDevicePrefix();
         return success;
     }
@@ -35,12 +38,13 @@ public partial class FileAccessServer
     /// <summary>
     /// Attempts to resolve the given path from source to target.
     /// </summary>
-    /// <param name="objectAttributes">Attributes containing the original path to resolve.</param>
-    /// <param name="result">The resulting path.</param>
+    /// <param name="originalPath">The original path to resolve.</param>
+    /// <param name="result">The resulting path, including prefix <see cref="Strings.PrefixLocalDeviceStr"/>.</param>
+    /// <param name="isDirectory">True if resulting item is a directory, else false.</param>
     /// <returns>True if the path is resolved, else false if not found or is a directory.</returns>
-    public unsafe bool TryResolveFilePath(Native.OBJECT_ATTRIBUTES* objectAttributes, out string result)
+    public unsafe bool TryResolveFilePath(Native.OBJECT_ATTRIBUTES* objectAttributes, out string result, out bool isDirectory)
     {
-        return TryResolveFilePath(ExtractPathFromObjectAttributes(objectAttributes), out result);
+        return TryResolveFilePath(ExtractPathFromObjectAttributes(objectAttributes), out result, out isDirectory);
     }
 
     /// <summary>
@@ -75,6 +79,14 @@ public partial class FileAccessServer
             return;
         
         _logger.Info("[R2.Redirector] File Get Attributes {0}", path.ToString());
+    }
+    
+    private void PrintDirectoryGetAttributeIfNeeded(ReadOnlySpan<char> path)
+    {
+        if (!_redirectorApi.GetRedirectorSetting(RedirectorSettings.PrintGetAttributes) || _logger == null) 
+            return;
+        
+        _logger.Info("[R2.Redirector] Directory Get Attributes {0}", path.ToString());
     }
 
     private void PrintAttributeRedirectIfNeeded(ReadOnlySpan<char> path, string newFilePath)

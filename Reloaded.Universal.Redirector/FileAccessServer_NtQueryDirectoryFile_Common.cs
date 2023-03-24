@@ -20,6 +20,7 @@ public unsafe partial class FileAccessServer
     private const int STATUS_SUCCESS = (int)0x0;
     private const int STATUS_BUFFER_OVERFLOW = unchecked((int)0x80000005);
     private const int NO_MORE_FILES = unchecked((int)0x80000006);
+    private const int STATUS_OBJECT_NAME_NOT_FOUND = unchecked((int)0xC0000034);
     // ReSharper restore InconsistentNaming
     
     private void FilterNtQueryDirectoryFileResults<TDirectoryInformation>(TDirectoryInformation* lastBufferPtr,

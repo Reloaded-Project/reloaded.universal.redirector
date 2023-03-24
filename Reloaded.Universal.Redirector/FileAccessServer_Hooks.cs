@@ -232,11 +232,24 @@ public unsafe partial class FileAccessServer
         
         {
             path = ExtractPathFromObjectAttributes(attributes);
-            if (!TryResolveFilePath(path, out string newFilePath))
+            if (!TryResolveFilePath(path, out string newFilePath, out bool isDirectory))
             {
                 PrintFileLoadIfNeeded(path);
                 _createFileLock.Unlock();
                 goto fastReturn;
+            }
+            
+            if (isDirectory)
+            {
+                PrintFileLoadIfNeeded(path);
+                var returnValue = _ntCreateFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus,
+                    allocSize, fileattributes, share, createDisposition, createOptions, eaBuffer, eaLength);
+                
+                if (returnValue != STATUS_OBJECT_NAME_NOT_FOUND)
+                {
+                    _createFileLock.Unlock();
+                    return returnValue;
+                }
             }
 
             PrintFileRedirectIfNeeded(path, newFilePath);
@@ -293,11 +306,22 @@ public unsafe partial class FileAccessServer
 
         {
             path = ExtractPathFromObjectAttributes(attributes);
-            if (!TryResolveFilePath(path, out string newFilePath))
+            if (!TryResolveFilePath(path, out string newFilePath, out var isDirectory))
             {
                 PrintFileLoadIfNeeded(path);
                 _openFileLock.Unlock();
                 goto fastReturn;
+            }
+            
+            if (isDirectory)
+            {
+                PrintFileLoadIfNeeded(path);
+                var returnValue = _ntOpenFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, share, openOptions);
+                if (returnValue != STATUS_OBJECT_NAME_NOT_FOUND)
+                {
+                    _openFileLock.Unlock();
+                    return returnValue;
+                }
             }
 
             PrintFileRedirectIfNeeded(path, newFilePath);
@@ -348,10 +372,20 @@ public unsafe partial class FileAccessServer
 
         {
             DequeueHandles();
-            if (!TryResolveFilePath(attributes, out string newFilePath))
+            if (!TryResolveFilePath(attributes, out string newFilePath, out var isDirectory))
             {
                 _deleteFileLock.Unlock();
                 goto fastReturn; 
+            }
+
+            if (isDirectory)
+            {
+                var result = _ntDeleteFileHook.Original.Value.Invoke(objectAttributes);
+                if (result != STATUS_OBJECT_NAME_NOT_FOUND)
+                {
+                    _deleteFileLock.Unlock();
+                    return result;
+                }
             }
 
             fixed (char* address = newFilePath)
@@ -392,13 +426,26 @@ public unsafe partial class FileAccessServer
         {
             DequeueHandles();
             var path = ExtractPathFromObjectAttributes(attributes);
-            if (!TryResolveFilePath(path, out string newFilePath))
+            if (!TryResolveFilePath(path, out string newFilePath, out var isDirectory))
             {
                 PrintGetAttributeIfNeeded(path);
                 _queryAttributesFileLock.Unlock();
                 goto fastReturn; 
             }
 
+            // For directories, try to get the result, but if that's not possible, try again with redirect path.
+            // This should provide us with a result if original directory didn't exist.
+            if (isDirectory)
+            {
+                PrintDirectoryGetAttributeIfNeeded(path);
+                var result = _ntQueryAttributesFileHook.Original.Value.Invoke(attributes, fileInformation);
+                if (result != STATUS_OBJECT_NAME_NOT_FOUND)
+                {
+                    _queryAttributesFileLock.Unlock();
+                    return result;
+                }
+            }
+            
             PrintAttributeRedirectIfNeeded(path, newFilePath);
             fixed (char* address = newFilePath)
             {
@@ -438,11 +485,24 @@ public unsafe partial class FileAccessServer
         {
             DequeueHandles();
             var path = ExtractPathFromObjectAttributes(attributes);
-            if (!TryResolveFilePath(path, out string newFilePath))
+            if (!TryResolveFilePath(path, out var newFilePath, out var isDirectory))
             {
                 PrintGetAttributeIfNeeded(path);
                 _queryFullAttributesFileLock.Unlock();
                 goto fastReturn; 
+            }
+
+            // For directories, try to get the result, but if that's not possible, try again with redirect path.
+            // This should provide us with a result if original directory didn't exist.
+            if (isDirectory)
+            {
+                PrintDirectoryGetAttributeIfNeeded(path);
+                var result = _ntQueryFullAttributesFileHook.Original.Value.Invoke(attributes, fileInformation);
+                if (result != STATUS_OBJECT_NAME_NOT_FOUND)
+                {
+                    _queryFullAttributesFileLock.Unlock();
+                    return result;
+                }
             }
 
             PrintAttributeRedirectIfNeeded(path, newFilePath);
