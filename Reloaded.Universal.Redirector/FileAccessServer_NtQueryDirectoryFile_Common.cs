@@ -23,14 +23,16 @@ public unsafe partial class FileAccessServer
     private const int STATUS_OBJECT_NAME_NOT_FOUND = unchecked((int)0xC0000034);
     // ReSharper restore InconsistentNaming
     
-    private void FilterNtQueryDirectoryFileResults<TDirectoryInformation>(TDirectoryInformation* lastBufferPtr,
+    /// <summary/>
+    /// <returns>If true, all items were filtered out.</returns>
+    private bool FilterNtQueryDirectoryFileResults<TDirectoryInformation>(TDirectoryInformation* lastBufferPtr,
         TDirectoryInformation* currentBufferPtr,
         SpanOfCharDict<bool> alreadyInjected)
         where TDirectoryInformation : unmanaged, IFileDirectoryInformationDerivative
     {
         // If no injected items, nothing to filter.
         if (alreadyInjected.Count == 0)
-            return;
+            return false;
         
         // We need to walk through the results to filter them.
         // There is no pointer back, so we need to be clever about how to do this.
@@ -49,16 +51,16 @@ public unsafe partial class FileAccessServer
                 if (!HasNext(nextItem))
                 {
                     lastEntry->SetNextEntryOffset(0);
-                    return;
+                    return currentEntry == lastBufferPtr; // check for first item
                 }
                 
                 while (true)
                 {
                     if (!GoToNext(ref nextItem))
                     {
-                        // There is no 'next item'; we set pointer to 0 [default].
+                        // There is no 'next item'; we cancel out from last pointer.
                         lastEntry->SetNextEntryOffset(0);
-                        break;
+                        return currentEntry == lastBufferPtr; // check for first item
                     }
                     
                     // Skip if we need to remove this
@@ -74,7 +76,7 @@ public unsafe partial class FileAccessServer
             // Update current entry [end of loop].
             lastEntry = currentEntry;
             if (!GoToNext(ref currentEntry))
-                return; // no more elements
+                return false; // no more elements
         } 
         while (true);
     }

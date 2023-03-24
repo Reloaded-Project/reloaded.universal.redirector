@@ -148,7 +148,14 @@ public unsafe partial class FileAccessServer
         if (returnSingleEntry != 0)
             return;
 
-        FilterNtQueryDirectoryFileResults((TDirectoryInformation*)lastFileInformation, currentBufferPtr, handleItem.AlreadyInjected!);
+        if (FilterNtQueryDirectoryFileResults((TDirectoryInformation*)lastFileInformation, currentBufferPtr, handleItem.AlreadyInjected!))
+        {
+            // Called if all filtered out.
+            // If we previously returned an injected file, it's success, else no more files.
+            returnValue = handleItem.CurrentItem > initialItem 
+                ? STATUS_SUCCESS 
+                : NO_MORE_FILES;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

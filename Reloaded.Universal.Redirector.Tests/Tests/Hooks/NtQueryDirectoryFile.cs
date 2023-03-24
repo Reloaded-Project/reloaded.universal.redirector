@@ -102,6 +102,31 @@ public class NtQueryDirectoryFile : BaseHookTest
     
     [Theory]
     [MemberData(nameof(GetTestCases))]
+    public void CanMapFolder_DiscardsDuplicates_WithAllItemsDuplicated(bool ex, Native.FILE_INFORMATION_CLASS method)
+    {
+        Api.Enable();
+        const int count = 256;
+
+        int currentName = 0;
+        string MakeFileName() => (currentName++).ToString("000");
+        using var items = new TemporaryJunkFolder(count, MakeFileName);
+        currentName = 0;
+        using var newItems = new TemporaryJunkFolder(count, MakeFileName);
+
+        Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()
+        {
+            OneByOne = false,
+            RestartAfter = null,
+            FileNameFilter = "*"
+        }).Files;
+        
+        // No files are injected.
+        Assert.Equal(count, files.Count);
+    }
+    
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_DoesNotRedirectSubFolderHandle(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         // Ensures the file path to a subfolder doesn't get redirected,
