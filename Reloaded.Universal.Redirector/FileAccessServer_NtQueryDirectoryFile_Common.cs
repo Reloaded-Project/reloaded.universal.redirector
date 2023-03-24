@@ -57,7 +57,7 @@ public unsafe partial class FileAccessServer
                     if (!GoToNext(ref nextItem))
                     {
                         // There is no 'next item'; we set pointer to 0 [default].
-                        currentEntry->SetNextEntryOffset(0);
+                        lastEntry->SetNextEntryOffset(0);
                         break;
                     }
                     
