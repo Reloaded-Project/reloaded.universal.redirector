@@ -247,6 +247,7 @@ public unsafe partial class FileAccessServer
                 
                 if (returnValue != STATUS_OBJECT_NAME_NOT_FOUND)
                 {
+                    _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
                     _createFileLock.Unlock();
                     return returnValue;
                 }
@@ -319,6 +320,7 @@ public unsafe partial class FileAccessServer
                 var returnValue = _ntOpenFileHook.Original.Value.Invoke(fileHandle, access, objectAttributes, ioStatus, share, openOptions);
                 if (returnValue != STATUS_OBJECT_NAME_NOT_FOUND)
                 {
+                    _fileHandles[*fileHandle] = new OpenHandleState(path.ToString());
                     _openFileLock.Unlock();
                     return returnValue;
                 }
