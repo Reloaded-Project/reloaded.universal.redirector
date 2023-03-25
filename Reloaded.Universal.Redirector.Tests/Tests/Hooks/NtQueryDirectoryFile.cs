@@ -198,6 +198,37 @@ public class NtQueryDirectoryFile : BaseHookTest
     
     [Theory]
     [MemberData(nameof(GetTestCases))]
+    public void CanMapFolder_FileDoesNotExist(bool ex, Native.FILE_INFORMATION_CLASS method) => GetFiles_DoesNotExist(ex, method, false);
+
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
+    public void CanMapFolder_FileDoesNotExist_SingleFile(bool ex, Native.FILE_INFORMATION_CLASS method) => GetFiles_DoesNotExist(ex, method, true);
+
+    
+    private void GetFiles_DoesNotExist(bool ex, Native.FILE_INFORMATION_CLASS method, bool singleFile)
+    {
+        Api.Enable();
+        const int count = 8;
+
+        int currentName = 0;
+        string MakeFileName() => (currentName++).ToString();
+        using var items = new TemporaryJunkFolder(count, MakeFileName);
+        using var newItems = new TemporaryJunkFolder(count, MakeFileName);
+
+        Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
+        
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method,
+            new NtQueryDirectoryFileSettings()
+            {
+                OneByOne = singleFile,
+                FileNameFilter = "DoesNotExist"
+            }).Files;
+        
+        Assert.Empty(files);
+    }
+    
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_Baseline_Single(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();

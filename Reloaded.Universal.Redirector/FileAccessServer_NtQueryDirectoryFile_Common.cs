@@ -119,7 +119,6 @@ public unsafe partial class FileAccessServer
             handleItem.AlreadyInjected = new SpanOfCharDict<bool>(handleItem.Items.Length);
         }
 
-        // TODO: Handle This
         if (fileName != null)
         {
             handleItem.QueryFileName = fileName->ToSpan().ToString();
@@ -134,8 +133,8 @@ public unsafe partial class FileAccessServer
     /// <exception cref="Win32Exception">Failed to query file. [file will be skipped]</exception>
     /// <returns>True on success, else false if failed or filtered out.</returns>
     /// <remarks>
-    ///     If the item is not advanced, buffer is insufficient; else item was filtered out or an error occurred.
-    ///     Item is advanced regardless of success.
+    ///     If the item is not advanced, buffer is insufficient.
+    ///     If the item was advanced, but result was false, an error occurred.
     /// </remarks>
     private bool QueryCustomFile<TDirectoryInformation>(ref nint lastFileInformation, ref nint fileInformation,
         ref int remainingBytes,

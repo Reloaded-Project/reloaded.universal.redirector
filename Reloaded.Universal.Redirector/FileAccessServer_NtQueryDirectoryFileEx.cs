@@ -97,13 +97,13 @@ public unsafe partial class FileAccessServer
         int remainingBytes = (int)length;
         var lastFileInformation = fileInformation;
         
-        var initialItem = handleItem.CurrentItem;
+        var initInjectedItems = handleItem.NumInjectedItems;
         while (moreFiles)
         {
             var currentBufferPtr = (TDirectoryInformation*)fileInformation;
             if (handleItem.CurrentItem < items!.Length)
             {
-                if (InjectCustomFile(ref fileInformation, returnSingleEntry, ref returnValue, handleItem, items, currentBufferPtr, initialItem, ref lastFileInformation, ref remainingBytes, ref moreFiles)) 
+                if (InjectCustomFile(ref fileInformation, returnSingleEntry, ref returnValue, handleItem, items, currentBufferPtr, initInjectedItems, ref lastFileInformation, ref remainingBytes, ref moreFiles)) 
                     break;
             }
             else
@@ -122,7 +122,7 @@ public unsafe partial class FileAccessServer
                 returnValue = _ntQueryDirectoryFileExHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
                     fileInformation, (uint)remainingBytes, fileInformationClass, queryFlags, fileName);
                 
-                HandleNtQueryDirectoryFileResult(returnSingleEntry, ref returnValue, handleItem, initialItem, lastFileInformation, currentBufferPtr);
+                HandleNtQueryDirectoryFileResult(returnSingleEntry, ref returnValue, handleItem, initInjectedItems, lastFileInformation, currentBufferPtr);
                 break;
             }
         }

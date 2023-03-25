@@ -95,13 +95,13 @@ public unsafe partial class FileAccessServer
         int remainingBytes = (int)length;
         var lastFileInformation = fileInformation;
 
-        var initialItem = handleItem.CurrentItem;
+        var initInjectedItems = handleItem.NumInjectedItems;
         while (moreFiles)
         {
             var currentBufferPtr = (TDirectoryInformation*)fileInformation;
             if (handleItem.CurrentItem < items!.Length)
             {
-                if (InjectCustomFile(ref fileInformation, returnSingleEntry, ref returnValue, handleItem, items, currentBufferPtr, initialItem, ref lastFileInformation, ref remainingBytes, ref moreFiles)) 
+                if (InjectCustomFile(ref fileInformation, returnSingleEntry, ref returnValue, handleItem, items, currentBufferPtr, initInjectedItems, ref lastFileInformation, ref remainingBytes, ref moreFiles)) 
                     break;
             }
             else
@@ -117,7 +117,7 @@ public unsafe partial class FileAccessServer
                 returnValue = _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
                     fileInformation, (uint)remainingBytes, fileInformationClass, returnSingleEntry, fileName, handleItem.GetForceRestartScan());
 
-                HandleNtQueryDirectoryFileResult(returnSingleEntry, ref returnValue, handleItem, initialItem, lastFileInformation, currentBufferPtr);
+                HandleNtQueryDirectoryFileResult(returnSingleEntry, ref returnValue, handleItem, initInjectedItems, lastFileInformation, currentBufferPtr);
                 break;
             }
         }
@@ -128,13 +128,13 @@ public unsafe partial class FileAccessServer
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void HandleNtQueryDirectoryFileResult<TDirectoryInformation>(int returnSingleEntry, ref int returnValue,
-        OpenHandleState handleItem, int initialItem, nint lastFileInformation, TDirectoryInformation* currentBufferPtr)
+        OpenHandleState handleItem, int initInjectedItems, nint lastFileInformation, TDirectoryInformation* currentBufferPtr)
         where TDirectoryInformation : unmanaged, IFileDirectoryInformationDerivative
     {
         if (returnValue != 0)
         {
             // If we previously returned an injected file, assume success.
-            if (handleItem.CurrentItem > initialItem)
+            if (handleItem.NumInjectedItems > initInjectedItems)
             {
                 returnValue = STATUS_SUCCESS;
                 ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
@@ -152,22 +152,24 @@ public unsafe partial class FileAccessServer
         {
             // Called if all filtered out.
             // If we previously returned an injected file, it's success, else no more files.
-            returnValue = handleItem.CurrentItem > initialItem 
+            returnValue = handleItem.NumInjectedItems > initInjectedItems 
                 ? STATUS_SUCCESS 
                 : NO_MORE_FILES;
         }
     }
 
+    /// <summary/>
+    /// <returns>True if there are no more files to query</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     // ReSharper disable once UnusedMember.Local
     private bool InjectCustomFile<TDirectoryInformation>(ref nint fileInformation, int returnSingleEntry,
         ref int returnValue, OpenHandleState handleItem, SpanOfCharDict<RedirectionTreeTarget>.ItemEntry[] items, TDirectoryInformation* currentBufferPtr,
-        int initialItem, ref nint lastFileInformation, ref int remainingBytes, ref bool moreFiles)
+        int initInjectedItems, ref nint lastFileInformation, ref int remainingBytes, ref bool moreFiles)
         where TDirectoryInformation : unmanaged, IFileDirectoryInformationDerivative
     {
         // Populate with custom files.
         LogDebugOnly("Injecting File Index {0} in {1}, Struct: [{2}]", handleItem.CurrentItem, nameof(InjectCustomFile), typeof(TDirectoryInformation).Name);
-        
+
         var lastItem = handleItem.CurrentItem;
         var success = QueryCustomFile(ref lastFileInformation, ref fileInformation, ref remainingBytes,
             ref handleItem.CurrentItem, items, currentBufferPtr, ref moreFiles, handleItem.AlreadyInjected!,
@@ -175,22 +177,29 @@ public unsafe partial class FileAccessServer
         
         if (!success)
         {
-            // Not enough space for next element.
-            if (lastItem > initialItem)
+            // Not enough space for next element, but we successfully injected an item before
+            if (handleItem.NumInjectedItems > initInjectedItems)
             {
                 ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
                 returnValue = STATUS_SUCCESS;
                 return true;
             }
 
-            // Not enough space for any element
+            // Not enough space for element
             if (lastItem == handleItem.CurrentItem)
             {
-                returnValue = STATUS_BUFFER_TOO_SMALL;
+                returnValue = handleItem.NumInjectedItems == initInjectedItems ? 
+                    STATUS_BUFFER_TOO_SMALL : // if we haven't injected any, it's failure
+                    STATUS_SUCCESS; // ok if we injected before
+
                 return true;
             }
 
             LogDebugOnly("Filtered Out {0} in {1}", handleItem.CurrentItem, nameof(InjectCustomFile));
+        }
+        else
+        {
+            handleItem.NumInjectedItems++;
         }
 
         if ((returnSingleEntry != 0 && success) || !moreFiles)

@@ -726,6 +726,11 @@ public unsafe partial class FileAccessServer
         /// Index of the current item to return.
         /// </summary>
         public int CurrentItem;
+        
+        /// <summary>
+        /// Index of the current item to return.
+        /// </summary>
+        public int NumInjectedItems;
 
         /// <summary>
         /// Forces a scan restart on next API call to original function.
@@ -741,6 +746,7 @@ public unsafe partial class FileAccessServer
         public void Restart()
         {
             CurrentItem = 0;
+            NumInjectedItems = 0;
             AlreadyInjected?.Clear();
             ForceRestartScan = 1;
         }
