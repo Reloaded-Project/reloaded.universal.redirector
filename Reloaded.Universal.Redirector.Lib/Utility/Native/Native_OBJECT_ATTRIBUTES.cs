@@ -79,6 +79,10 @@ public partial class Native
                 
             if (queryStatus != 0)
             {
+                // Not a file
+                if (queryStatus == unchecked((int)0xC0000010))
+                    return false;
+                
                 ThrowHelpers.Win32Exception(queryStatus);
                 return false;
             }
