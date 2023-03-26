@@ -69,6 +69,8 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
         
         // We can freely add files until we kick in the 'optimise' button because files are
         // supposed to take priority.
+        
+        // TODO: This *can* be implemented for lookup tree, and can be shared with fast append.
         if (UsingLookupTree)
             Rebuild();
         else
