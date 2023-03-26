@@ -1,5 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
-using FileEmulationFramework.Lib.IO;
+using Reloaded.Universal.Redirector.Lib.Utility;
 
 namespace Reloaded.Universal.Redirector.Benchmarks.Benchmarks;
 

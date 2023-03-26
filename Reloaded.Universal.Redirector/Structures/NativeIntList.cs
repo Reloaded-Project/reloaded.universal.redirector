@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using Reloaded.Universal.Redirector.Lib.Utility.Native;
 
 namespace Reloaded.Universal.Redirector.Structures;
 
@@ -80,12 +81,12 @@ public unsafe struct NativeIntList
 
     public NativeIntList()
     {
-        var ucrt = FileEmulationFramework.Lib.Utilities.Native.LoadLibrary("ucrtbase.dll");
-        Malloc = (delegate*unmanaged[Cdecl, SuppressGCTransition]<nuint, nuint>)FileEmulationFramework.Lib.Utilities.Native.GetProcAddress(ucrt, "malloc");
-        Free = (delegate*unmanaged[Cdecl, SuppressGCTransition]<nuint, void>)FileEmulationFramework.Lib.Utilities.Native.GetProcAddress(ucrt, "free");
+        var ucrt = Native.LoadLibraryW("ucrtbase.dll");
+        Malloc = (delegate*unmanaged[Cdecl, SuppressGCTransition]<nuint, nuint>)Native.GetProcAddress(ucrt, "malloc");
+        Free = (delegate*unmanaged[Cdecl, SuppressGCTransition]<nuint, void>)Native.GetProcAddress(ucrt, "free");
         
-        var kernel32 = FileEmulationFramework.Lib.Utilities.Native.LoadLibrary("kernel32.dll");
-        GetCurrentThreadId = (delegate*unmanaged[Stdcall, SuppressGCTransition]<int>)FileEmulationFramework.Lib.Utilities.Native.GetProcAddress(kernel32, "GetCurrentThreadId");
+        var kernel32 = Native.LoadLibraryW("kernel32.dll");
+        GetCurrentThreadId = (delegate*unmanaged[Stdcall, SuppressGCTransition]<int>)Native.GetProcAddress(kernel32, "GetCurrentThreadId");
         
         NumItems = 0;
         Capacity = 20;

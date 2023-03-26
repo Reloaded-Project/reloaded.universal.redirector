@@ -1,7 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance.Buffers;
-using FileEmulationFramework.Lib.IO;
 using Reloaded.Universal.Redirector.Lib.Backports.System.Globalization;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 using Reloaded.Universal.Redirector.Lib.Utility;

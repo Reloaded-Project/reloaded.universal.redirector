@@ -104,7 +104,7 @@ public unsafe partial class FileAccessServer
             return false;
         }
         
-        LogDebugOnly("Call {0} in {1}",handleItem.FilePath, nameof(InitHandleNtQueryDirectoryFileHook));
+        LogDebugOnly("Call {0} in {1}", handleItem.FilePath, nameof(InitHandleNtQueryDirectoryFileHook));
 
         // Fetch items we need 
         if (handleItem.Items == null)

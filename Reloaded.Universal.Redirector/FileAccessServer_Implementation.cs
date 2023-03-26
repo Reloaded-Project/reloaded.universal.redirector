@@ -75,7 +75,7 @@ public partial class FileAccessServer
         
         if (_redirectorApi.GetRedirectorSetting(RedirectorSettings.DontPrintNonFiles))
         {
-            if (path.Contains("usb#vid", StringComparison.OrdinalIgnoreCase) || path.Contains("hid#vid", StringComparison.OrdinalIgnoreCase))
+            if (path.Contains("usb#vid", StringComparison.OrdinalIgnoreCase) || path.Contains("hid#", StringComparison.OrdinalIgnoreCase))
                 return;
         }
 

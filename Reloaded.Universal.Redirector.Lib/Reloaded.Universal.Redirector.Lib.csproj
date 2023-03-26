@@ -6,12 +6,14 @@
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        
+        <IsTrimmable>true</IsTrimmable>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="CommunityToolkit.HighPerformance" Version="8.1.0" />
-      <PackageReference Include="FileEmulationFramework.Lib" Version="1.1.1" />
       <PackageReference Include="Reloaded.Hooks.Definitions" Version="1.15.0" />
+      <PackageReference Include="Reloaded.Mod.Interfaces" Version="2.3.0" />
     </ItemGroup>
 
     <ItemGroup>

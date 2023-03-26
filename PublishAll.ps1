@@ -11,6 +11,7 @@ Split-Path $MyInvocation.MyCommand.Path | Push-Location
               -MakeDelta true -UseGitHubDelta true `
               -MetadataFileName "Reloaded.Universal.Redirector.ReleaseMetadata.json" `
               -GitHubUserName Reloaded-Project -GitHubRepoName reloaded.universal.redirector -GitHubFallbackPattern reloaded.universal.redirector.zip -GitHubInheritVersionFromTag false `
+			  -BuildR2R true `
 			  @args
 
 ./Publish.ps1 -ProjectPath "Reloaded.Universal.Monitor/Reloaded.Universal.Monitor.csproj" `

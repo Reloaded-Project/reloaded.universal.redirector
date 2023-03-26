@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Reloaded.Hooks.Definitions;
+using static System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes;
 
 namespace Reloaded.Universal.Redirector.Lib.Utility;
 
@@ -6,7 +8,7 @@ namespace Reloaded.Universal.Redirector.Lib.Utility;
 /// Wrapper for <see cref="IHook{TFunction}"/> to introduce devirtualisation.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class AHook<T> : IHook<T>
+public class AHook<[DynamicallyAccessedMembers(PublicParameterlessConstructor | PublicMethods | NonPublicMethods | PublicFields | PublicNestedTypes)]T> : IHook<T>
 {
     private readonly IHook<T> _child;
 
@@ -70,10 +72,10 @@ public static class AHookExtensions
     /// <summary>
     /// Converts from <see cref="IHook{TFunction}"/> to <see cref="AHook{T}"/>
     /// </summary>
-    public static AHook<T> ToAHook<T>(this IHook<T> hook) => new(hook);
+    public static AHook<T> ToAHook<[DynamicallyAccessedMembers(PublicParameterlessConstructor | PublicMethods | NonPublicMethods | PublicFields | PublicNestedTypes)]T>(this IHook<T> hook) => new(hook);
 
     /// <summary>
     /// Activates an <see cref="IHook{TFunction}"/> as an <see cref="AHook{T}"/>.
     /// </summary>
-    public static AHook<T> ActivateAHook<T>(this IHook<T> hook) => hook.Activate().ToAHook();
+    public static AHook<T> ActivateAHook<[DynamicallyAccessedMembers(PublicParameterlessConstructor | PublicMethods | NonPublicMethods | PublicFields | PublicNestedTypes)]T>(this IHook<T> hook) => hook.Activate().ToAHook();
 }

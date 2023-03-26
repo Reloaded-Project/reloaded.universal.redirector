@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using FileEmulationFramework.Lib.IO;
 using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native;
 
 namespace Reloaded.Universal.Redirector.Lib.Utility.Native;

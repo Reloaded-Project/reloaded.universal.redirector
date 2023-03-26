@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel;
-using FileEmulationFramework.Lib.Utilities;
+using Reloaded.Universal.Redirector.Lib.Utility;
 using Reloaded.Universal.Redirector.Template.Configuration;
 
 namespace Reloaded.Universal.Redirector;

@@ -1,8 +1,6 @@
 using BenchmarkDotNet.Attributes;
-using FileEmulationFramework.Lib.IO;
 using Reloaded.Universal.Redirector.Lib.Structures;
 using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
-using Reloaded.Universal.Redirector.Lib.Utility;
 using FileInformation = Reloaded.Universal.Redirector.Lib.Utility.FileInformation;
 using WindowsDirectorySearcher = Reloaded.Universal.Redirector.Lib.Utility.WindowsDirectorySearcher;
 
