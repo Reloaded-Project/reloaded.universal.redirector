@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Reloaded.Hooks.Definitions;
 using Reloaded.Hooks.Definitions.Enums;
@@ -8,6 +9,7 @@ using Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
 using Reloaded.Universal.Redirector.Lib.Utility;
 using Reloaded.Universal.Redirector.Lib.Utility.Native;
 using Reloaded.Universal.Redirector.Structures;
+using static System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes;
 using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native;
 using static Reloaded.Universal.Redirector.Structures.NativeIntList;
 
@@ -172,7 +174,7 @@ public unsafe partial class FileAccessServer
         _closeHandleHook.Activate();
     }
 
-    private void HookMethod<THook>(ref AHook<THook> hook, string methodName, string origFunctionName, IReloadedHooks hooks, Logger? log, nint nativePointer)
+    private void HookMethod<[DynamicallyAccessedMembers(All)]THook>(ref AHook<THook> hook, string methodName, string origFunctionName, IReloadedHooks hooks, Logger? log, nint nativePointer)
     {
         if (nativePointer != IntPtr.Zero)
             hook = hooks.CreateHook<THook>(typeof(FileAccessServer), methodName, nativePointer).ActivateAHook();
@@ -665,12 +667,12 @@ public unsafe partial class FileAccessServer
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtQueryAttributesFile(OBJECT_ATTRIBUTES* files, IntPtr fileInformation)
     {
-#if DEBUG
+#if true
         try
         {
 #endif
         return _instance.NtQueryAttributesFileImpl(files, fileInformation);
-#if DEBUG
+#if true
         }
         catch (Exception e)
         {
@@ -683,12 +685,12 @@ public unsafe partial class FileAccessServer
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int NtQueryFullAttributesFile(OBJECT_ATTRIBUTES* files, IntPtr fileInformation)
     {
-#if DEBUG
+#if true
         try
         {
 #endif
         return _instance.NtQueryFullAttributesFileImpl(files, fileInformation);
-#if DEBUG
+#if true
         }
         catch (Exception e)
         {

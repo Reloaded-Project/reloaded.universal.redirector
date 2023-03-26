@@ -6,15 +6,8 @@ using Reloaded.Mod.Interfaces;
 
 namespace Reloaded.Universal.Redirector.Template.Configuration;
 
-public class Configurable<TParentType> : IUpdatableConfigurable where TParentType : Configurable<TParentType>, new()
+public class Configurable<TParentType> : IUpdatableConfigurable where TParentType : Configurable<TParentType>, IGetTypeInfo<TParentType>, new()
 {
-    // Default Serialization Options
-    public static JsonSerializerOptions SerializerOptions { get; } = new JsonSerializerOptions()
-    {
-        Converters = { new JsonStringEnumConverter() },
-        WriteIndented = true
-    };
-
     /* Events */
 
     /// <summary>
@@ -128,14 +121,14 @@ public class Configurable<TParentType> : IUpdatableConfigurable where TParentTyp
     private void OnSave()
     {
         var parent = (TParentType)this;
-        File.WriteAllText(FilePath!, JsonSerializer.Serialize(parent, SerializerOptions));
+        File.WriteAllText(FilePath!, JsonSerializer.Serialize(parent, TParentType.GetTypeInfo()));
     }
 
     /* Utility */
     private static TParentType ReadFrom(string filePath, string configName)
     {
         var result = (File.Exists(filePath)
-            ? JsonSerializer.Deserialize<TParentType>(File.ReadAllBytes(filePath), SerializerOptions)
+            ? JsonSerializer.Deserialize<TParentType>(File.ReadAllBytes(filePath), TParentType.GetTypeInfo())
             : new TParentType()) ?? new TParentType();
 
         result.Initialize(filePath, configName);

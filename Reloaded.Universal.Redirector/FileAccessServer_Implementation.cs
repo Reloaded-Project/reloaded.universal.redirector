@@ -109,7 +109,7 @@ public partial class FileAccessServer
         if (_redirectorApi.GetRedirectorSetting(RedirectorSettings.PrintRedirect) && _logger != null)
             _logger.Info("[R2.Redirector] File Redirect {0}\n-> {1}", path.ToString(), newFilePath);
     }
-    
+
     /// <summary>
     /// Forces the JIT to compile a given function.
     /// </summary>
@@ -118,9 +118,7 @@ public partial class FileAccessServer
     /// <returns>Pointer to the function.</returns>
     // ReSharper disable once UnusedMethodReturnValue.Local
     private unsafe void* JitFunction(
-#if NET5_0_OR_GREATER
-        [DynamicallyAccessedMembers(Trimming.Methods)]
-#endif
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
         Type type, string name)
     {
         _logger?.Debug("Jitting Function: {0}", name);
