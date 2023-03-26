@@ -94,14 +94,14 @@ public unsafe partial class FileAccessServer
     private readonly Dictionary<nint, OpenHandleState> _fileHandles = new();
     private Logger? _logger;
 
-    public static void Initialize(IReloadedHooks hooks, RedirectorApi redirectorApi, string programDirectory, Logger? log = null)
+    public static void Initialize(IReloadedHooks hooks, RedirectorApi redirectorApi, string codeDirectory, Logger? log = null)
     {
         // ReSharper disable once NullCoalescingConditionIsAlwaysNotNullAccordingToAPIContract
         _instance ??= new FileAccessServer();
-        _instance.InitializeImpl(hooks, redirectorApi, programDirectory, log);    
+        _instance.InitializeImpl(hooks, redirectorApi, codeDirectory, log);    
     }
 
-    private void InitializeImpl(IReloadedHooks hooks, RedirectorApi redirectorApi, string programDirectory, Logger? log = null)
+    private void InitializeImpl(IReloadedHooks hooks, RedirectorApi redirectorApi, string codeDirectory, Logger? log = null)
     {
         _redirectorApi = redirectorApi;
         _redirectorApi.OnDisable += Disable;
@@ -138,12 +138,12 @@ public unsafe partial class FileAccessServer
         var listPtr = (long)_closedHandleList.Pointer;
         if (IntPtr.Size == 4)
         {
-            var asm = string.Format(File.ReadAllText(Path.Combine(programDirectory, "Asm/NativeIntList_X86.asm")), listPtr);
+            var asm = string.Format(File.ReadAllText(Path.Combine(codeDirectory, "Asm/NativeIntList_X86.asm")), listPtr);
             _closeHandleHook = hooks.CreateAsmHook(asm, closeHandle, AsmHookBehaviour.ExecuteFirst);
         }
         else
         {
-            var asm = string.Format(File.ReadAllText(Path.Combine(programDirectory, "Asm/NativeIntList_X64.asm")), listPtr);
+            var asm = string.Format(File.ReadAllText(Path.Combine(codeDirectory, "Asm/NativeIntList_X64.asm")), listPtr);
             _closeHandleHook = hooks.CreateAsmHook(asm, closeHandle, AsmHookBehaviour.ExecuteFirst);
         }
 

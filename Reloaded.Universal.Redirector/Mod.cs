@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Interfaces;
@@ -46,7 +47,7 @@ public class Mod : ModBase, IExports // <= Do not Remove.
         _redirectorApi = new RedirectorApi(ModLoaderRedirectorExtensions.Create(modConfigs, _modLoader, modsFolder!));
         _logger = new Logger(logger, config.LogLevel);
         InitSettings(config);
-        FileAccessServer.Initialize(hooks!, _redirectorApi, _modLoader.GetDirectoryForModId(modConfig.ModId), _logger);
+        FileAccessServer.Initialize(hooks!, _redirectorApi, Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, _logger);
 
         _modLoader.AddOrReplaceController<IRedirectorController>(owner, _redirectorApi);
         _modLoader.ModLoading   += ModLoading;
