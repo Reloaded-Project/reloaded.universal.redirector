@@ -79,8 +79,8 @@ public class Mod : ModBase, IExports // <= Do not Remove.
     public override void Resume()  => FileAccessServer.Enable();
     public override void Unload()  => Suspend();
 
-    public override bool CanUnload()  => false;
-    public override bool CanSuspend() => false;
+    public override bool CanUnload()  => true;
+    public override bool CanSuspend() => true;
 
     #region For Exports, Serialization etc.
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
