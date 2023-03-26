@@ -113,26 +113,9 @@ public unsafe partial class FileAccessServer
         _hooksApplied = true;
         _logger = log;
         
-        // Force-jit of some methods: We need this otherwise we might be stuck in infinite recursion if JIT needs 
-        //                            to load a DLL to compile one of the methods with a recursion lock
-        JitFunction(typeof(OBJECT_ATTRIBUTES), nameof(OBJECT_ATTRIBUTES.TryGetRootDirectory));
-        
-        JitFunction(typeof(FileAccessServer), nameof(NtCreateFileHookFn));
-        JitFunction(typeof(FileAccessServer), nameof(NtOpenFileHookFn));
-        JitFunction(typeof(FileAccessServer), nameof(NtDeleteFileHookFn));
-        JitFunction(typeof(FileAccessServer), nameof(NtQueryDirectoryFileHookFn));
-        JitFunction(typeof(FileAccessServer), nameof(NtQueryDirectoryFileExHookFn));
-        JitFunction(typeof(FileAccessServer), nameof(NtQueryAttributesFile));
-        JitFunction(typeof(FileAccessServer), nameof(NtQueryFullAttributesFile));
-        
-        JitFunction(typeof(FileAccessServer), nameof(NtCreateFileHookImpl));
-        JitFunction(typeof(FileAccessServer), nameof(NtOpenFileHookImpl));
-        JitFunction(typeof(FileAccessServer), nameof(NtDeleteFileHookImpl));
-        JitFunction(typeof(FileAccessServer), nameof(NtQueryDirectoryFileHookImpl));
-        JitFunction(typeof(FileAccessServer), nameof(NtQueryAttributesFileImpl));
-        JitFunction(typeof(FileAccessServer), nameof(NtQueryFullAttributesFileImpl));
-        _queryFullAttributesFileLock.Lock(0);
-        _queryFullAttributesFileLock.Unlock();
+        // Force-jit of all methods: We need this otherwise we might be stuck in infinite recursion if JIT needs 
+        //                           to load a DLL to compile one of the methods with a recursion lock
+        JitAllNeededFunctions();
         
         // Get Hooks
         var ntdllHandle = LoadLibraryW("ntdll");

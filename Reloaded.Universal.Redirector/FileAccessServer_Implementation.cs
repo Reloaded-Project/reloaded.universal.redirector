@@ -111,20 +111,30 @@ public partial class FileAccessServer
     }
 
     /// <summary>
-    /// Forces the JIT to compile a given function.
+    /// Forces the JIT to compile all functions we need ahead of time.
     /// </summary>
-    /// <param name="type">Type inside which the function is contained.</param>
-    /// <param name="name">Name of the function.</param>
-    /// <returns>Pointer to the function.</returns>
     // ReSharper disable once UnusedMethodReturnValue.Local
-    private unsafe void* JitFunction(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-        Type type, string name)
+    private void JitAllNeededFunctions()
     {
-        _logger?.Debug("Jitting Function: {0}", name);
-        var method = type.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)!.MethodHandle;
-        RuntimeHelpers.PrepareMethod(method);
-        return (void*) method.GetFunctionPointer();
+        JitAllFunctionsInAssembly(Assembly.GetExecutingAssembly());
+        JitAllFunctionsInAssembly(typeof(Native).Assembly);
+    }
+    
+    private void JitAllFunctionsInAssembly(Assembly assembly)
+    {
+        _logger?.Debug("Jitting Assembly {0}", assembly);
+        foreach (var type in assembly.GetTypes())
+        {
+            _logger?.Debug("Jitting Type: {0}", type.Name);
+            foreach (var method in type.GetMethods())
+            {
+                if (method.IsAbstract || method.IsGenericMethod || method.IsGenericMethodDefinition || method.ContainsGenericParameters)
+                    continue;
+                
+                _logger?.Debug("Jitting Function: {0}", method.Name);
+                RuntimeHelpers.PrepareMethod(method.MethodHandle);
+            }
+        }
     }
     
     // ReSharper disable UnusedMember.Local
