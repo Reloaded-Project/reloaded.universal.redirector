@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Reloaded.Hooks.Definitions;
@@ -115,6 +115,8 @@ public unsafe partial class FileAccessServer
         
         // Force-jit of some methods: We need this otherwise we might be stuck in infinite recursion if JIT needs 
         //                            to load a DLL to compile one of the methods with a recursion lock
+        JitFunction(typeof(OBJECT_ATTRIBUTES), nameof(OBJECT_ATTRIBUTES.TryGetRootDirectory));
+        
         JitFunction(typeof(FileAccessServer), nameof(NtCreateFileHookFn));
         JitFunction(typeof(FileAccessServer), nameof(NtOpenFileHookFn));
         JitFunction(typeof(FileAccessServer), nameof(NtDeleteFileHookFn));
@@ -142,15 +144,6 @@ public unsafe partial class FileAccessServer
         var ntQueryAttributesFilePointer = GetProcAddress(ntdllHandle, "NtQueryAttributesFile");
         var ntQueryFullAttributesFilePointer = GetProcAddress(ntdllHandle, "NtQueryFullAttributesFile");
 
-        // Kick off the server
-        HookMethod(ref _ntCreateFileHook, nameof(NtCreateFileHookFn), "NtCreateFile", hooks, log, ntCreateFilePointer);
-        HookMethod(ref _ntOpenFileHook, nameof(NtOpenFileHookFn), "NtOpenFile", hooks, log, ntOpenFilePointer);
-        HookMethod(ref _ntDeleteFileHook, nameof(NtDeleteFileHookFn), "NtDeleteFile", hooks, log, ntDeleteFilePointer);
-        HookMethod(ref _ntQueryDirectoryFileHook, nameof(NtQueryDirectoryFileHookFn), "NtQueryDirectoryFile", hooks, log, ntQueryDirectoryFilePointer);
-        HookMethod(ref _ntQueryDirectoryFileExHook, nameof(NtQueryDirectoryFileExHookFn), "NtQueryDirectoryFileEx", hooks, log, ntQueryDirectoryFileExPointer);
-        HookMethod(ref _ntQueryAttributesFileHook, nameof(NtQueryAttributesFile), "NtQueryAttributesFile", hooks, log, ntQueryAttributesFilePointer);
-        HookMethod(ref _ntQueryFullAttributesFileHook, nameof(NtQueryFullAttributesFile), "NtQueryFullAttributesFile", hooks, log, ntQueryFullAttributesFilePointer);
-
         // We need to cook some assembly for NtClose, because Native->Managed
         // transition can invoke thread setup code which will call CloseHandle again
         // and that will lead to infinite recursion; also unable to do Coop <=> Preemptive GC transition
@@ -172,6 +165,15 @@ public unsafe partial class FileAccessServer
         }
 
         _closeHandleHook.Activate();
+        
+        // Kick off the server
+        HookMethod(ref _ntCreateFileHook, nameof(NtCreateFileHookFn), "NtCreateFile", hooks, log, ntCreateFilePointer);
+        HookMethod(ref _ntOpenFileHook, nameof(NtOpenFileHookFn), "NtOpenFile", hooks, log, ntOpenFilePointer);
+        HookMethod(ref _ntDeleteFileHook, nameof(NtDeleteFileHookFn), "NtDeleteFile", hooks, log, ntDeleteFilePointer);
+        HookMethod(ref _ntQueryDirectoryFileHook, nameof(NtQueryDirectoryFileHookFn), "NtQueryDirectoryFile", hooks, log, ntQueryDirectoryFilePointer);
+        HookMethod(ref _ntQueryDirectoryFileExHook, nameof(NtQueryDirectoryFileExHookFn), "NtQueryDirectoryFileEx", hooks, log, ntQueryDirectoryFileExPointer);
+        HookMethod(ref _ntQueryAttributesFileHook, nameof(NtQueryAttributesFile), "NtQueryAttributesFile", hooks, log, ntQueryAttributesFilePointer);
+        HookMethod(ref _ntQueryFullAttributesFileHook, nameof(NtQueryFullAttributesFile), "NtQueryFullAttributesFile", hooks, log, ntQueryFullAttributesFilePointer);
     }
 
     private void HookMethod<[DynamicallyAccessedMembers(All)]THook>(ref AHook<THook> hook, string methodName, string origFunctionName, IReloadedHooks hooks, Logger? log, nint nativePointer)
