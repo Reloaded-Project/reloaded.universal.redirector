@@ -74,12 +74,13 @@ public class Mod : ModBase, IExports // <= Do not Remove.
     private void ModLoading(IModV1 mod, IModConfigV1 config)   => _redirectorApi.Redirector.Add(config.ModId, _modLoader);
     private void ModUnloading(IModV1 mod, IModConfigV1 config) => _redirectorApi.Redirector.Remove(config.ModId, _modLoader);
 
+    // Disabled unload in favour of Ready-To-Run
     public override void Suspend() => FileAccessServer.Disable();
     public override void Resume()  => FileAccessServer.Enable();
     public override void Unload()  => Suspend();
 
-    public override bool CanUnload()  => true;
-    public override bool CanSuspend() => true;
+    public override bool CanUnload()  => false;
+    public override bool CanSuspend() => false;
 
     #region For Exports, Serialization etc.
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
