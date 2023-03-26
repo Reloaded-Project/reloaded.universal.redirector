@@ -369,6 +369,9 @@ public class SpanOfCharDict<T>
     /// </summary>
     public ItemEntry[] GetValues()
     {
+        if (Count == 0)
+            return Array.Empty<ItemEntry>();
+        
         var entries = GC.AllocateUninitializedArray<ItemEntry>(Count);
         int entryIndex = 0;
         
