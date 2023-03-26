@@ -296,7 +296,7 @@ public class RedirectionTreeManager : IFolderRedirectionUpdateReceiver
             using var filesRental = new ArrayRental<FileInformation>(current.Value.Count);
             var files = filesRental.RawArray;
             var currentSpan = CollectionsMarshal.AsSpan(current.Value);
-            for (int x = 0; x < files.Length; x++)
+            for (int x = 0; x < filesRental.Count; x++)
             {
                 ref var value = ref currentSpan[x];
                 files[x] = new FileInformation(value.FileName, value.IsDirectory);
