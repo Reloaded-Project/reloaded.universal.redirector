@@ -1,4 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
+using Reloaded.Universal.Redirector.Lib.Extensions;
 using Reloaded.Universal.Redirector.Lib.Utility;
 
 namespace Reloaded.Universal.Redirector.Lib.Structures.RedirectionTree;
@@ -115,7 +116,7 @@ public struct RedirectionTree<TTarget>
             // Navigate to next node if possible.
             if (currentNode.Children.TryGetValue(splitSpan, out var existingNode))
             {
-                pathSpan = pathSpan.Slice(splitSpan.Length + 1);
+                pathSpan = pathSpan.SliceFast(splitSpan.Length + 1);
                 currentNode = existingNode;
                 continue;
             }
@@ -125,7 +126,7 @@ public struct RedirectionTree<TTarget>
             currentNode.Children.AddOrReplace(splitSpan.ToString(), newNode);
 
             // Advance
-            pathSpan = pathSpan.Slice(splitSpan.Length + 1);
+            pathSpan = pathSpan.SliceFast(splitSpan.Length + 1);
             currentNode = newNode; // Estimate number of subdirectories.
         }
 
