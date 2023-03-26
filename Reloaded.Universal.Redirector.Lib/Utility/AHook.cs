@@ -8,7 +8,8 @@ namespace Reloaded.Universal.Redirector.Lib.Utility;
 /// Wrapper for <see cref="IHook{TFunction}"/> to introduce devirtualisation.
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class AHook<[DynamicallyAccessedMembers(PublicParameterlessConstructor | PublicMethods | NonPublicMethods | PublicFields | PublicNestedTypes)]T> : IHook<T>
+[DynamicallyAccessedMembers(All)]
+public struct AHook<[DynamicallyAccessedMembers(All)]T>
 {
     private readonly IHook<T> _child;
 
@@ -24,7 +25,7 @@ public class AHook<[DynamicallyAccessedMembers(PublicParameterlessConstructor | 
         Original = OriginalFunction;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc cref="IHook{T}.Activate"/>
     public IHook<T> Activate() => _child.Activate();
 
     /// <summary/>
@@ -33,35 +34,23 @@ public class AHook<[DynamicallyAccessedMembers(PublicParameterlessConstructor | 
     /// <summary/>
     public void Enable() => _child.Enable();
 
-    /// <inheritdoc />
+    /// <inheritdoc cref="IHook{T}.ReverseWrapper"/>
     public T OriginalFunction => _child.OriginalFunction;
 
-    /// <inheritdoc />
+    /// <inheritdoc cref="IHook{T}.ReverseWrapper"/>
     public IReverseWrapper<T> ReverseWrapper => _child.ReverseWrapper;
 
-    /// <inheritdoc />
-    bool IHook<T>.IsHookEnabled => _child.IsHookEnabled;
+    /// <inheritdoc cref="IHook.IsHookEnabled"/>
+    bool IsHookEnabled => _child.IsHookEnabled;
 
-    /// <inheritdoc />
-    bool IHook<T>.IsHookActivated => _child.IsHookActivated;
+    /// <inheritdoc cref="IHook.IsHookActivated"/>
+    bool IsHookActivated => _child.IsHookActivated;
 
-    /// <inheritdoc />
-    nint IHook<T>.OriginalFunctionAddress => _child.OriginalFunctionAddress;
+    /// <inheritdoc cref="IHook.OriginalFunctionAddress"/>
+    nint OriginalFunctionAddress => _child.OriginalFunctionAddress;
 
-    /// <inheritdoc />
-    nint IHook<T>.OriginalFunctionWrapperAddress => _child.OriginalFunctionWrapperAddress;
-    
-    /// <inheritdoc />
-    bool IHook.IsHookEnabled => _child.IsHookEnabled;
-
-    /// <inheritdoc />
-    bool IHook.IsHookActivated => _child.IsHookActivated;
-
-    /// <inheritdoc />
-    nint IHook.OriginalFunctionAddress => _child.OriginalFunctionAddress;
-
-    /// <inheritdoc />
-    nint IHook.OriginalFunctionWrapperAddress => _child.OriginalFunctionWrapperAddress;
+    /// <inheritdoc cref="IHook.OriginalFunctionWrapperAddress"/>
+    nint OriginalFunctionWrapperAddress => _child.OriginalFunctionWrapperAddress;
 }
 
 /// <summary>
@@ -72,10 +61,10 @@ public static class AHookExtensions
     /// <summary>
     /// Converts from <see cref="IHook{TFunction}"/> to <see cref="AHook{T}"/>
     /// </summary>
-    public static AHook<T> ToAHook<[DynamicallyAccessedMembers(PublicParameterlessConstructor | PublicMethods | NonPublicMethods | PublicFields | PublicNestedTypes)]T>(this IHook<T> hook) => new(hook);
+    public static AHook<T> ToAHook<[DynamicallyAccessedMembers(All)]T>(this IHook<T> hook) => new(hook);
 
     /// <summary>
     /// Activates an <see cref="IHook{TFunction}"/> as an <see cref="AHook{T}"/>.
     /// </summary>
-    public static AHook<T> ActivateAHook<[DynamicallyAccessedMembers(PublicParameterlessConstructor | PublicMethods | NonPublicMethods | PublicFields | PublicNestedTypes)]T>(this IHook<T> hook) => hook.Activate().ToAHook();
+    public static AHook<T> ActivateAHook<[DynamicallyAccessedMembers(All)]T>(this IHook<T> hook) => hook.Activate().ToAHook();
 }

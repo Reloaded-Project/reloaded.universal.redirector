@@ -79,14 +79,14 @@ public unsafe partial class FileAccessServer
     private SemaphoreRecursionLock _openFileLock = new();
     private SemaphoreRecursionLock _queryAttributesFileLock = new();
     private SemaphoreRecursionLock _queryFullAttributesFileLock = new();
-    
-    private AHook<NativeHookDefinitions.NtQueryDirectoryFileEx> _ntQueryDirectoryFileExHook = null!;
-    private AHook<NativeHookDefinitions.NtQueryDirectoryFile> _ntQueryDirectoryFileHook = null!;
-    private AHook<NativeHookDefinitions.NtDeleteFile> _ntDeleteFileHook = null!;
-    private AHook<NativeHookDefinitions.NtCreateFile> _ntCreateFileHook = null!;
-    private AHook<NativeHookDefinitions.NtOpenFile> _ntOpenFileHook = null!;
-    private AHook<NativeHookDefinitions.NtQueryAttributesFile> _ntQueryAttributesFileHook = null!;
-    private AHook<NativeHookDefinitions.NtQueryAttributesFile> _ntQueryFullAttributesFileHook = null!;
+
+    private AHook<NativeHookDefinitions.NtQueryDirectoryFileEx> _ntQueryDirectoryFileExHook;
+    private AHook<NativeHookDefinitions.NtQueryDirectoryFile> _ntQueryDirectoryFileHook;
+    private AHook<NativeHookDefinitions.NtDeleteFile> _ntDeleteFileHook;
+    private AHook<NativeHookDefinitions.NtCreateFile> _ntCreateFileHook;
+    private AHook<NativeHookDefinitions.NtOpenFile> _ntOpenFileHook;
+    private AHook<NativeHookDefinitions.NtQueryAttributesFile> _ntQueryAttributesFileHook;
+    private AHook<NativeHookDefinitions.NtQueryAttributesFile> _ntQueryFullAttributesFileHook;
     private IAsmHook _closeHandleHook = null!;
     private Pinnable<NativeIntList> _closedHandleList = new(new NativeIntList());
     private readonly Dictionary<nint, OpenHandleState> _fileHandles = new();
