@@ -153,8 +153,10 @@ public unsafe partial class FileAccessServer
             if (TDirectoryInformation.TryPopulate(currentBufferPtr, remainingBytes, handle))
             {
                 // Filter out bad result.
-                if (!FileSystemName.MatchesWin32Expression(queryFileName, currentBufferPtr->GetFileName(currentBufferPtr)))
+                var fileName = currentBufferPtr->GetFileName(currentBufferPtr);
+                if (!FileSystemName.MatchesWin32Expression(queryFileName, fileName))
                 {
+                    LogDebugOnly($"Discarding File {fileName}, Expression: {queryFileName}");
                     NtClose(handle);
                     currentItem++;
                     return false;
