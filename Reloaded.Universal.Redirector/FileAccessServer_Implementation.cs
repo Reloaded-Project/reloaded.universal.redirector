@@ -53,10 +53,19 @@ public partial class FileAccessServer
     public unsafe ReadOnlySpan<char> ExtractPathFromObjectAttributes(Native.OBJECT_ATTRIBUTES* objectAttributes)
     {
         if (!objectAttributes->TryGetRootDirectory(out string result))
-            return objectAttributes->ObjectName->ToSpan().TrimWindowsPrefixes().ToString().NormalizePath();
+        {
+            var str = objectAttributes->ObjectName->ToSpan().TrimWindowsPrefixes();
+            if (str.Length == 0)
+                return default;
+            
+            return str.ToString().NormalizePath();
+        }
 
-        var joined = Path.Join(result.AsSpan(), objectAttributes->ObjectName->ToSpan());
-        return joined.AsSpan().TrimWindowsPrefixes().ToString().NormalizePath();
+        var joined = Path.Join(result.AsSpan(), objectAttributes->ObjectName->ToSpan()).AsSpan();
+        if (joined.Length == 0)
+            return default;
+        joined = joined.TrimWindowsPrefixes();
+        return joined.ToString().NormalizePath();
     }
     
     private void PrintFileLoadIfNeeded(ReadOnlySpan<char> path)
