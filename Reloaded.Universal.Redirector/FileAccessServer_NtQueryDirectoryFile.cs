@@ -112,10 +112,16 @@ public unsafe partial class FileAccessServer
                     ((TDirectoryInformation*)lastFileInformation)->SetNextEntryOffset(0);
                     break;
                 }
-                
-                // We finished with custom files, now get the originals that haven't been replaced.
-                returnValue = _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
-                    fileInformation, (uint)remainingBytes, fileInformationClass, returnSingleEntry, fileName, handleItem.GetForceRestartScan());
+
+                fixed (char* fileNamePtr = handleItem.QueryFileName)
+                {
+                    var fileNameStr = new UNICODE_STRING(fileNamePtr, handleItem.QueryFileName.Length);
+                    // We finished with custom files, now get the originals that haven't been replaced.
+                    returnValue = _ntQueryDirectoryFileHook.Original.Value.Invoke(fileHandle, @event, apcRoutine,
+                        apcContext, ioStatusBlock,
+                        fileInformation, (uint)remainingBytes, fileInformationClass, returnSingleEntry, &fileNameStr,
+                        handleItem.GetForceRestartScan());
+                }
 
                 HandleNtQueryDirectoryFileResult(returnSingleEntry, ref returnValue, handleItem, initInjectedItems, lastFileInformation, currentBufferPtr);
                 break;
@@ -195,7 +201,7 @@ public unsafe partial class FileAccessServer
                 return true;
             }
 
-            LogDebugOnly("Filtered Out {0} in {1}", handleItem.CurrentItem, nameof(InjectCustomFile));
+            LogDebugOnly("Discarded Out {0} in {1}", handleItem.CurrentItem, nameof(InjectCustomFile));
         }
         else
         {

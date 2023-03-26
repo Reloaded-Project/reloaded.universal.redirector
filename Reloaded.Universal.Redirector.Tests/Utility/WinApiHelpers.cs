@@ -37,6 +37,11 @@ public static class WinApiHelpers
         /// </summary>
         public int BufferSize = 4096;
 
+        /// <summary>
+        /// Sets the file name parameter to null on subsequent calls.
+        /// </summary>
+        public bool SetNullFileNameOnSubsequentCalls = false;
+
         public NtQueryDirectoryFileSettings() { }
     }
     
@@ -81,10 +86,13 @@ public static class WinApiHelpers
         // Read remaining files while possible.
         bool moreFiles = true;
         int returnSingleEntry = settings.OneByOne ? 1 : 0;
+        bool hasCalledBefore = false;
+        
         fixed (char* fileNamePtr = settings.FileNameFilter)
         {
             var fileNameString = new UNICODE_STRING(fileNamePtr, settings.FileNameFilter.Length);
-
+            var fileNameStringPtr = &fileNameString;
+            
             while (moreFiles)
             {
                 int restartScan = 0;
@@ -96,12 +104,16 @@ public static class WinApiHelpers
                     settings.RestartAfter = null;
                 }
 
+                if (hasCalledBefore && settings.SetNullFileNameOnSubsequentCalls) 
+                    fileNameStringPtr = null;
+
                 var statusBlock = new IO_STATUS_BLOCK();
                 var ntstatus = NtQueryDirectoryFile(handle.DangerousGetHandle(), // Our directory handle.
                     IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, &statusBlock, // Pointers we don't care about 
                     (IntPtr)bufferPtr, (uint)settings.BufferSize, method, // Buffer info.
-                    returnSingleEntry, &fileNameString, restartScan);
+                    returnSingleEntry, fileNameStringPtr, restartScan);
 
+                hasCalledBefore = true;
                 var currentBufferPtr = (IntPtr)bufferPtr;
                 if (ntstatus != 0)
                 {
@@ -135,10 +147,13 @@ public static class WinApiHelpers
         // Read remaining files while possible.
         bool moreFiles = true;
         int returnSingleEntry = settings.OneByOne ? 1 : 0;
+        bool hasCalledBefore = false;
+        
         fixed (char* fileNamePtr = settings.FileNameFilter)
         {
             var fileNameString = new UNICODE_STRING(fileNamePtr, settings.FileNameFilter.Length);
-
+            var fileNameStringPtr = &fileNameString;
+            
             while (moreFiles)
             {
                 int restartScan = 0;
@@ -150,6 +165,9 @@ public static class WinApiHelpers
                     settings.RestartAfter = null;
                 }
 
+                if (hasCalledBefore && settings.SetNullFileNameOnSubsequentCalls) 
+                    fileNameStringPtr = null;
+                
                 var statusBlock = new IO_STATUS_BLOCK();
                 int queryFlags = 0;
 
@@ -162,8 +180,9 @@ public static class WinApiHelpers
                 var ntstatus = NtQueryDirectoryFileEx(handle.DangerousGetHandle(), // Our directory handle.
                     IntPtr.Zero, IntPtr.Zero, IntPtr.Zero, &statusBlock, // Pointers we don't care about 
                     (IntPtr)bufferPtr, (uint)settings.BufferSize, method, // Buffer info.
-                    queryFlags, &fileNameString);
+                    queryFlags, fileNameStringPtr);
 
+                hasCalledBefore = true;
                 var currentBufferPtr = (IntPtr)bufferPtr;
                 if (ntstatus != 0)
                 {

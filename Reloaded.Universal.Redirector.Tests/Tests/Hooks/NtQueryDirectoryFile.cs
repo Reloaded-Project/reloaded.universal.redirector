@@ -181,6 +181,31 @@ public class NtQueryDirectoryFile : BaseHookTest
     
     [Theory]
     [MemberData(nameof(GetTestCases))]
+    public void CanMapFolder_WithNullFileNameOnSubsequentCalls(bool ex, Native.FILE_INFORMATION_CLASS method)
+    {
+        Api.Enable();
+        const int count = 256;
+
+        int currentName = 0;
+        string MakeFileName() => (currentName++).ToString();
+        using var items = new TemporaryJunkFolder(count, MakeFileName);
+        using var newItems = new TemporaryJunkFolder(count, MakeFileName);
+
+        Api.AddRedirectFolder(newItems.FolderPath, items.FolderPath);
+        var files = NtQueryDirectoryFileGetAllItems(ex, Strings.PrefixLocalDeviceStr + items.FolderPath, method, new NtQueryDirectoryFileSettings()
+        {
+            OneByOne = false,
+            RestartAfter = null,
+            SetNullFileNameOnSubsequentCalls = true,
+            FileNameFilter = "10*"
+        }).Files;
+        
+        foreach (var file in files)
+            file.StartsWith("10");
+    }
+    
+    [Theory]
+    [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_OverEmptyFolder(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
         Api.Enable();
@@ -203,7 +228,6 @@ public class NtQueryDirectoryFile : BaseHookTest
     [Theory]
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_FileDoesNotExist_SingleFile(bool ex, Native.FILE_INFORMATION_CLASS method) => GetFiles_DoesNotExist(ex, method, true);
-
     
     private void GetFiles_DoesNotExist(bool ex, Native.FILE_INFORMATION_CLASS method, bool singleFile)
     {

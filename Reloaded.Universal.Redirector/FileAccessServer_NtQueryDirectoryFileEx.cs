@@ -118,9 +118,13 @@ public unsafe partial class FileAccessServer
                 // We finished with custom files, now get the originals that haven't been replaced.
                 if (handleItem.GetForceRestartScan() >= 1)
                     queryFlags |= RestartScanFlag;
-                
-                returnValue = _ntQueryDirectoryFileExHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
-                    fileInformation, (uint)remainingBytes, fileInformationClass, queryFlags, fileName);
+
+                fixed (char* fileNamePtr = handleItem.QueryFileName)
+                {
+                    var fileNameStr = new UNICODE_STRING(fileNamePtr, handleItem.QueryFileName.Length);
+                    returnValue = _ntQueryDirectoryFileExHook.Original.Value.Invoke(fileHandle, @event, apcRoutine, apcContext, ioStatusBlock, 
+                        fileInformation, (uint)remainingBytes, fileInformationClass, queryFlags, &fileNameStr);
+                }
                 
                 HandleNtQueryDirectoryFileResult(returnSingleEntry, ref returnValue, handleItem, initInjectedItems, lastFileInformation, currentBufferPtr);
                 break;
