@@ -93,6 +93,7 @@ public unsafe partial class FileAccessServer
     private Pinnable<NativeIntList> _closedHandleList = new(new NativeIntList());
     private readonly Dictionary<nint, OpenHandleState> _fileHandles = new();
     private Logger? _logger;
+    private delegate*unmanaged[Stdcall, SuppressGCTransition]<int> _getCurrentThreadId;
 
     public static void Initialize(IReloadedHooks hooks, RedirectorApi redirectorApi, string codeDirectory, Logger? log = null)
     {
@@ -109,8 +110,9 @@ public unsafe partial class FileAccessServer
 
         if (_hooksApplied)
             return;
-
+        
         _hooksApplied = true;
+        _getCurrentThreadId = _closedHandleList.Pointer->GetCurrentThreadId;
         _logger = log;
         
         // Force-jit of all methods: We need this otherwise we might be stuck in infinite recursion if JIT needs 
@@ -168,25 +170,24 @@ public unsafe partial class FileAccessServer
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void DequeueHandles()
+    private void DequeueHandles(int threadId)
     {
         ref var nativeList = ref Unsafe.AsRef<NativeIntList>(_closedHandleList.Pointer);
         if (nativeList.NumItems <= 0)
             return;
         
-        DoDequeueHandles(ref nativeList);
+        DoDequeueHandles(ref nativeList, threadId);
     }
     
-    private void DoDequeueHandles(ref NativeIntList nativeList)
+    private void DoDequeueHandles(ref NativeIntList nativeList, int threadId)
     {
-        var threadId = nativeList.GetCurrentThreadId();
         while (Interlocked.CompareExchange(ref nativeList.CurrentThread, threadId, DefaultThreadHandle) != DefaultThreadHandle) { }
 
         for (int x = 0; x < nativeList.NumItems; x++)
         {
             var item = nativeList.ListPtr[x];
             if (_fileHandles.Remove(item, out var value))
-                _logger?.Debug("[FileAccessServer] Closed handle: {0}, File: {1}", item, value.FilePath);
+                LogDebugOnly("[FileAccessServer] Closed handle: {0}, File: {1}", item, value.FilePath);
         }
 
         nativeList.NumItems = 0;
@@ -201,11 +202,11 @@ public unsafe partial class FileAccessServer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int NtCreateFileHookImpl(IntPtr* fileHandle, FileAccess access, OBJECT_ATTRIBUTES* objectAttributes, IO_STATUS_BLOCK* ioStatus, long* allocSize, uint fileattributes, FileShare share, uint createDisposition, uint createOptions, IntPtr eaBuffer, uint eaLength)
     {
-        DequeueHandles();
         ReadOnlySpan<char> path = default;
 
         // Prevent recursion.
-        var threadId = Thread.CurrentThread.ManagedThreadId;
+        var threadId = _getCurrentThreadId();
+        DequeueHandles(threadId);
         if (_createFileLock.IsThisThread(threadId))
             goto fastReturn;
         
@@ -276,11 +277,11 @@ public unsafe partial class FileAccessServer
     private int NtOpenFileHookImpl(IntPtr* fileHandle, FileAccess access, OBJECT_ATTRIBUTES* objectAttributes, 
         IO_STATUS_BLOCK* ioStatus, FileShare share, uint openOptions)
     {
-        DequeueHandles();
         ReadOnlySpan<char> path = default;
         
         // Prevent recursion.
-        var threadId = Thread.CurrentThread.ManagedThreadId;
+        var threadId = _getCurrentThreadId();
+        DequeueHandles(threadId);
         if (_openFileLock.IsThisThread(threadId))
             goto fastReturn;
         
@@ -359,7 +360,6 @@ public unsafe partial class FileAccessServer
         _deleteFileLock.Lock(threadId);
 
         {
-            DequeueHandles();
             if (!TryResolveFilePath(attributes, out string newFilePath, out var isDirectory))
             {
                 _deleteFileLock.Unlock();
@@ -412,7 +412,6 @@ public unsafe partial class FileAccessServer
         _queryAttributesFileLock.Lock(threadId);
 
         {
-            DequeueHandles();
             var path = ExtractPathFromObjectAttributes(attributes);
             if (!TryResolveFilePath(path, out string newFilePath, out var isDirectory))
             {
@@ -471,7 +470,6 @@ public unsafe partial class FileAccessServer
         _queryFullAttributesFileLock.Lock(threadId);
 
         {
-            DequeueHandles();
             var path = ExtractPathFromObjectAttributes(attributes);
             if (!TryResolveFilePath(path, out var newFilePath, out var isDirectory))
             {
