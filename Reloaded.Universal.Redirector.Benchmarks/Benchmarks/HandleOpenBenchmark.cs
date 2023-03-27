@@ -14,14 +14,28 @@ public class HandleOpenBenchmark : IBenchmark
 
     public HandleOpenBenchmark()
     {
-        _files = Directory.GetFiles(@"D:\Games\GOG&DRMFREE", "*", SearchOption.AllDirectories);
+        _files = Directory.GetFiles(@"D:\Games\Steam\steamapps\common\GOG&DRMFREE", "*", SearchOption.AllDirectories);
     }
-
+    
+    private void VfsSetupImpl()
+    {
+        _api = new RedirectorApi(new Lib.Redirector(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!));
+        _api.AddRedirectFolder(@"D:\Games\Steam\steamapps\common\New", @"D:\Games\Steam\steamapps\common\GOG&DRMFREE");
+        FileAccessServer.Initialize(ReloadedHooks.Instance, _api, AppContext.BaseDirectory);
+    }
+    
     [GlobalSetup(Target = nameof(OpenAllHandles_WithVfs))]
     public void VfsSetup()
     {
-        _api = new RedirectorApi(new Lib.Redirector(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!));
-        FileAccessServer.Initialize(ReloadedHooks.Instance, _api, AppContext.BaseDirectory);
+        VfsSetupImpl();
+        _api.Enable();
+    }
+    
+    [GlobalSetup(Target = nameof(OpenAllHandles_WithVfs_Optimized))]
+    public void VfsSetup_Optimized()
+    {
+        VfsSetupImpl();
+        _api.Redirector.Manager.Optimise();
         _api.Enable();
     }
 
@@ -31,6 +45,9 @@ public class HandleOpenBenchmark : IBenchmark
     [Benchmark]
     public void OpenAllHandles_WithVfs() => OpenAllHandles_Common();
     
+    [Benchmark]
+    public void OpenAllHandles_WithVfs_Optimized() => OpenAllHandles_Common();
+
     [Benchmark(Baseline = true)]
     public void OpenAllHandles_WithoutVfs() => OpenAllHandles_Common();
     

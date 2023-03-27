@@ -1,5 +1,7 @@
-﻿using Reloaded.Universal.Redirector.Interfaces;
+﻿using System.Runtime.CompilerServices;
+using Reloaded.Universal.Redirector.Interfaces;
 
+[assembly: InternalsVisibleTo("Reloaded.Universal.Redirector.Benchmarks")]
 namespace Reloaded.Universal.Redirector;
 
 public class RedirectorApi : IRedirectorController
