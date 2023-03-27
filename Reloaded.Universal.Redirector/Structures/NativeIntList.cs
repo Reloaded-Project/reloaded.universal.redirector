@@ -85,7 +85,10 @@ public unsafe struct NativeIntList
         Malloc = (delegate*unmanaged[Cdecl, SuppressGCTransition]<nuint, nuint>)Native.GetProcAddress(ucrt, "malloc");
         Free = (delegate*unmanaged[Cdecl, SuppressGCTransition]<nuint, void>)Native.GetProcAddress(ucrt, "free");
         
-        var kernel32 = Native.LoadLibraryW("kernel32.dll");
+        var kernel32 = Native.LoadLibraryW("kernelbase.dll");
+        if (kernel32 == 0) // old OS
+            kernel32 = Native.LoadLibraryW("kernel32.dll");
+        
         GetCurrentThreadId = (delegate*unmanaged[Stdcall, SuppressGCTransition]<int>)Native.GetProcAddress(kernel32, "GetCurrentThreadId");
         
         NumItems = 0;

@@ -1,5 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using Reloaded.Universal.Redirector.Lib.Utility;
+using Reloaded.Universal.Redirector.Structures;
 
 namespace Reloaded.Universal.Redirector.Benchmarks.Benchmarks;
 
@@ -13,11 +14,24 @@ public class RecursionLockCandidatesBenchmark : IBenchmark
     private static object _lock = new object();
     private int _fieldInterlocked;
     private SemaphoreRecursionLock _semaphore = new();
+    private NativeIntList _intList = new();
 
     [Benchmark]
     public bool SemaphoreLock()
     {
         var threadId = Thread.CurrentThread.ManagedThreadId;
+        if (_semaphore.IsThisThread(threadId))
+            return true;
+
+        _semaphore.Lock(threadId);
+        _semaphore.Unlock();
+        return _field;
+    }
+    
+    [Benchmark]
+    public unsafe bool SemaphoreLockNativeThreadId()
+    {
+        var threadId = _intList.GetCurrentThreadId();
         if (_semaphore.IsThisThread(threadId))
             return true;
 
