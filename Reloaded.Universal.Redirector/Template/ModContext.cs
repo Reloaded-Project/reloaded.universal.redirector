@@ -1,5 +1,5 @@
-﻿using Reloaded.Mod.Interfaces;
-using IReloadedHooks = Reloaded.Hooks.ReloadedII.Interfaces.IReloadedHooks;
+﻿using Reloaded.Hooks.Definitions;
+using Reloaded.Mod.Interfaces;
 
 namespace Reloaded.Universal.Redirector.Template;
 

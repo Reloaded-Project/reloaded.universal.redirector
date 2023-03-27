@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Microsoft.Win32.SafeHandles;
+using Reloaded.Universal.Redirector.Lib.Utility;
 using Reloaded.Universal.Redirector.Lib.Utility.Native;
 using static Reloaded.Universal.Redirector.Lib.Utility.Native.Native;
 
@@ -332,7 +333,7 @@ public static class WinApiHelpers
                 CreateDisposition.Open, CreateOptions.SynchronousIoAlert, 0, 0);
             
             if (status != 0)
-                throw new Win32Exception(status);
+                ThrowHelpers.Win32Exception(status);
 
             return ntOpenWrapper.Handle;
         }

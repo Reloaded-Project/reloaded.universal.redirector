@@ -24,7 +24,9 @@ public struct Redirector : IDisposable
     public FolderUpdateListener<RedirectionTreeManager> Listener { get; private set; }
 
     private RedirectorSettings _settings;
-    
+
+    public Redirector() => throw new Exception("Invalid constructor. Please use one that specifies base directory.");
+
     /// <summary>
     /// Creates a new instance of the redirector.
     /// </summary>

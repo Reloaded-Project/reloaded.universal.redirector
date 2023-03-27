@@ -3,7 +3,7 @@
  * to make it easier to upgrade to newer versions of the template.
 */
 
-using Reloaded.Hooks.ReloadedII.Interfaces;
+using Reloaded.Hooks.Definitions;
 using Reloaded.Mod.Interfaces;
 using Reloaded.Mod.Interfaces.Internal;
 using Reloaded.Universal.Redirector.Template.Configuration;
