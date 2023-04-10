@@ -6,7 +6,7 @@ Split-Path $MyInvocation.MyCommand.Path | Push-Location
 
 ./Publish.ps1 -ProjectPath "Reloaded.Universal.Redirector/Reloaded.Universal.Redirector.csproj" `
               -PackageName "Reloaded.Universal.Redirector" `
-			  -ReadmePath ./README-REDIRECTOR.md `
+			  -ReadmePath ./docs/usage.md `
               -PublishOutputDir "Publish/ToUpload/Redirector" `
               -MakeDelta true -UseGitHubDelta true `
               -MetadataFileName "Reloaded.Universal.Redirector.ReleaseMetadata.json" `

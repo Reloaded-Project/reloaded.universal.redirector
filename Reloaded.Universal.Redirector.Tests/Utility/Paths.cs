@@ -81,4 +81,14 @@ public static class Paths
     /// An overlay folder that overrides a file stored in the base folder with subfolders.
     /// </summary>
     public static string GetOverrideWithSubfolders(string baseFolder) => Path.Combine(baseFolder, "Override with Subfolder");
+    
+    /// <summary>
+    /// An overlay folder that contains a native DLL which can be loaded.
+    /// </summary>
+    public static readonly string NativeDll = GetOverride1(AssetsFolder);
+    
+    /// <summary>
+    /// An overlay folder that contains a native DLL which can be loaded.
+    /// </summary>
+    public static string GetNativeDll(string baseFolder) => Path.Combine(baseFolder, nint.Size == 4 ? "Dlls/x86" : "Dlls/x64");
 }
