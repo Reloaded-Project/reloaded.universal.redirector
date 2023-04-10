@@ -22,47 +22,6 @@ namespace Reloaded.Universal.Redirector;
 /// </summary>
 public unsafe partial class FileAccessServer
 {
-    /*
-        Sewer's Grand API Mapping Table:
-
-        This comment shows a listing of hooks and their corresponding APIs they successfully handle.
-        i.e. Often API 1 will call API 2 under the hood in Windows.
-
-        Confirmed by looking at Windows (7, 8.1, 10 & 11), older versions are no longer 
-        supported by me, MSFT or .NET runtime.
-
-        Windows Native APIs:
-            ✅ NtCreateFile_Hook           -> NtCreateFile 
-            ✅ NtOpenFile_Hook             -> NtOpenFile
-            ✅ NtQueryDirectoryFileEx_Hook -> NtQueryDirectoryFileEx
-                                              NtQueryDirectoryFile
-
-            ✅ NtDeleteFile_Hook              -> NtDeleteFile
-            ✅ NtQueryAttributesFile_Hook     -> NtQueryAttributesFile
-            ✅ NtQueryFullAttributesFile_Hook -> NtQueryFullAttributesFile
-            ✅ NtClose_Hook                   -> NtClose [needs ASM; as GC Transition can close threads; leading to infinite recursion]
-
-            Note: NtQueryDirectoryFileEx on Win10 >=, hook NtQueryDirectoryFile on Wine and Earlier
-            Check explicitly if methods present, else bail out fast.
-
-        Win32 APIs:
-
-            Listing of Win32 counterparts and the corresponding NT hooks that handle them.
-
-            FindFirstFileA   -> FindFirstFileExW -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
-            FindFirstFileExA -> FindFirstFileExW -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
-            FindFirstFileW   -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
-            FindFirstFileExW -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
-            FindFirstFileExFromAppW -> FindFirstFileExW -> NtOpenFile & NtQueryDirectoryFileEx Hooks.
-
-            FindNextFileA -> FindNextFileW -> NtQueryDirectoryFileEx Hook
-            FindNextFileW -> NtQueryDirectoryFileEx Hook
-
-            Ignore: 
-                FindFirstFileName | We don't deal with hardlinks.
-
-    */
-
     private static FileAccessServer _instance = null!;
 
     private Lib.Redirector GetRedirector() => _redirectorApi.Redirector;

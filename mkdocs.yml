@@ -1,0 +1,58 @@
+site_name: Reloaded Redirector
+site_url: https://reloaded-project.github.io/reloaded.universal.redirector
+
+repo_name: Reloaded-Project/reloaded.universal.redirector
+repo_url: https://github.com/Reloaded-Project/reloaded.universal.redirector
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Sewer56
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/TheSewer56
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.details
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tasklist
+  - def_list
+  - meta
+  - md_in_html
+  - attr_list
+  - footnotes
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.footer
+
+  palette:
+    primary: red
+    accent: red
+    scheme: slate
+
+use_directory_urls: false
+
+nav:
+  - Home: index.md
+  - About the VFS: about-the-vfs.md
+  - Basic Usage: usage.md
+  - Programmer Usage: programmer-usage.md
+  - Performance Details: benchmarks.md
+  - Implementation Details: 
+      - Hooks: implementationdetails/used-hooks.md
+      - Lookup Tree: implementationdetails/lookup-tree.md
+      - Redirection Tree: implementationdetails/redirection-tree.md
+
+  - Guides: 
+    - Contributing Locally: guides/contributing-locally.md
+    - Contributing Online: guides/contributing-online.md
+     
