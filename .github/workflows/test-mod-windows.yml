@@ -1,0 +1,30 @@
+name: Test on Windows
+
+on:
+  push:
+    branches: [ master, rewrite-usvfs-read-features ]
+    tags:
+      - '*'
+  pull_request:
+    branches: [ master, rewrite-usvfs-read-features ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET Core SDK (7.0)
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+        
+    - name: Build
+      run: ./Test.ps1
