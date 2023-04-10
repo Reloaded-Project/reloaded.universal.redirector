@@ -20,6 +20,32 @@ flowchart LR
 
 The VFS sits in the middle and does some magic 😇.
 
+```mermaid
+classDiagram    
+
+    class `Mod Folder`
+    `Mod Folder` : data3.pak
+
+    class `Mod 2 Folder`
+    `Mod 2 Folder` : data4.pak
+
+    class `Real Game Folder`
+    `Real Game Folder` : data1.pak
+    `Real Game Folder` : data2.pak
+    `Real Game Folder` : game.exe
+
+    class `Virtual Game Folder [What Game Sees]`
+    `Virtual Game Folder [What Game Sees]` : data1.pak
+    `Virtual Game Folder [What Game Sees]` : data2.pak
+    `Virtual Game Folder [What Game Sees]` : data3.pak
+    `Virtual Game Folder [What Game Sees]` : data4.pak
+    `Virtual Game Folder [What Game Sees]` : game.exe
+
+    `Mod Folder` --|> `Virtual Game Folder [What Game Sees]`
+    `Mod 2 Folder` --|> `Virtual Game Folder [What Game Sees]`
+    `Real Game Folder` --|> `Virtual Game Folder [What Game Sees]`
+```
+
 ## Usage Guide
 
 You place files in a folder, and game can 'magically' see them.  
