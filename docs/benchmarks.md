@@ -39,7 +39,7 @@ The Reloaded VFS is heavily optimized for performance. A lot of micro-optimisati
 
 | Folder Type                  | Directories | Total Items | RedirectionTree (Time) | RedirectionTree (Memory) | LookupTree (Time) | LookupTree (Memory) |
 |------------------------------|-------------|-------------|------------------------|-------------------------|-------------------|---------------------|
-| Windows Folder               | 40,796      | 170,438     | 43ms                   | 27MB                    | 32ms              | 11MB                |
+| Windows Folder               | 40,796      | 170,438     | 43ms                   | 27MB                    | 32ms              | 25MB                |
 | Steam Folder <br/>(65 games) | 9,318       | 172,896     | 18ms                   | 12MB                    | 20ms              | 11MB                |
 
 The performance of mapping operations mainly depends on the directory count. The table above shows the time and memory usage for building the `RedirectionTree` and `LookupTree` for both Windows and Steam folders. The `LookupTree` memory usage should be approximately equal to the total runtime memory usage.
