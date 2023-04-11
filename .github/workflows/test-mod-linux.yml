@@ -1,0 +1,27 @@
+name: Test on Wine
+
+on:
+  push:
+    branches: [ master, rewrite-usvfs-read-features ]
+    tags:
+      - '*'
+  pull_request:
+    branches: [ master, rewrite-usvfs-read-features ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        shell: pwsh
+    
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: devopsx/gha-focal-i386-fix@master
+
+      - name: Build
+        run: ./TestWine.ps1

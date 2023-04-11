@@ -8,10 +8,18 @@ namespace Reloaded.Universal.Redirector.Tests.Tests.Hooks;
 public class NtQueryAttributesFile : BaseHookTest
 {
     [Fact]
-    public void NtQueryAttributesFile_Baseline() => Baseline(NtQueryAttributesFileHelper);
+    public void NtQueryAttributesFile_Baseline()
+    {
+        if (FileAccessServer.SupportsNtQueryAttributesFile)
+            Baseline(NtQueryAttributesFileHelper);
+    }
 
     [Fact]
-    public void NtQueryFullAttributesFile_Baseline() => Baseline(NtQueryFullAttributesFileHelper);
+    public void NtQueryFullAttributesFile_Baseline()
+    {
+        if (FileAccessServer.SupportsNtQueryFullAttributesFile)
+            Baseline(NtQueryFullAttributesFileHelper);
+    }
 
     private void Baseline<T>(Func<string, T> ntQueryAttributesFile)
     {
@@ -42,6 +50,13 @@ public class NtQueryAttributesFile : BaseHookTest
     
     private void OpenPreviouslyMissingDirectory(bool useFull)
     {
+        switch (useFull)
+        {
+            case true when !FileAccessServer.SupportsNtQueryFullAttributesFile:
+            case false when !FileAccessServer.SupportsNtQueryAttributesFile:
+                return;
+        }
+
         Api.Enable();
 
         // Setup.

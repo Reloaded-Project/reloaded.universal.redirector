@@ -24,6 +24,10 @@ public unsafe partial class FileAccessServer
 {
     private static FileAccessServer _instance = null!;
 
+    public static bool SupportsNtQueryAttributesFile => _instance._ntQueryAttributesFileHook.HasValue;
+    public static bool SupportsNtQueryFullAttributesFile => _instance._ntQueryFullAttributesFileHook.HasValue;
+    public static bool SupportsNtQueryDirectoryFileEx => _instance._ntQueryDirectoryFileHook.HasValue;
+    
     private Lib.Redirector GetRedirector() => _redirectorApi.Redirector;
     private RedirectionTreeManager GetManager() => _redirectorApi.Redirector.Manager;
     

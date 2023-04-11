@@ -14,6 +14,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void Baseline_CanGetFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
 
         const int count = 256;
@@ -29,7 +32,6 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_WithOnlyFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
-        Api.Enable();
         MapFolder_Common(ex, method, 256);
     }
     
@@ -37,7 +39,6 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_WithFilesAndDirectories(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
-        Api.Enable();
         MapFolder_Common(ex, method, 256, true);
     }
     
@@ -45,6 +46,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_WhileReturningSingleEntry(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
         const int count = 256;
         var items = GetFiles_ReturningSingleEntry(ex, method, count, int.MaxValue, out var newItems, out var files);
@@ -56,6 +60,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_WithRestart(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
         const int count = 256;
         const int restartAfter = count / 2;
@@ -68,6 +75,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_WithRestart_InOriginalFiles(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
         const int count = 256;
         const int restartAfter = count + (count / 2);
@@ -80,6 +90,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_WithWin32Filter(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
         const int count = 256;
 
@@ -104,6 +117,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_DiscardsDuplicates_WithAllItemsDuplicated(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
         const int count = 256;
 
@@ -129,6 +145,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_DoesNotRedirectSubFolderHandle(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         // Ensures the file path to a subfolder doesn't get redirected,
         // which could lead to erroneous behaviour 
         Api.Enable();
@@ -164,6 +183,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_TargetDiscoversNewFolders(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
         const int count = 256;
 
@@ -183,6 +205,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_WithNullFileNameOnSubsequentCalls(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
         const int count = 256;
 
@@ -208,6 +233,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_OverEmptyFolder(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
         int count = 256;
         using var items = new TemporaryFolderAllocation();
@@ -231,6 +259,9 @@ public class NtQueryDirectoryFile : BaseHookTest
     
     private void GetFiles_DoesNotExist(bool ex, Native.FILE_INFORMATION_CLASS method, bool singleFile)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
         Api.Enable();
         const int count = 8;
 
@@ -255,7 +286,6 @@ public class NtQueryDirectoryFile : BaseHookTest
     [MemberData(nameof(GetTestCases))]
     public void CanMapFolder_Baseline_Single(bool ex, Native.FILE_INFORMATION_CLASS method)
     {
-        Api.Enable();
         MapFolder_Common(ex, method, 1);
     }
     
@@ -280,6 +310,10 @@ public class NtQueryDirectoryFile : BaseHookTest
 
     private void MapFolder_Common(bool ex, Native.FILE_INFORMATION_CLASS method, int count, bool includeDirectories = false)
     {
+        if (ex && !FileAccessServer.SupportsNtQueryDirectoryFileEx)
+            return;
+        
+        Api.Enable();
         using var items = new TemporaryJunkFolder(count);
         using var newItems = new TemporaryJunkFolder(count);
 

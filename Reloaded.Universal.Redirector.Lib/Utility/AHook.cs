@@ -18,6 +18,11 @@ public struct AHook<[DynamicallyAccessedMembers(All)]T>
     /// </summary>
     public T Original;
 
+    /// <summary>
+    /// True if this struct has a value, else false.
+    /// </summary>
+    public bool HasValue => _child != null;
+
     /// <summary/>
     public AHook(IHook<T> child)
     {
@@ -29,10 +34,10 @@ public struct AHook<[DynamicallyAccessedMembers(All)]T>
     public IHook<T> Activate() => _child.Activate();
 
     /// <summary/>
-    public void Disable() => _child.Disable();
+    public void Disable() => _child?.Disable();
 
     /// <summary/>
-    public void Enable() => _child.Enable();
+    public void Enable() => _child?.Enable();
 
     /// <inheritdoc cref="IHook{T}.ReverseWrapper"/>
     public T OriginalFunction => _child.OriginalFunction;
